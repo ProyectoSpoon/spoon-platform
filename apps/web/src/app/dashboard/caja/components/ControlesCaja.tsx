@@ -1,0 +1,197 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Button } from '@spoon/shared/components/ui/Button';
+import { Input } from '@spoon/shared/components/ui//Input';
+import { Card, CardContent, CardHeader, CardTitle } from '@spoon/shared/components/ui//Card';
+import { useCajaSesion } from '@spoon/shared/caja/hooks/useCajaSesion';
+import { formatCurrency, CAJA_CONFIG, CAJA_MESSAGES } from '@spoon/shared/caja/constants/cajaConstants';
+
+interface ControlesCajaProps {
+  className?: string;
+}
+
+export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
+  const { sesionActual, estadoCaja, loading, abrirCaja, cerrarCaja } = useCajaSesion();
+  const [montoInicial, setMontoInicial] = useState(CAJA_CONFIG.MONTO_INICIAL_DEFAULT);
+  const [notasApertura, setNotasApertura] = useState('');
+  const [notasCierre, setNotasCierre] = useState('');
+  const [showAbrirModal, setShowAbrirModal] = useState(false);
+  const [showCerrarModal, setShowCerrarModal] = useState(false);
+
+  const handleAbrirCaja = async () => {
+    const resultado = await abrirCaja(montoInicial, notasApertura);
+    if (resultado.success) {
+      setShowAbrirModal(false);
+      setNotasApertura('');
+    }
+  };
+
+  const handleCerrarCaja = async () => {
+    const resultado = await cerrarCaja(notasCierre);
+    if (resultado.success) {
+      setShowCerrarModal(false);
+      setNotasCierre('');
+    }
+  };
+
+  const formatearMonto = (centavos: number) => {
+    return formatCurrency(centavos);
+  };
+
+  if (estadoCaja === 'abierta' && sesionActual) {
+    return (
+      <div className={`flex items-center justify-between ${className || ''}`}>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-green-700">Caja Abierta</span>
+          </div>
+          <div className="text-sm text-gray-600">
+            Monto inicial: <span className="font-semibold">{formatearMonto(sesionActual.monto_inicial)}</span>
+          </div>
+          <div className="text-sm text-gray-600">
+            Desde: {new Date(sesionActual.abierta_at).toLocaleTimeString('es-CO', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}
+          </div>
+        </div>
+
+        <Button
+          variant="outline"
+          onClick={() => setShowCerrarModal(true)}
+          disabled={loading}
+          className="text-red-600 border-red-200 hover:bg-red-50"
+        >
+          Cerrar Caja
+        </Button>
+
+        {showCerrarModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle>Cerrar Caja</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Notas de cierre (opcional)</label>
+                  <textarea
+                    value={notasCierre}
+                    onChange={(e) => setNotasCierre(e.target.value)}
+                    placeholder="Observaciones del cierre..."
+                    className="w-full p-2 border rounded-md resize-none h-20"
+                  />
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCerrarModal(false)}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleCerrarCaja}
+                    disabled={loading}
+                    className="flex-1 bg-red-600 hover:bg-red-700"
+                  >
+                    {loading ? 'Cerrando...' : 'Cerrar Caja'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex items-center justify-between ${className || ''}`}>
+      <div className="flex items-center space-x-2">
+        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+        <span className="text-sm font-medium text-gray-600">Caja Cerrada</span>
+      </div>
+
+      <Button
+        onClick={() => setShowAbrirModal(true)}
+        disabled={loading}
+        className="bg-green-600 hover:bg-green-700"
+      >
+        <span className="mr-2">🏪</span>
+        Abrir Caja
+      </Button>
+
+      {showAbrirModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Abrir Caja</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Monto inicial en efectivo</label>
+                <Input
+                  type="number"
+                  value={montoInicial / 100}
+                  onChange={(e) => setMontoInicial(Math.round(parseFloat(e.target.value || '0') * 100))}
+                  placeholder="50000"
+                  className="text-right"
+                />
+                <p className="text-xs text-gray-500">
+                  Equivale a: {formatearMonto(montoInicial)}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Notas de apertura (opcional)</label>
+                <textarea
+                  value={notasApertura}
+                  onChange={(e) => setNotasApertura(e.target.value)}
+                  placeholder="Observaciones de la apertura..."
+                  className="w-full p-2 border rounded-md resize-none h-20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Montos sugeridos</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[25000, 50000, 100000].map((monto) => (
+                    <Button
+                      key={monto}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMontoInicial(monto * 100)}
+                      className="text-xs"
+                    >
+                      ${monto.toLocaleString()}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAbrirModal(false)}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleAbrirCaja}
+                  disabled={loading || montoInicial <= 0}
+                  className="flex-1"
+                >
+                  {loading ? 'Abriendo...' : 'Abrir Caja'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};

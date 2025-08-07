@@ -1,0 +1,256 @@
+Análisis del Módulo: Sistema de Gestión de Mesas
+1. Propósito del Módulo
+Este módulo implementa un sistema de gestión de mesas para restaurantes enfocado en el control visual y operativo de las mesas del establecimiento. Su función principal es permitir el seguimiento en tiempo real del estado de las mesas, visualización de consumos pendientes y procesamiento de cobros de manera eficiente.
+2. Funcionalidades Principales
+Gestión Visual de Mesas:
+
+Grid interactivo: Visualización de todas las mesas en formato cuadrícula
+Estados visuales: Diferenciación clara entre mesas libres y ocupadas
+Indicadores de estado: Colores y textos descriptivos para cada estado
+Información inmediata: Total pendiente por mesa visible al instante
+
+Sistema de Cobros:
+
+Modal de detalles: Vista completa de consumos por mesa
+Desglose de productos: Lista detallada de items consumidos con cantidades y precios
+Cálculo automático: Total acumulado con formato de moneda local
+Procesamiento de cobro: Funcionalidad completa para cerrar cuentas
+
+Dashboard de Control:
+
+KPIs en tiempo real: Mesas activas y total pendiente
+Actualización automática: Refresh cada 30 segundos
+Resumen del día: Estadísticas consolidadas de la operación
+
+Experiencia de Usuario:
+
+Interfaz intuitiva: Click directo en mesas ocupadas para ver detalles
+Feedback visual: Estados de carga y confirmaciones
+Formato local: Moneda colombiana (COP) con formateo apropiado
+
+3. Dependencias Identificadas
+Dependencias Externas:
+
+React: Hooks básicos (useState, useEffect)
+Lucide React: Iconografía (X, DollarSign, Clock, RefreshCw)
+@spoon/shared: Biblioteca compartida del sistema
+
+Dependencias Internas Críticas:
+
+UI Components: Button de la biblioteca compartida
+Context: useSetPageTitle para manejo de títulos de página
+Services: getMesasEstado, cobrarMesa, getUserRestaurant, getDetallesMesa
+Types: Mesa, ItemMesa, EstadoMesas del sistema de tipos compartido
+Constants: COLORES_ESTADO, TEXTOS_ESTADO, TOTAL_MESAS_DEFAULT
+
+Estructura de Datos Esperada:
+typescript// Base de datos debe tener:
+- Tabla de órdenes activas por mesa
+- Relación con restaurant_id
+- Items de orden con precios y cantidades
+- Estado de mesas (ocupada/libre)
+4. Errores e Inconsistencias Detectadas
+Errores Críticos:
+
+Dependencia de debug en producción (MesaModal.tsx, línea 90):
+
+typescript{process.env.NODE_ENV === 'development' && // Debug info en producción
+Riesgo: Información sensible podría filtrarse
+
+Falta de validación de datos (MesaModal.tsx):
+
+typescript// No valida si detalles.items existe antes de mapear
+{detalles.items.map((item, index) => ( // Puede fallar
+
+Manejo de errores insuficiente (useMesas.ts):
+
+typescript} catch (error) {
+  console.error('Error cargando mesas:', error);
+  // No hay feedback al usuario sobre el error
+}
+Problemas de Arquitectura:
+
+Lógica de formateo duplicada: formatCurrency se repite en múltiples componentes
+Estado local no sincronizado: Auto-refresh puede generar inconsistencias
+Falta de optimistic updates: Las acciones no muestran feedback inmediato
+
+Issues de UX/UI:
+
+No hay confirmación de cobro: Acción crítica sin confirmación
+Loading states inconsistentes: Algunos componentes no muestran estados de carga
+Falta de manejo de errores de red: Conexión perdida no se comunica al usuario
+
+5. Sugerencias de Mejora
+Correcciones Inmediatas:
+typescript// 1. Validación robusta de datos
+const renderItems = () => {
+  if (!detalles?.items?.length) {
+    return <div>No hay items registrados</div>;
+  }
+  
+  return detalles.items.map((item, index) => {
+    if (!item || typeof item.precio_total !== 'number') {
+      console.warn('Item inválido:', item);
+      return null;
+    }
+    // Render seguro...
+  });
+};
+
+// 2. Utility centralizado para formato
+// utils/currency.ts
+export const formatCurrency = (amount: number): string => {
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    console.warn('Formato de moneda inválido:', amount);
+    return '$0';
+  }
+  
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0
+  }).format(amount);
+};
+
+// 3. Confirmación de cobro
+const handleCobrar = async () => {
+  const confirmado = await showConfirmDialog(
+    '¿Confirmar cobro?',
+    `Total: ${formatCurrency(detalles.total)}`
+  );
+  
+  if (!confirmado) return;
+  
+  // Procesar cobro...
+};
+Mejoras Arquitectónicas:
+
+Context para estado global:
+
+typescript// MesasContext.tsx
+interface MesasContextType {
+  mesasEstado: EstadoMesas;
+  loading: boolean;
+  error: string | null;
+  actualizarMesa: (numero: number) => Promise<void>;
+  procesarCobro: (numero: number) => Promise<boolean>;
+}
+
+Hook optimizado con cache:
+
+typescript// useMesas.ts mejorado
+export const useMesas = () => {
+  const [cache, setCache] = useState<Map<string, EstadoMesas>>(new Map());
+  
+  const cargarMesas = useCallback(async () => {
+    const cacheKey = `mesas_${restaurantId}_${Date.now()}`;
+    // Implementar cache inteligente
+  }, [restaurantId]);
+};
+
+Error boundaries específicos:
+
+typescript// MesasErrorBoundary.tsx
+export const MesasErrorBoundary: React.FC<{children: React.ReactNode}> = ({children}) => {
+  return (
+    <ErrorBoundary
+      fallback={<MesasErrorFallback />}
+      onError={(error) => logMesasError(error)}
+    >
+      {children}
+    </ErrorBoundary>
+  );
+};
+Optimizaciones de Rendimiento:
+
+Memoización de componentes:
+
+typescriptconst MesaCard = React.memo<MesaCardProps>(({numero, estado, total, onClick}) => {
+  // Implementación memoizada
+});
+
+Virtualización para muchas mesas:
+
+typescript// Para restaurantes con 50+ mesas
+import { FixedSizeGrid as Grid } from 'react-window';
+
+Debounce en actualizaciones:
+
+typescriptconst debouncedRefresh = useMemo(
+  () => debounce(cargarMesas, 1000),
+  [cargarMesas]
+);
+6. Observaciones para IAs Futuras
+Contexto del Sistema:
+
+Este módulo maneja operaciones financieras críticas (cobros de mesas)
+Debe ser 100% confiable durante horarios de servicio
+Es usado por personal de servicio con diferentes niveles técnicos
+Requiere sincronización en tiempo real entre múltiples dispositivos
+
+Patrones de Diseño Implementados:
+
+Presentation/Container Pattern en MesasPage/MesaCard
+Modal Pattern para detalles de mesa
+Auto-refresh Pattern con intervalo fijo
+State Management local con React hooks
+
+Flujo de Datos Crítico:
+Usuario → Click Mesa → Cargar Detalles → Mostrar Modal → 
+Confirmar Cobro → Procesar Pago → Actualizar Estado → 
+Sincronizar con Base de Datos → Actualizar UI
+Consideraciones de Testing:
+
+Mock de servicios de mesa es esencial
+Estados de error requieren cobertura completa
+Operaciones de cobro necesitan testing exhaustivo
+Auto-refresh debe testearse con timers
+
+Datos de Entrada Esperados:
+typescript// El sistema requiere:
+1. Restaurant activo con mesas configuradas
+2. Órdenes activas vinculadas a mesas
+3. Items de orden con precios válidos
+4. Conexión estable para actualizaciones
+
+// Estructura típica de mesa ocupada:
+{
+  numero: 5,
+  total: 45000,
+  items: [
+    {
+      id: 'item_1',
+      nombre: 'Menú Ejecutivo',
+      cantidad: 2,
+      precio_total: 30000
+    }
+  ]
+}
+Limitaciones Actuales:
+
+No hay sistema de reservas integrado
+Falta división de cuentas para grupos
+No hay asignación de meseros por mesa
+Ausencia de tiempo de ocupación tracking
+Sin notificaciones para mesas que esperan cobro
+No hay reportes de rotación de mesas
+
+Puntos de Extensión:
+
+Sistema de reservas con calendario
+Asignación de meseros por mesa
+División de cuentas para grupos
+Alertas de tiempo de ocupación
+Dashboard analítico de rotación
+Integración con POS para órdenes automáticas
+App móvil para meseros
+Sistema de propinas digitales
+
+Consideraciones de Seguridad:
+
+Validar permisos antes de cobrar
+Log de todas las transacciones para auditoría
+Prevenir cobros dobles con locks
+Backup de datos antes de operaciones críticas
+
+Este módulo es fundamental para las operaciones diarias del restaurante y requiere máxima estabilidad y precisión en el manejo de transacciones financieras.

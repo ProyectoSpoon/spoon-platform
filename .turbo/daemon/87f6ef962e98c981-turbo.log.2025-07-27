@@ -1,0 +1,121 @@
+2025-07-27T00:43:47.114607Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\87f6ef962e98c981-turbo.log.2025-07-26")}
+2025-07-27T00:43:47.114750Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:43:47.209009Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\87f6ef962e98c981-turbo.log.2025-07-26"), AnchoredSystemPathBuf(".turbo\\daemon\\87f6ef962e98c981-turbo.log.2025-07-27")}
+2025-07-27T00:43:47.209041Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:43:47.810759Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon")}
+2025-07-27T00:43:47.810779Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:46:34.811631Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard"), AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas")}
+2025-07-27T00:46:34.811686Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T00:46:34.811990Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-07-27T00:46:35.003697Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\page.tsx")}
+2025-07-27T00:46:35.003740Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T00:46:35.110945Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas")}
+2025-07-27T00:46:35.110992Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T00:46:35.111076Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-07-27T00:46:35.202894Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\components\\ui\\MesaCard.tsx")}
+2025-07-27T00:46:35.202947Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T00:46:35.404876Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\components\\ui\\MesaModal.tsx")}
+2025-07-27T00:46:35.404917Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T00:46:35.502999Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\components\\ui")}
+2025-07-27T00:46:35.503044Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T00:46:35.503119Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-07-27T00:48:09.303869Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\lib\\supabase.ts")}
+2025-07-27T00:48:09.303944Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T00:48:22.206518Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\lib\\supabase.ts")}
+2025-07-27T00:48:22.206532Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T00:49:08.701828Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\page.tsx")}
+2025-07-27T00:49:08.701905Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T00:53:08.607806Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\src\\app"), AnchoredSystemPathBuf("apps"), AnchoredSystemPathBuf("apps\\src\\app\\dashboard"), AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas"), AnchoredSystemPathBuf("apps\\src"), AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas\\hooks")}
+2025-07-27T00:53:08.607858Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }, WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:53:08.607961Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-07-27T00:53:08.702730Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas")}
+2025-07-27T00:53:08.702749Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:53:09.001122Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas\\types"), AnchoredSystemPathBuf("apps\\src\\app\\dashboard"), AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas")}
+2025-07-27T00:53:09.001172Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:53:09.301574Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas\\constants"), AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas")}
+2025-07-27T00:53:09.301641Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:53:09.601427Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas"), AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas\\pages")}
+2025-07-27T00:53:09.601578Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:53:09.806300Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas\\types\\mesasTypes.ts")}
+2025-07-27T00:53:09.806348Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:53:10.036231Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas\\constants\\mesasConstants.ts")}
+2025-07-27T00:53:10.036273Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:53:10.518679Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas\\hooks\\useMesas.ts")}
+2025-07-27T00:53:10.518725Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:53:10.715452Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas\\index.ts")}
+2025-07-27T00:53:10.715708Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:53:41.304177Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas\\constants"), AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas\\hooks"), AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas"), AnchoredSystemPathBuf("apps\\src\\app\\dashboard\\mesas\\types")}
+2025-07-27T00:53:41.304300Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T00:54:02.608393Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\pages"), AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas")}
+2025-07-27T00:54:02.608446Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T00:54:02.608538Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-07-27T00:54:10.299398Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\components\\ui"), AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\pages\\MesaModal.tsx"), AnchoredSystemPathBuf("packages\\shared\\components\\ui\\MesaCard.tsx"), AnchoredSystemPathBuf("packages\\shared\\components\\ui\\MesaModal.tsx"), AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\pages\\MesaCard.tsx"), AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\pages")}
+2025-07-27T00:54:10.299472Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }, WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T00:54:10.407126Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\components\\ui")}
+2025-07-27T00:54:10.407172Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T00:54:10.407250Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-07-27T00:54:37.405674Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\pages\\MesaCard.tsx")}
+2025-07-27T00:54:37.405750Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T00:54:58.499637Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\pages\\MesaModal.tsx")}
+2025-07-27T00:54:58.499681Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T00:55:09.211737Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\pages\\MesasPage.tsx")}
+2025-07-27T00:55:09.211760Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T00:55:09.307844Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\pages")}
+2025-07-27T00:55:09.307891Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T00:55:09.307990Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-07-27T00:55:21.715186Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\pages\\MesasPage.tsx")}
+2025-07-27T00:55:21.715299Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T00:55:28.309314Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\page.tsx")}
+2025-07-27T00:55:28.309380Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T03:16:39.880361Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies"), AnchoredSystemPathBuf(".turbo"), AnchoredSystemPathBuf(".turbo\\cookies\\1.cookie")}
+2025-07-27T03:16:39.880405Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T03:16:41.586554Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\.next")}
+2025-07-27T03:16:41.586564Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T03:16:41.780011Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\.next")}
+2025-07-27T03:16:41.780021Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T03:16:41.806534Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-07-27T03:16:50.290279Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies")}
+2025-07-27T03:16:50.290316Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T03:16:56.283900Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\daemon\\87f6ef962e98c981-turbo.log.2025-07-27")}
+2025-07-27T03:16:56.283946Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T03:19:26.482494Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\carta\\menu-dia\\pages\\MenuWizardPage.tsx")}
+2025-07-27T03:19:26.482553Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T03:21:30.880914Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\hooks\\special-dishes\\useSpecialData.ts")}
+2025-07-27T03:21:30.881012Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T03:22:33.690866Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\carta\\menu-dia\\pages\\MenuWizardPage.tsx")}
+2025-07-27T03:22:33.690960Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T03:22:53.183234Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\carta\\especiales\\pages\\SpecialesWizardPage.tsx")}
+2025-07-27T03:22:53.183286Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T03:23:16.186126Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\carta\\especiales\\pages\\SpecialesPage.tsx")}
+2025-07-27T03:23:16.186207Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T03:24:10.083572Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\hooks\\special-dishes\\useSpecialData.ts")}
+2025-07-27T03:24:10.083615Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T15:44:22.098601Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".turbo\\cookies\\1.cookie"), AnchoredSystemPathBuf(".turbo\\cookies")}
+2025-07-27T15:44:22.098624Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2025-07-27T15:44:24.084771Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\.next")}
+2025-07-27T15:44:24.084781Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T15:44:24.386365Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\.next")}
+2025-07-27T15:44:24.386376Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T15:44:24.423806Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-07-27T15:44:24.492757Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\.next")}
+2025-07-27T15:44:24.492796Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T15:44:24.492880Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-07-27T17:12:23.493278Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\lib\\supabase.ts.backup")}
+2025-07-27T17:12:23.493348Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T17:12:23.597791Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\lib")}
+2025-07-27T17:12:23.597812Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T17:12:23.597839Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2025-07-27T17:14:00.294169Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\lib\\supabase.ts")}
+2025-07-27T17:14:00.294207Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T17:14:26.298485Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\types\\mesas\\mesasTypes.ts")}
+2025-07-27T17:14:26.298523Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T17:22:30.597055Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\lib\\supabase.ts")}
+2025-07-27T17:22:30.597112Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T17:39:43.292455Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\lib\\supabase.ts")}
+2025-07-27T17:39:43.292477Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T17:41:39.093137Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages\\shared\\lib\\supabase.ts")}
+2025-07-27T17:41:39.093191Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/shared"), path: AnchoredSystemPathBuf("packages\\shared") }}))
+2025-07-27T17:43:43.696059Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\pages\\MesaModal.tsx")}
+2025-07-27T17:43:43.696139Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))
+2025-07-27T17:45:02.089953Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps\\web\\src\\app\\dashboard\\mesas\\pages\\MesaModal.tsx")}
+2025-07-27T17:45:02.089972Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@spoon/web"), path: AnchoredSystemPathBuf("apps\\web") }}))

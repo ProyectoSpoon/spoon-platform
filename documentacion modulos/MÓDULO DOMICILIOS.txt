@@ -1,0 +1,191 @@
+Análisis del Módulo: Sistema de Domicilios
+1. Propósito del Módulo
+Este módulo implementa un sistema completo de gestión de domicilios para restaurantes. Su función principal es permitir la gestión integral de pedidos a domicilio, desde su creación hasta la entrega y pago, incluyendo la administración de domiciliarios y el seguimiento en tiempo real de toda la operación.
+2. Funcionalidades Principales
+Gestión de Pedidos:
+
+Creación de pedidos: Formulario completo con datos del cliente, dirección y selección de productos
+Seguimiento de estados: Flujo completo (recibido → cocinando → listo → enviado → entregado → pagado)
+Asignación de domiciliarios: Sistema de asignación automática y manual
+Registro de pagos: Manejo de efectivo y pagos digitales
+Timeline detallado: Seguimiento de tiempos en cada etapa
+
+Gestión de Domiciliarios:
+
+Panel de administración: Alta, baja y modificación de domiciliarios
+Estados en tiempo real: Disponible, ocupado, desconectado
+Asignación automática: Sistema que considera disponibilidad
+
+Integración con Menú del Día:
+
+Validación de disponibilidad: Solo permite pedidos si hay menú configurado
+Gestión de combinaciones: Productos disponibles y agotados
+Actualización en tiempo real: Sincronización de disponibilidad
+
+Dashboard y Estadísticas:
+
+Métricas en tiempo real: Pedidos pendientes, en ruta, entregados
+Indicadores financieros: Total del día, valores pendientes
+Estado de la operación: Domiciliarios disponibles, tiempos promedio
+
+3. Dependencias Identificadas
+Dependencias Externas:
+
+React: Hooks completos (useState, useEffect, useCallback)
+Next.js: Navegación y estructura de páginas
+Lucide React: Sistema de iconografía extenso
+Supabase: Base de datos y tiempo real
+
+Dependencias Internas Críticas:
+
+@spoon/shared: Funciones utilitarias y servicios base
+Tipos compartidos: RestaurantData, UserData del sistema principal
+
+Estructura de Base de Datos:
+
+Tablas principales: delivery_orders, delivery_personnel, daily_menus, generated_combinations
+Relaciones: Restaurant → DailyMenu → Combinations → Orders → DeliveryPersonnel
+
+4. Errores e Inconsistencias Detectadas
+Errores Críticos:
+
+Error en suscripción de tiempo real (useMenuDelDia.ts, línea 142):
+
+typescriptfilter: 'daily_menu_id=eq.123', // <- ID hardcodeado!
+Debería ser: filter: 'daily_menu_id=eq.' + estado.menu.id
+
+Cálculo incorrecto de montos (múltiples archivos):
+
+typescript// Los precios están en centavos pero se dividen inconsistentemente
+${Math.round(totalDia / 100).toLocaleString()} // A veces /100
+${item.subtotal.toLocaleString()} // A veces sin /100
+
+Validación de domiciliario faltante (PedidosTable.tsx):
+
+typescript// No valida si el domiciliario existe antes de asignar
+disabled={loading.registrando_pago || !pedido.assigned_delivery_person_id}
+Problemas de Arquitectura:
+
+Inconsistencia en notificaciones: Mezcla console.log, alert() y sistemas de toast
+Estados duplicados: Carga de restaurantId en cada hook independientemente
+Falta de centralización: No hay un store global para datos compartidos
+
+Issues de UX/UI:
+
+Modal de pago duplicado: Existe tanto PagoModal.tsx como implementación inline en PedidosTable.tsx
+Falta de loading granular: No se distingue entre diferentes operaciones de carga
+No hay manejo de errores de red: Fallos de conexión no se manejan apropiadamente
+
+5. Sugerencias de Mejora
+Correcciones Inmediatas:
+typescript// 1. Corregir suscripción en tiempo real
+const channel = supabase
+  .channel('menu_combinations_changes')
+  .on('postgres_changes', {
+    event: 'UPDATE',
+    schema: 'public',
+    table: 'generated_combinations',
+    filter: `daily_menu_id=eq.${estado.menu.id}` // ✅ ID dinámico
+  }, (payload) => {
+    cargarMenuDelDia();
+  })
+  .subscribe();
+
+// 2. Estandarizar manejo de montos
+const formatearPrecio = (centavos: number) => {
+  return `$${Math.round(centavos / 100).toLocaleString()}`;
+};
+
+// 3. Centralizar gestión de restaurantId
+const useRestaurantContext = () => {
+  // Hook compartido para evitar duplicación
+};
+Mejoras Arquitectónicas:
+
+Context API para estado global:
+
+typescript// DomiciliosContext.tsx
+const DomiciliosContext = createContext({
+  restaurantId: null,
+  pedidos: [],
+  domiciliarios: [],
+  menu: null
+});
+
+Sistema de notificaciones centralizado:
+
+typescript// useNotifications.ts
+export const useNotifications = () => {
+  const showSuccess = (message: string) => toast.success(message);
+  const showError = (message: string) => toast.error(message);
+  return { showSuccess, showError };
+};
+
+Validación robusta:
+
+typescript// validators/domiciliosValidators.ts
+export const validarPedido = (pedido: NuevoPedido): ValidationResult => {
+  // Validaciones completas con tipos específicos
+};
+Optimizaciones de Rendimiento:
+
+Memoización de componentes pesados
+Debounce en actualizaciones de estado
+Paginación inteligente para pedidos
+Cache de datos frecuentemente accedidos
+
+6. Observaciones para IAs Futuras
+Contexto del Sistema:
+
+Este módulo es crítico para operaciones comerciales - maneja dinero real y entregas
+Debe funcionar 24/7 sin interrupciones durante horarios comerciales
+Requiere sincronización en tiempo real entre múltiples usuarios (cocina, domiciliarios, administrador)
+
+Patrones de Diseño Implementados:
+
+Custom Hooks para lógica de negocio reutilizable
+Compound Components para formularios complejos
+State Machines implícitas en el flujo de estados de pedidos
+Observer Pattern a través de suscripciones de Supabase
+
+Flujo de Datos Crítico:
+Cliente → PedidoForm → usePedidos → Supabase → 
+Cocina (actualiza estado) → Domiciliario (recoge) → 
+Cliente (entrega) → usePedidos (pago) → Completado
+Consideraciones de Testing:
+
+Mock de Supabase es esencial para testing
+Estados temporales requieren testing de concurrencia
+Flujos de pago necesitan validación exhaustiva
+Tiempo real requiere testing de suscripciones
+
+Datos de Entrada Críticos:
+typescript// El sistema requiere:
+1. Restaurant activo con menú del día configurado
+2. Al menos un domiciliario disponible
+3. Conexión estable a Supabase para tiempo real
+4. Validación de horarios comerciales
+
+// Flujo típico diario:
+1. Verificar menú del día disponible
+2. Activar domiciliarios
+3. Recibir pedidos durante horario comercial
+4. Gestionar entregas y pagos
+5. Generar reportes al cierre
+Limitaciones Actuales:
+
+No hay sistema de reportes detallados
+Falta integración con POS para kitchen display
+No hay estimación inteligente de tiempos de entrega
+Ausencia de geolocalización para optimizar rutas
+No hay sistema de reviews o calificación de domiciliarios
+
+Puntos de Extensión:
+
+Sistema de rutas optimizadas (Google Maps integration)
+Notificaciones push para clientes
+Dashboard analítico con métricas avanzadas
+Integración con WhatsApp para confirmaciones
+Sistema de inventario automático
+
+Este módulo es el corazón operativo del negocio de domicilios y requiere máxima estabilidad y precisión. Cualquier falla puede impactar directamente en ingresos y satisfacción del cliente.

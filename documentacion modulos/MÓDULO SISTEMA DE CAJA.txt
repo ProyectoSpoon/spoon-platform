@@ -1,0 +1,429 @@
+📊 INFORME COMPLETO - MÓDULO SISTEMA DE CAJA (POS)
+Aplicativo Spoon - Terminal de Punto de Venta
+
+🎯 RESUMEN EJECUTIVO
+El Módulo Sistema de Caja es un terminal de punto de venta (POS) completo integrado en el aplicativo Spoon. Permite gestionar sesiones de caja, procesar pagos de órdenes (mesas y delivery), registrar gastos operativos, y mantener control financiero en tiempo real para restaurantes.
+Funcionalidades Principales
+
+✅ Control de sesiones de caja (apertura/cierre con arqueo)
+✅ Procesamiento de pagos (efectivo, tarjeta, digital)
+✅ Gestión de gastos operativos (categorizados y auditados)
+✅ Dashboard financiero en tiempo real
+✅ Integración completa con sistema de mesas y delivery
+
+
+📁 ESTRUCTURA DE ARCHIVOS
+1. Hooks Personalizados
+packages/shared/caja/hooks/
+├── useCajaSesion.ts        # Gestión de sesiones de caja
+├── useCaja.ts              # Operaciones generales del POS  
+└── useGastos.ts            # Gestión de gastos operativos
+2. Componentes UI
+apps/restaurant/src/components/caja/
+├── CajaTerminal.tsx        # Componente principal del terminal
+├── ControlesCaja.tsx       # Controles apertura/cierre caja
+├── ModalProcesarPago.tsx   # Modal procesamiento pagos
+├── ModalNuevoGasto.tsx     # Modal registro gastos
+└── OrdenPendiente.tsx      # Display órdenes por cobrar
+3. Definiciones de Tipos
+packages/shared/caja/types/
+└── cajaTypes.ts            # Interfaces y tipos TypeScript
+4. Constantes y Configuración
+packages/shared/caja/constants/
+└── cajaConstants.ts        # Configuración, mensajes, utilidades
+5. Funciones de Base de Datos
+packages/shared/lib/
+└── supabase.ts             # Funciones CRUD y consultas BD
+
+🔧 ANÁLISIS DETALLADO POR ARCHIVO
+1. useCajaSesion.ts - Hook de Gestión de Sesiones
+Ubicación: packages/shared/caja/hooks/useCajaSesion.ts
+Variables de Estado:
+typescriptconst [sesionActual, setSesionActual] = useState<CajaSesion | null>(null);
+const [estadoCaja, setEstadoCaja] = useState<string>('cerrada');  
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState<string | null>(null);
+Funciones Principales:
+
+verificarSesionAbierta() - Consulta BD para verificar sesión activa del restaurante
+abrirCaja(montoInicial: number, notas?: string) - Crea nueva sesión en tabla caja_sesiones
+cerrarCaja(notas?: string) - Actualiza sesión actual con estado 'cerrada' y timestamp
+
+Propósito: Controlar el ciclo de vida de las sesiones de caja, garantizando que solo exista una sesión abierta por restaurante.
+
+2. useCaja.ts - Hook Principal de Operaciones POS
+Ubicación: packages/shared/caja/hooks/useCaja.ts (paste.txt)
+Variables de Estado:
+typescriptconst [ordenesMesas, setOrdenesMesas] = useState<OrdenPendiente[]>([]);
+const [ordenesDelivery, setOrdenesDelivery] = useState<OrdenPendiente[]>([]);
+const [metricas, setMetricas] = useState<MetricasCaja>({
+  balance: 0,           // Saldo actual de caja
+  ventasTotales: 0,     // Total vendido en el día
+  porCobrar: 0,         // Monto pendiente por cobrar
+  gastosTotales: 0,     // Total de gastos del día
+  transaccionesDelDia: [], // Array de transacciones
+  totalEfectivo: 0,     // Total cobrado en efectivo
+  totalTarjeta: 0,      // Total cobrado con tarjeta
+  totalDigital: 0       // Total cobrado digital
+});
+Funciones Principales:
+
+obtenerDatosCaja() - Consulta múltiples tablas para dashboard
+procesarPago(orden, metodoPago, montoRecibido) - Registra transacción y actualiza orden
+calcularCambio(montoTotal, montoRecibido) - Calcula vuelto para pagos en efectivo
+
+Auto-refresh: Sistema que actualiza datos cada 30 segundos cuando caja está abierta
+typescriptuseEffect(() => {
+  if (estadoCaja === 'abierta') {
+    const interval = setInterval(() => {
+      obtenerDatosCaja();
+    }, CAJA_CONFIG.REFRESH_INTERVAL); // 30000ms
+  }
+}, [estadoCaja]);
+
+3. useGastos.ts - Hook de Gestión de Gastos
+Ubicación: packages/shared/caja/hooks/useGastos.ts (paste-2.txt)
+Variables de Estado:
+typescriptconst [gastos, setGastos] = useState<GastoCaja[]>([]);
+const [totalGastos, setTotalGastos] = useState(0);
+const [gastosPorCategoria, setGastosPorCategoria] = useState<{
+  [key in CategoriaGasto]: number;
+}>({
+  proveedor: 0,    // Gastos en proveedores
+  servicios: 0,    // Servicios públicos, etc.
+  suministros: 0,  // Material de empaque, etc.
+  otro: 0          // Gastos varios
+});
+Funciones Principales:
+
+crearGasto(nuevoGasto: NuevoGasto) - Inserta registro en tabla gastos_caja
+eliminarGasto(gastoId: string) - Soft delete de gasto
+validarGasto(gasto: NuevoGasto) - Validaciones antes de crear
+buscarGastos(termino: string) - Búsqueda por concepto o categoría
+
+
+4. cajaConstants.ts - Configuración y Constantes
+Ubicación: packages/shared/caja/constants/cajaConstants.ts (paste-3.txt)
+Configuraciones Principales:
+typescriptexport const CAJA_CONFIG = {
+  MONTO_INICIAL_DEFAULT: 5000000,  // $50,000 pesos en centavos
+  REFRESH_INTERVAL: 30000,         // 30 segundos
+  DENOMINACIONES_EFECTIVO: [       // Billetes para cálculos
+    { valor: 10000000, label: '$100,000' },
+    { valor: 5000000, label: '$50,000' },
+    // ... más denominaciones
+  ]
+};
+Métodos de Pago:
+typescriptexport const METODOS_PAGO: { value: MetodoPago; label: string; icon: string }[] = [
+  { value: 'efectivo', label: 'Efectivo', icon: '💵' },
+  { value: 'tarjeta', label: 'Tarjeta', icon: '💳' },
+  { value: 'digital', label: 'Digital', icon: '📱' }
+];
+Categorías de Gastos:
+typescriptexport const CATEGORIAS_GASTOS: { value: CategoriaGasto; label: string; icon: string; color: string }[] = [
+  { value: 'proveedor', label: 'Proveedor', icon: '🏪', color: 'blue' },
+  { value: 'servicios', label: 'Servicios', icon: '⚡', color: 'green' },
+  { value: 'suministros', label: 'Suministros', icon: '📦', color: 'orange' },
+  { value: 'otro', label: 'Otro', icon: '💼', color: 'gray' }
+];
+Utilidades de Formato:
+
+formatCurrency(centavos: number) - Formateador para pesos colombianos
+parseCurrency(currency: string) - Parseador de moneda a centavos
+
+
+5. CajaTerminal.tsx - Componente Principal
+Ubicación: apps/restaurant/src/components/caja/CajaTerminal.tsx (paste-7.txt)
+Variables de Estado:
+typescriptconst [tabActiva, setTabActiva] = useState<TabActiva>('movimientos');
+const [subTabMovimientos, setSubTabMovimientos] = useState<SubTabMovimientos>('por_cobrar');
+const [ordenSeleccionada, setOrdenSeleccionada] = useState<OrdenPendienteType | null>(null);
+const [modalPagoAbierto, setModalPagoAbierto] = useState(false);
+const [modalGastoAbierto, setModalGastoAbierto] = useState(false);
+Secciones del Dashboard:
+
+Header: Controles principales y botones de acción
+Métricas: 4 cards con balance, ventas, por cobrar, gastos
+Pestañas: Movimientos, Arqueo, Reportes
+Sub-pestañas: Por cobrar, Ingresos, Egresos
+Filtros: Fecha, búsqueda, actualización
+
+Handlers Principales:
+
+handleProcesarPago(orden) - Abre modal de pago
+handleConfirmarPago(orden, metodoPago, montoRecibido) - Procesa transacción
+handleNuevoGasto() - Abre modal de gastos
+
+
+6. ModalProcesarPago.tsx - Modal de Procesamiento de Pagos
+Ubicación: apps/restaurant/src/components/caja/ModalProcesarPago.tsx (paste-5.txt)
+Variables de Estado:
+typescriptconst [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
+const [montoRecibido, setMontoRecibido] = useState<number>(0);
+const [cambioCalculado, setCambioCalculado] = useState<number>(0);
+const [procesando, setProcesando] = useState(false);
+const [pagoExitoso, setPagoExitoso] = useState<{ cambio: number } | null>(null);
+Funcionalidades:
+
+Selección de método de pago (efectivo/tarjeta/digital)
+Cálculo automático de cambio para pagos en efectivo
+Montos sugeridos basados en denominaciones comunes
+Validación de monto recibido vs monto total
+Pantalla de confirmación con detalles del cambio
+
+Función de Montos Sugeridos:
+typescriptconst getMontosSugeridos = () => {
+  const total = orden.monto_total;
+  const denominaciones = [1000000, 500000, 200000, 100000, 50000, 20000, 10000];
+  
+  for (const denom of denominaciones) {
+    const redondeado = Math.ceil(total / denom) * denom;
+    if (redondeado > total && redondeado <= total * 1.5) {
+      sugeridos.push(redondeado);
+    }
+  }
+};
+
+7. ModalNuevoGasto.tsx - Modal de Registro de Gastos
+Ubicación: apps/restaurant/src/components/caja/ModalNuevoGasto.tsx (paste-4.txt)
+Variables de Estado:
+typescriptconst [concepto, setConcepto] = useState('');
+const [monto, setMonto] = useState<number>(0);
+const [categoria, setCategoria] = useState<CategoriaGasto>('otro');
+const [notas, setNotas] = useState('');
+const [showConceptosSugeridos, setShowConceptosSugeridos] = useState(false);
+Funcionalidades:
+
+Selección visual de categoría con iconos y colores
+Conceptos sugeridos por categoría (definidos en constants)
+Montos rápidos para selección común ($5k, $10k, $20k, $50k)
+Validaciones en tiempo real de formulario
+Preview de monto en formato peso colombiano
+
+Conceptos Frecuentes por Categoría:
+typescriptexport const CONCEPTOS_FRECUENTES = {
+  proveedor: ['Compra de ingredientes', 'Carnes y proteínas', '..'],
+  servicios: ['Servicios públicos', 'Internet y telefonía', '..'],
+  suministros: ['Material de empaque', 'Productos de limpieza', '..'],
+  otro: ['Gastos administrativos', 'Capacitación personal', '..']
+};
+
+8. ControlesCaja.tsx - Controles de Sesión
+Ubicación: apps/restaurant/src/components/caja/ControlesCaja.tsx (paste-6.txt)
+Estados Visuales:
+
+Caja Abierta: Muestra sesión actual, monto inicial, hora apertura
+Caja Cerrada: Botón para abrir nueva sesión
+
+Funciones:
+
+Modal de Apertura: Configuración de monto inicial y notas
+Modal de Cierre: Confirmación y notas de cierre
+Validaciones: Monto inicial positivo requerido
+
+
+9. OrdenPendiente.tsx - Componente de Órdenes
+Ubicación: apps/restaurant/src/components/caja/OrdenPendiente.tsx (paste-8.txt)
+Funcionalidades:
+
+Display de información de orden (mesa/delivery)
+Cálculo de tiempo transcurrido desde creación
+Botón de cobrar integrado
+Estados visuales diferenciados por tipo
+Componente de lista vacía cuando no hay órdenes
+
+
+10. Funciones de Base de Datos (supabase.ts)
+Ubicación: packages/shared/lib/supabase.ts (paste-9.txt)
+Funciones de Sesiones:
+typescript// Gestión de sesiones de caja
+export const getSesionCajaActiva = async (restaurantId: string): Promise<CajaSesion | null>
+export const abrirSesionCaja = async (restaurantId, cajeroId, montoInicial, notas): Promise<CajaSesion>
+export const cerrarSesionCaja = async (sesionId: string, notas?: string): Promise<CajaSesion>
+Funciones de Transacciones:
+typescript// Procesamiento de pagos
+export const procesarPagoOrden = async (sesionId, cajeroId, ordenId, tipoOrden, metodoPago, montoTotal, montoRecibido)
+export const getTransaccionesDelDia = async (restaurantId: string, fecha?: string)
+export const getTransaccionesSesion = async (sesionId: string): Promise<TransaccionCaja[]>
+Funciones de Gastos:
+typescript// Gestión de gastos operativos
+export const crearGastoCaja = async (cajaSesionId, cajeroId, gastoData)
+export const getGastosDelDia = async (restaurantId: string, fecha?: string)
+export const eliminarGastoCaja = async (gastoId: string): Promise<void>
+Funciones de Órdenes:
+typescript// Consulta de órdenes pendientes
+export const getOrdenesMesasPendientes = async (restaurantId: string)
+export const getOrdenesDeliveryPendientes = async (restaurantId: string)
+
+📊 TIPOS E INTERFACES
+Interfaces Principales (cajaTypes.ts):
+typescript// Sesión de caja
+export interface CajaSesion {
+  id: string;
+  restaurant_id: string;
+  cajero_id: string;
+  monto_inicial: number;        // En centavos
+  estado: 'abierta' | 'cerrada';
+  abierta_at: string;
+  cerrada_at?: string;
+  notas_apertura?: string;
+  notas_cierre?: string;
+}
+
+// Transacción de pago
+export interface TransaccionCaja {
+  id: string;
+  caja_sesion_id: string;
+  orden_id: string;
+  tipo_orden: 'mesa' | 'delivery' | 'directa';
+  metodo_pago: 'efectivo' | 'tarjeta' | 'digital';
+  monto_total: number;          // En centavos
+  monto_recibido?: number;
+  monto_cambio: number;
+  procesada_at: string;
+  cajero_id: string;
+}
+
+// Orden pendiente de pago
+export interface OrdenPendiente {
+  id: string;
+  tipo: 'mesa' | 'delivery';
+  identificador: string;        // "Mesa 5" o "Juan Pérez"
+  monto_total: number;
+  fecha_creacion: string;
+  detalles?: string;
+}
+
+// Gasto operativo
+export interface GastoCaja {
+  id: string;
+  caja_sesion_id: string;
+  concepto: string;
+  monto: number;                // En centavos
+  categoria: CategoriaGasto;
+  comprobante_url?: string;
+  registrado_por: string;
+  registrado_at: string;
+  notas?: string;
+}
+
+🗃️ ESTRUCTURA DE BASE DE DATOS
+Tablas Principales:
+1. caja_sesiones - Control de Turnos
+sqlid                uuid PRIMARY KEY
+restaurant_id     uuid REFERENCES restaurants(id)
+cajero_id         uuid REFERENCES users(id)
+monto_inicial     integer NOT NULL          -- En centavos
+estado            text CHECK (estado IN ('abierta', 'cerrada'))
+abierta_at        timestamptz DEFAULT now()
+cerrada_at        timestamptz
+notas_apertura    text
+notas_cierre      text
+created_at        timestamptz DEFAULT now()
+updated_at        timestamptz DEFAULT now()
+2. transacciones_caja - Registro de Pagos
+sqlid                uuid PRIMARY KEY
+caja_sesion_id    uuid REFERENCES caja_sesiones(id)
+orden_id          uuid NOT NULL             -- FK a ordenes_mesa o delivery_orders
+tipo_orden        text CHECK (tipo_orden IN ('mesa', 'delivery', 'directa'))
+metodo_pago       text CHECK (metodo_pago IN ('efectivo', 'tarjeta', 'digital'))
+monto_total       integer NOT NULL          -- En centavos
+monto_recibido    integer
+monto_cambio      integer DEFAULT 0
+procesada_at      timestamptz DEFAULT now()
+cajero_id         uuid REFERENCES users(id)
+3. gastos_caja - Control de Egresos
+sqlid                uuid PRIMARY KEY
+caja_sesion_id    uuid REFERENCES caja_sesiones(id)
+concepto          text NOT NULL
+monto             integer NOT NULL          -- En centavos
+categoria         text CHECK (categoria IN ('proveedor', 'servicios', 'suministros', 'otro'))
+comprobante_url   text
+registrado_por    uuid REFERENCES users(id)
+registrado_at     timestamptz DEFAULT now()
+notas             text
+
+🔄 FLUJO DE OPERACIÓN
+1. Inicio de Jornada:
+
+Cajero accede al terminal POS
+Ejecuta abrirCaja() con monto inicial
+Sistema crea registro en caja_sesiones
+Estado cambia a 'abierta'
+Dashboard se actualiza automáticamente cada 30s
+
+2. Procesamiento de Pago:
+
+Sistema consulta órdenes pendientes (mesas + delivery)
+Cajero selecciona orden y método de pago
+Si es efectivo, calcula cambio automáticamente
+Ejecuta procesarPago() que:
+
+Crea registro en transacciones_caja
+Actualiza orden como 'pagada'
+Actualiza métricas en tiempo real
+
+
+
+3. Registro de Gastos:
+
+Cajero accede a modal de gastos
+Selecciona categoría y concepto
+Sistema valida y ejecuta crearGasto()
+Actualiza totales de egresos
+Impacta balance general
+
+4. Cierre de Jornada:
+
+Cajero ejecuta cerrarCaja()
+Sistema actualiza registro con timestamp cierre
+Estado cambia a 'cerrada'
+Genera resumen final de la jornada
+
+
+⚡ CARACTERÍSTICAS TÉCNICAS
+Optimizaciones de Rendimiento:
+
+Auto-refresh inteligente solo cuando caja abierta
+Consultas optimizadas con índices en BD
+Cálculos en tiempo real sin impacto en UX
+Estados locales para respuesta inmediata
+
+Validaciones y Seguridad:
+
+Row Level Security (RLS) por restaurante
+Validaciones multi-nivel (cliente, servidor, BD)
+Sesión única por restaurante garantizada
+Auditoría completa de todas las operaciones
+
+Integración:
+
+Sistema de mesas automático
+Órdenes delivery integradas
+Dashboard unificado con métricas reales
+Notificaciones en tiempo real
+
+
+📋 ARCHIVOS FALTANTES NECESARIOS
+Para completar el análisis, sería útil tener:
+
+cajaTypes.ts completo - Para verificar todas las interfaces
+Componentes UI base (Button.tsx, Input.tsx, Card.tsx) - Para entender dependencias
+Tests unitarios - Para documentar casos de uso
+Archivo de configuración de la aplicación - Para constantes globales
+Middleware de autenticación - Para flujo de permisos
+
+
+✅ FORTALEZAS DEL MÓDULO
+
+✅ Arquitectura sólida - Separación clara de responsabilidades
+✅ UX optimizada - Flujos intuitivos y validaciones en tiempo real
+✅ Seguridad robusta - RLS y validaciones multi-nivel
+✅ Escalabilidad - Preparado para múltiples restaurantes
+✅ Integración completa - Conecta con todos los módulos
+✅ Auditoría total - Trazabilidad de todas las operaciones
+✅ Flexibilidad - Múltiples métodos de pago y categorías
+
+
+Este módulo representa una implementación profesional y completa de un sistema POS, con todas las funcionalidades necesarias para la operación diaria de un restaurante.

@@ -1,0 +1,1494 @@
+# INFORME DETALLADO - MÓDULO DE CONFIGURACIÓN DE RESTAURANTE
+
+## 1. INFORMACIÓN GENERAL DEL MÓDULO
+
+**Módulo:** Sistema de Configuración de Restaurante  
+**Propósito:** Onboarding completo de restauranteros nuevos en la plataforma SPOON  
+**Arquitectura:** Multi-página con navegación secuencial  
+**Framework:** Next.js 13+ con TypeScript  
+**Patrón:** Wizard de configuración de 4 pasos + página hub
+
+---
+
+## 2. ESTRUCTURA GENERAL DEL MÓDULO
+
+### 2.1 Componentes del Sistema
+```
+/config-restaurante/
+├── page.tsx                    # Hub principal - Vista general del progreso
+├── /informacion-general/
+│   └── page.tsx               # Paso 1: Datos básicos del restaurante
+├── /ubicacion/
+│   └── page.tsx               # Paso 2: Ubicación geográfica
+├── /horario-comercial/
+│   └── page.tsx               # Paso 3: Horarios de atención
+└── /logo-portada/
+    └── page.tsx               # Paso 4: Imágenes del restaurante
+```
+
+### 2.2 Flujo de Navegación
+```
+Autenticación → Hub Config → Paso 1 → Paso 2 → Paso 3 → Paso 4 → Dashboard
+     ↓              ↓           ↓         ↓         ↓         ↓         ↓
+  AuthPage     ConfigPage   InfoGeneral Ubicación Horarios  LogoPortada Complete
+```
+
+---
+
+## 3. ANÁLISIS DETALLADO DE CADA COMPONENTE
+
+### 3.1 HUB PRINCIPAL (`/config-restaurante/page.tsx`)
+
+#### 3.1.1 Propósito y Responsabilidades
+- **Dashboard de progreso:** Muestra estado actual de configuración
+- **Punto de entrada:** Desde autenticación y navegación lateral
+- **Validación de estado:** Determina qué pasos están completados
+- **Navegación inteligente:** Redirige según progreso actual
+
+#### 3.1.2 Estados Principales
+```typescript
+interface ConfigProgress {
+  informacionGeneral: boolean;
+  ubicacion: boolean;
+  horarios: boolean;
+  logoPortada: boolean;
+  totalCompleto: number;
+  totalPasos: number;
+  porcentaje: number;
+}
+```
+
+#### 3.1.3 Lógica de Cálculo de Progreso
+```typescript
+const calcularProgresoRestaurante = (restaurant: any): ConfigProgress => {
+  const infoGeneral = !!(
+    restaurant.name && 
+    restaurant.description && 
+    restaurant.contact_phone && 
+    restaurant.cuisine_type
+  );
+  
+  const ubicacion = !!(
+    restaurant.address && 
+    restaurant.latitude && 
+    restaurant.longitude
+  );
+  
+  const horarios = !!(
+    restaurant.business_hours && 
+    Object.keys(restaurant.business_hours).length > 0
+  );
+  
+  const logoPortada = !!(
+    restaurant.logo_url && 
+    restaurant.cover_image_url
+  );
+  
+  // Cálculo de progreso general...
+};
+```
+
+#### 3.1.4 Configuración de Pasos
+```typescript
+const configSteps = [
+  {
+    id: 'informacionGeneral',
+    title: 'Información General',
+    description: 'Datos básicos del restaurante: nombre, contacto y tipo de cocina',
+    icon: '📋',
+    color: 'purple',
+    route: '/config-restaurante/informacion-general',
+    requiredFields: 4
+  },
+  // ... más pasos
+];
+```
+
+#### 3.1.5 Características de UX
+- **Tarjetas visuales** para cada paso con iconos y colores
+- **Progreso visual** con porcentajes y contadores
+- **Estado dinámico** (Completado/Pendiente)
+- **Navegación directa** a cualquier paso
+- **Feedback contextual** según estado de configuración
+
+---
+
+### 3.2 PASO 1: INFORMACIÓN GENERAL (`/informacion-general/page.tsx`)
+
+#### 3.2.1 Datos Gestionados
+```typescript
+interface RestaurantInfo {
+  name: string;           // Nombre único del restaurante
+  description: string;    // Descripción opcional
+  phone: string;          // Teléfono de contacto
+  email: string;          // Email de contacto
+  cuisineType: string;    // Tipo de cocina (slug)
+}
+```
+
+#### 3.2.2 Integración con Base de Datos
+- **Tabla `cuisine_types`:** Carga dinámica de tipos de cocina
+- **Pre-rellenado inteligente:** Usa datos del perfil de usuario
+- **Validación bidireccional:** Cliente y servidor
+- **Manejo de estados:** Nuevo vs existente
+
+#### 3.2.3 Función de Pre-rellenado
+```typescript
+const preRellenarDatos = (profile: any, restaurant: any = null) => {
+  if (restaurant) {
+    // Priorizar datos del restaurante existente
+    setFormData({
+      name: restaurant.name || '',
+      description: restaurant.description || '',
+      phone: restaurant.contact_phone || profile?.phone || '',
+      email: restaurant.contact_email || profile?.email || '',
+      cuisineType: restaurant.cuisine_type || ''
+    });
+  } else {
+    // Pre-rellenar con datos del usuario para nuevo restaurante
+    setFormData({
+      name: '',  // Siempre vacío - único del restaurante
+      description: '',  // Siempre vacío - único del restaurante
+      phone: profile?.phone || '',  // PRE-RELLENAR
+      email: profile?.email || '',  // PRE-RELLENAR
+      cuisineType: ''  // Selección nueva
+    });
+  }
+};
+```
+
+#### 3.2.4 Validaciones Implementadas
+- **Nombre:** Requerido, no vacío
+- **Teléfono:** Formato colombiano, 7-15 dígitos
+- **Email:** Formato RFC válido
+- **Tipo de cocina:** Opcional pero recomendado
+
+#### 3.2.5 Lógica de Guardado
+```typescript
+const handleSave = async () => {
+  if (restaurantId) {
+    // Actualizar restaurante existente
+    const { error } = await supabase
+      .from('restaurants')
+      .update({
+        name: formData.name.trim(),
+        // ... otros campos
+        setup_step: Math.max(1, 1),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', restaurantId);
+  } else {
+    // Crear nuevo restaurante
+    const { data, error } = await supabase
+      .from('restaurants')
+      .insert({
+        // ... campos del restaurante
+        owner_id: user.id,
+        setup_step: 1,
+        setup_completed: false,
+        status: 'configuring'
+      });
+  }
+};
+```
+
+---
+
+### 3.3 PASO 2: UBICACIÓN (`/ubicacion/page.tsx`)
+
+#### 3.3.1 Datos Gestionados
+```typescript
+interface UbicacionData {
+  address: string;        // Dirección completa
+  country_id: string;     // ID del país
+  department_id: string;  // ID del departamento
+  city_id: string;        // ID de la ciudad
+  latitude?: number;      // Coordenada Y
+  longitude?: number;     // Coordenada X
+}
+```
+
+#### 3.3.2 Sistema Geográfico Jerárquico
+```typescript
+// Carga en cascada de datos geográficos
+Country → Department → City → Coordinates
+
+// Tablas de base de datos
+- countries (id, name, code, phone_code)
+- departments (id, name, country_id)
+- cities (id, name, department_id, latitude, longitude)
+```
+
+#### 3.3.3 Funciones de Carga Geográfica
+```typescript
+const loadCountries = async () => {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('*')
+    .eq('is_active', true)
+    .order('name');
+};
+
+const loadDepartments = async (countryId: string) => {
+  const { data, error } = await supabase
+    .from('departments')
+    .select('*')
+    .eq('country_id', countryId)
+    .eq('is_active', true)
+    .order('name');
+};
+
+const loadCities = async (departmentId: string) => {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .eq('department_id', departmentId)
+    .eq('is_active', true)
+    .order('is_capital', { ascending: false })
+    .order('population', { ascending: false });
+};
+```
+
+#### 3.3.4 Componente de Mapa Simulado
+```typescript
+const MapaSimple = ({ lat, lng, address }) => (
+  <div className="h-64 w-full bg-gradient-to-br from-blue-100 to-green-100">
+    {/* Efectos visuales tipo mapa */}
+    {/* Marcador animado */}
+    {/* Información de coordenadas */}
+  </div>
+);
+```
+
+#### 3.3.5 Actualización Automática de Coordenadas
+```typescript
+useEffect(() => {
+  if (formData.city_id) {
+    const selectedCity = cities.find(c => c.id === formData.city_id);
+    if (selectedCity) {
+      setFormData(prev => ({
+        ...prev,
+        latitude: selectedCity.latitude,
+        longitude: selectedCity.longitude
+      }));
+    }
+  }
+}, [formData.city_id, cities]);
+```
+
+---
+
+### 3.4 PASO 3: HORARIO COMERCIAL (`/horario-comercial/page.tsx`)
+
+#### 3.4.1 Estructura de Datos Compleja
+```typescript
+interface Turno {
+  horaApertura: string;
+  horaCierre: string;
+}
+
+interface HorarioDia {
+  abierto: boolean;
+  turnos: Turno[];
+}
+
+interface Horarios {
+  lunes: HorarioDia;
+  martes: HorarioDia;
+  miercoles: HorarioDia;
+  jueves: HorarioDia;
+  viernes: HorarioDia;
+  sabado: HorarioDia;
+  domingo: HorarioDia;
+}
+```
+
+#### 3.4.2 Generación de Opciones de Hora
+```typescript
+const generarOpcionesHora = () => {
+  const opciones = [];
+  for (let hora = 6; hora <= 23; hora++) {
+    for (let minuto = 0; minuto < 60; minuto += 30) {
+      if (hora === 23 && minuto === 30) continue;
+      const hora24 = `${hora.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}`;
+      const hora12 = formatTo12Hour(hora24);
+      opciones.push({ value: hora24, label: hora12 });
+    }
+  }
+  return opciones;
+};
+```
+
+#### 3.4.3 Validaciones de Horarios
+```typescript
+const validarHorarios = (horarios: Horarios): string[] => {
+  const errores: string[] = [];
+  
+  DIAS_SEMANA.forEach(dia => {
+    const horarioDia = horarios[dia];
+    if (!horarioDia.abierto) return;
+    
+    // Validar que cierre sea posterior a apertura
+    horarioDia.turnos.forEach((turno, index) => {
+      const apertura = parseInt(turno.horaApertura.replace(':', ''));
+      const cierre = parseInt(turno.horaCierre.replace(':', ''));
+      
+      if (apertura >= cierre) {
+        errores.push(`${NOMBRES_DIAS[dia]} - Turno ${index + 1}: La hora de cierre debe ser posterior a la de apertura`);
+      }
+    });
+    
+    // Validar solapamientos entre turnos
+    for (let i = 0; i < horarioDia.turnos.length - 1; i++) {
+      const turno1 = horarioDia.turnos[i];
+      const turno2 = horarioDia.turnos[i + 1];
+      
+      const cierre1 = parseInt(turno1.horaCierre.replace(':', ''));
+      const apertura2 = parseInt(turno2.horaApertura.replace(':', ''));
+      
+      if (cierre1 > apertura2) {
+        errores.push(`${NOMBRES_DIAS[dia]}: Los turnos ${i + 1} y ${i + 2} se solapan`);
+      }
+    }
+  });
+  
+  return errores;
+};
+```
+
+#### 3.4.4 Funciones de Manipulación
+```typescript
+// Toggle día abierto/cerrado
+const toggleDiaAbierto = (dia: DiaSemana, abierto: boolean) => { ... };
+
+// Actualizar turno específico
+const actualizarTurno = (dia: DiaSemana, indice: number, cambios: Partial<Turno>) => { ... };
+
+// Agregar turno (máximo 3 por día)
+const agregarTurno = (dia: DiaSemana) => { ... };
+
+// Eliminar turno (mínimo 1 por día)
+const eliminarTurno = (dia: DiaSemana, indice: number) => { ... };
+
+// Copiar horarios entre días
+const copiarHorarios = (origen: DiaSemana, destino: DiaSemana) => { ... };
+```
+
+#### 3.4.5 Interfaz de Usuario Avanzada
+- **Tabs por día** de la semana
+- **Vista general** de todos los horarios
+- **Editor detallado** del día seleccionado
+- **Acciones rápidas** (copiar horarios)
+- **Validación en tiempo real**
+- **Indicadores visuales** de estado
+
+---
+
+### 3.5 PASO 4: LOGO Y PORTADA (`/logo-portada/page.tsx`)
+
+#### 3.5.1 Manejo de Archivos
+```typescript
+interface ArchivoImagen {
+  archivo: File | null;
+  previewUrl: string | null;
+  estado: 'pendiente' | 'cargando' | 'completado' | 'error';
+  error?: string;
+}
+```
+
+#### 3.5.2 Validación de Archivos
+```typescript
+const validarArchivo = (archivo: File): string | null => {
+  const tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg'];
+  const tamañoMaximo = 5 * 1024 * 1024; // 5MB
+
+  if (!tiposPermitidos.includes(archivo.type)) {
+    return 'Solo se permiten archivos JPG, JPEG y PNG';
+  }
+
+  if (archivo.size > tamañoMaximo) {
+    return 'El archivo no puede superar los 5MB';
+  }
+
+  return null;
+};
+```
+
+#### 3.5.3 Simulación de Subida
+```typescript
+const subirImagen = async (archivo: File, tipo: 'logo' | 'cover'): Promise<string> => {
+  // TODO: Implementar API real de subida de archivos
+  await new Promise(resolve => setTimeout(resolve, 1500)); // Simular delay
+  
+  const fakeUrl = `https://fake-cdn.spoon.com/${tipo}/${Date.now()}_${archivo.name}`;
+  return fakeUrl;
+};
+```
+
+#### 3.5.4 Funciones de Manejo
+```typescript
+// Manejar cambio de archivo
+const manejarCambioLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const archivo = e.target.files?.[0];
+  if (!archivo) return;
+
+  const error = validarArchivo(archivo);
+  if (error) {
+    toast.error(error);
+    return;
+  }
+
+  const url = URL.createObjectURL(archivo);
+  setLogo({
+    archivo,
+    previewUrl: url,
+    estado: 'completado'
+  });
+};
+
+// Eliminar imagen
+const eliminarImagen = (tipo: 'logo' | 'portada') => {
+  if (tipo === 'logo') {
+    if (logo.previewUrl) {
+      URL.revokeObjectURL(logo.previewUrl);
+    }
+    setLogo(estadoInicial);
+  }
+  // ...
+};
+```
+
+#### 3.5.5 Vista Previa Conjunta
+- **Preview individual** por cada imagen
+- **Vista previa combinada** simulando perfil real
+- **Estados de carga** con spinners
+- **Manejo de errores** por archivo
+- **Limpieza de memoria** (revokeObjectURL)
+
+---
+
+## 4. PATRONES Y ARQUITECTURA COMÚN
+
+### 4.1 Patrones de Estado Compartidos
+
+#### 4.1.1 Estados Base Comunes
+```typescript
+// En todos los componentes del módulo
+const [loading, setLoading] = useState(true);
+const [saving, setSaving] = useState(false);
+const [userInfo, setUserInfo] = useState<any>(null);
+const [restaurantId, setRestaurantId] = useState<string | null>(null);
+```
+
+#### 4.1.2 Patrón de Carga Inicial
+```typescript
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      const [profile, restaurant] = await Promise.all([
+        getUserProfile(),
+        getUserRestaurant()
+      ]);
+      
+      if (profile) setUserInfo(profile);
+      if (restaurant) {
+        setRestaurantId(restaurant.id);
+        // Cargar datos específicos del paso
+      }
+      
+    } catch (error) {
+      console.error('Error cargando datos:', error);
+      toast.error('Error al cargar información');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadData();
+}, []);
+```
+
+#### 4.1.3 Patrón de Navegación
+```typescript
+// Botones de navegación estándar
+const handleBack = () => {
+  router.push('/config-restaurante/paso-anterior');
+};
+
+const handleContinuar = async () => {
+  if (!validarFormulario()) return;
+  
+  try {
+    await guardarDatos();
+    toast.success('Datos guardados correctamente');
+    router.push('/config-restaurante/siguiente-paso');
+  } catch (error) {
+    toast.error('Error al guardar');
+  }
+};
+```
+
+### 4.2 Estructura de Layout Común
+
+#### 4.2.1 Header Estándar
+```typescript
+<Card>
+  <CardHeader className="text-center">
+    <div className="flex items-center justify-between mb-4">
+      <Button variant="outline" onClick={handleBack}>
+        ← Volver
+      </Button>
+      
+      <div className="text-center flex-1">
+        <span className="text-sm text-gray-500 font-medium">
+          Paso X de 4
+        </span>
+      </div>
+      
+      <div className="w-20"></div>
+    </div>
+    
+    <CardTitle>Título del Paso</CardTitle>
+    <p className="text-gray-600">Descripción del paso</p>
+  </CardHeader>
+</Card>
+```
+
+#### 4.2.2 Botones de Navegación
+```typescript
+<Card>
+  <CardContent className="p-5">
+    <div className="flex justify-between items-center">
+      <Button variant="outline" onClick={handleBack}>
+        ← Paso Anterior
+      </Button>
+      
+      <Button
+        onClick={handleContinuar}
+        disabled={saving || !isFormValid}
+        loading={saving}
+      >
+        {saving ? 'Guardando...' : 'Continuar →'}
+      </Button>
+    </div>
+  </CardContent>
+</Card>
+```
+
+### 4.3 Sistema de Validaciones
+
+#### 4.3.1 Patrón de Validación
+```typescript
+const validateForm = (): boolean => {
+  if (!campo1.trim()) {
+    toast.error('Campo 1 es requerido');
+    return false;
+  }
+  
+  if (!campo2Pattern.test(campo2)) {
+    toast.error('Campo 2 tiene formato inválido');
+    return false;
+  }
+  
+  return true;
+};
+```
+
+#### 4.3.2 Feedback Visual
+```typescript
+const isFormValid = campo1.trim() && campo2.trim() && campo3;
+
+// Aplicado en botones
+<Button
+  disabled={saving || !isFormValid}
+  variant={isFormValid ? "default" : "secondary"}
+>
+  {isFormValid ? 'Continuar →' : 'Completa los campos'}
+</Button>
+```
+
+---
+
+## 5. INTEGRACIÓN CON SERVICIOS EXTERNOS
+
+### 5.1 Servicios de Spoon Shared
+
+#### 5.1.1 Funciones de Usuario
+```typescript
+import { 
+  getUserProfile,      // Obtener perfil del usuario
+  getUserRestaurant,   // Obtener restaurante del usuario
+  updateRestaurant     // Actualizar datos del restaurante
+} from '@spoon/shared';
+```
+
+#### 5.1.2 Componentes UI
+```typescript
+import { 
+  Button, 
+  Card, 
+  CardContent, 
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  Input,
+  Progress,
+  toast 
+} from '@spoon/shared';
+```
+
+#### 5.1.3 Cliente de Supabase
+```typescript
+import { supabase } from '@spoon/shared';
+
+// Operaciones directas con base de datos
+const { data, error } = await supabase
+  .from('tabla')
+  .select('*')
+  .eq('campo', valor);
+```
+
+### 5.2 Sistema de Base de Datos
+
+#### 5.2.1 Tabla Principal: `restaurants`
+```sql
+restaurants (
+  id                  uuid PRIMARY KEY,
+  name               text,
+  description        text,
+  contact_phone      text,
+  contact_email      text,
+  cuisine_type       text,
+  cuisine_type_id    uuid REFERENCES cuisine_types(id),
+  address           text,
+  country_id        uuid REFERENCES countries(id),
+  department_id     uuid REFERENCES departments(id),
+  city_id          uuid REFERENCES cities(id),
+  latitude         decimal,
+  longitude        decimal,
+  business_hours   jsonb,
+  logo_url         text,
+  cover_image_url  text,
+  owner_id         uuid REFERENCES users(id),
+  setup_step       integer,
+  setup_completed  boolean,
+  status           text,
+  created_at       timestamp,
+  updated_at       timestamp
+)
+```
+
+#### 5.2.2 Tablas de Soporte Geográfico
+```sql
+countries (id, name, code, phone_code, is_active)
+departments (id, name, code, country_id, is_active)
+cities (id, name, department_id, latitude, longitude, is_capital, population, is_active)
+cuisine_types (id, name, slug, icon, description, display_order, is_active)
+```
+
+---
+
+## 6. FLUJO DE DATOS Y ESTADO
+
+### 6.1 Flujo General de Configuración
+
+```mermaid
+graph TD
+    A[Usuario Autenticado] --> B[Hub Config]
+    B --> C{¿Restaurante Existe?}
+    C -->|No| D[Crear Nuevo]
+    C -->|Sí| E[Cargar Existente]
+    D --> F[Paso 1: Info General]
+    E --> G{¿Paso Completo?}
+    G -->|No| F
+    G -->|Sí| H[Siguiente Paso]
+    F --> I[Paso 2: Ubicación]
+    I --> J[Paso 3: Horarios]
+    J --> K[Paso 4: Imágenes]
+    K --> L[Configuración Completa]
+    L --> M[Dashboard]
+```
+
+### 6.2 Estados de Progreso
+
+#### 6.2.1 Campo `setup_step`
+```typescript
+1: Información General (nombre, contacto, tipo)
+2: Ubicación (dirección, coordenadas)
+3: Horarios (horarios de atención)
+4: Imágenes (logo, portada)
+```
+
+#### 6.2.2 Campo `setup_completed`
+```typescript
+false: Configuración en progreso
+true:  Configuración completada → Acceso al dashboard
+```
+
+#### 6.2.3 Campo `status`
+```typescript
+'configuring': En proceso de configuración
+'active':      Restaurante activo y operacional
+'inactive':    Restaurante inactivo
+'suspended':   Restaurante suspendido
+```
+
+### 6.3 Persistencia de Datos
+
+#### 6.3.1 Estrategia de Guardado
+```typescript
+// Guardado por paso (no todo junto)
+Paso 1: Actualiza campos básicos + setup_step = 1
+Paso 2: Actualiza ubicación + setup_step = 2
+Paso 3: Actualiza horarios + setup_step = 3
+Paso 4: Actualiza imágenes + setup_step = 4 + setup_completed = true
+```
+
+#### 6.3.2 Manejo de Errores
+```typescript
+try {
+  await guardarDatos();
+  toast.success('Datos guardados');
+  // Continuar al siguiente paso
+} catch (error) {
+  console.error('Error:', error);
+  toast.error('Error al guardar');
+  // Permanecer en el paso actual
+}
+```
+
+---
+
+## 7. CARACTERÍSTICAS DE EXPERIENCIA DE USUARIO
+
+### 7.1 Progreso Visual
+
+#### 7.1.1 Indicadores de Progreso
+- **Paso actual:** "Paso X de 4" en header
+- **Porcentaje:** Calculado dinámicamente en hub
+- **Estados visuales:** Completado/Pendiente con colores
+- **Progreso por campos:** "2/4 campos completados"
+
+#### 7.1.2 Feedback Inmediato
+- **Validación en tiempo real:** Errores mostrados al escribir
+- **Estados de carga:** Spinners durante operaciones async
+- **Confirmaciones:** Toast notifications para acciones exitosas
+- **Prevención de errores:** Botones deshabilitados cuando no válido
+
+### 7.2 Navegación Inteligente
+
+#### 7.2.1 Redirección Automática
+```typescript
+// Desde autenticación
+if (!restaurant) {
+  router.push('/config-restaurante');
+} else if (!restaurant.setup_completed) {
+  const nextStep = getNextStepUrl(restaurant.setup_step);
+  router.push(nextStep);
+} else {
+  router.push('/dashboard');
+}
+```
+
+#### 7.2.2 Navegación Flexible
+- **Acceso directo:** Desde hub a cualquier paso
+- **Navegación secuencial:** Botones Anterior/Siguiente
+- **Breadcrumbs:** Enlaces contextuales en headers
+- **Protección de pérdida:** Advertencias en cambios no guardados
+
+### 7.3 Asistencia al Usuario
+
+#### 7.3.1 Pre-rellenado Inteligente
+- **Datos del usuario:** Email y teléfono personal
+- **Valores por defecto:** Configuraciones sensatas
+- **Autocompletado:** Coordenadas desde ciudad seleccionada
+- **Sugerencias:** Tipos de cocina comunes
+
+#### 7.3.2 Ayuda Contextual
+- **Helper texts:** Explicaciones bajo cada campo
+- **Ejemplos:** Placeholders con datos reales
+- **Recomendaciones:** Tips sobre mejores prácticas
+- **Información adicional:** Cards explicativas por paso
+
+---
+
+## 8. MANEJO DE ERRORES Y CASOS EDGE
+
+### 8.1 Errores de Red y API
+
+#### 8.1.1 Tratamiento de Errores Supabase
+```typescript
+try {
+  const { data, error } = await supabase.from('tabla').select();
+  if (error) throw error;
+  // Procesar data...
+} catch (error) {
+  console.error('Error específico:', error);
+  toast.error('Mensaje amigable para el usuario');
+  // Fallback o retry según contexto
+}
+```
+
+#### 8.1.2 Fallbacks de Datos
+```typescript
+// Si no se pueden cargar países
+const fallbackCountries = [
+  { id: 'col', name: 'Colombia', code: 'COL' }
+];
+
+// Si no se pueden cargar tipos de cocina
+const fallbackCuisines = [
+  { id: '1', name: 'Colombiana', slug: 'colombiana', icon: '🇨🇴' }
+];
+```
+
+### 8.2 Estados de Carga
+
+#### 8.2.1 Skeleton Screens
+```typescript
+if (loading) {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">Cargando información...</p>
+      </div>
+    </div>
+  );
+}
+```
+
+#### 8.2.2 Estados de Error
+```typescript
+if (error) {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <Card className="max-w-md">
+        <CardContent className="text-center p-6">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">Error de Carga</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={retry}>Intentar de Nuevo</Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+### 8.3 Validación de Integridad
+
+#### 8.3.1 Consistencia de Datos
+```typescript
+// Validar que el restaurante pertenece al usuario
+const verificarPropiedad = async (restaurantId: string, userId: string) => {
+  const { data, error } = await supabase
+    .from('restaurants')
+    .select('owner_id')
+    .eq('id', restaurantId)
+    .single();
+    
+  if (error || data.owner_id !== userId) {
+    throw new Error('Acceso no autorizado al restaurante');
+  }
+};
+
+// Validar integridad de datos geográficos
+const validarUbicacion = (data: UbicacionData) => {
+  if (data.city_id && !data.department_id) {
+    throw new Error('Ciudad sin departamento asociado');
+  }
+  if (data.department_id && !data.country_id) {
+    throw new Error('Departamento sin país asociado');
+  }
+};
+```
+
+#### 8.3.2 Recuperación de Estados Inconsistentes
+```typescript
+// Si hay datos parciales, intentar recuperar
+const recuperarDatosIncompletos = async (restaurant: any) => {
+  const fixes = [];
+  
+  // Reparar coordenadas faltantes
+  if (restaurant.city_id && (!restaurant.latitude || !restaurant.longitude)) {
+    const city = await getCityById(restaurant.city_id);
+    if (city) {
+      fixes.push({
+        latitude: city.latitude,
+        longitude: city.longitude
+      });
+    }
+  }
+  
+  // Reparar campos legacy
+  if (restaurant.city_id && !restaurant.city) {
+    const city = await getCityById(restaurant.city_id);
+    if (city) {
+      fixes.push({ city: city.name });
+    }
+  }
+  
+  if (fixes.length > 0) {
+    await supabase
+      .from('restaurants')
+      .update(Object.assign({}, ...fixes))
+      .eq('id', restaurant.id);
+  }
+};
+```
+
+---
+
+## 9. OPTIMIZACIONES Y RENDIMIENTO
+
+### 9.1 Carga de Datos Optimizada
+
+#### 9.1.1 Consultas Paralelas
+```typescript
+// Cargar datos independientes en paralelo
+const [profile, restaurant, cuisineTypes] = await Promise.all([
+  getUserProfile(),
+  getUserRestaurant(),
+  loadCuisineTypes()
+]);
+
+// Cargar datos dependientes en secuencia
+if (restaurant.country_id) {
+  const departments = await loadDepartments(restaurant.country_id);
+  if (restaurant.department_id) {
+    const cities = await loadCities(restaurant.department_id);
+  }
+}
+```
+
+#### 9.1.2 Caché de Datos Geográficos
+```typescript
+// Cache simple en memoria para sesión actual
+const geoCache = {
+  countries: null,
+  departments: new Map(),
+  cities: new Map()
+};
+
+const loadCountriesWithCache = async () => {
+  if (geoCache.countries) {
+    return geoCache.countries;
+  }
+  
+  const countries = await loadCountriesFromDB();
+  geoCache.countries = countries;
+  return countries;
+};
+```
+
+### 9.2 Optimización de Renders
+
+#### 9.2.1 Prevención de Re-renders Innecesarios
+```typescript
+// Memoización de funciones costosas
+const opcionesHora = useMemo(() => generarOpcionesHora(), []);
+
+// Callbacks estables
+const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const { name, value } = e.target;
+  setFormData(prev => ({ ...prev, [name]: value }));
+}, []);
+
+// Estados derivados memoizados
+const isFormValid = useMemo(() => {
+  return formData.name.trim() && formData.phone.trim() && formData.email.trim();
+}, [formData.name, formData.phone, formData.email]);
+```
+
+#### 9.2.2 Lazy Loading de Componentes
+```typescript
+// Componentes grandes cargados bajo demanda
+const MapaInteractivo = lazy(() => import('./MapaInteractivo'));
+
+// Renderizado condicional para componentes pesados
+{mostrarMapaCompleto && (
+  <Suspense fallback={<MapaSimple />}>
+    <MapaInteractivo />
+  </Suspense>
+)}
+```
+
+### 9.3 Manejo de Memoria
+
+#### 9.3.1 Limpieza de URLs de Objeto
+```typescript
+useEffect(() => {
+  return () => {
+    // Limpiar URLs creadas para previews de imágenes
+    if (logo.previewUrl && logo.archivo) {
+      URL.revokeObjectURL(logo.previewUrl);
+    }
+    if (portada.previewUrl && portada.archivo) {
+      URL.revokeObjectURL(portada.previewUrl);
+    }
+  };
+}, []);
+```
+
+#### 9.3.2 Debounce en Validaciones
+```typescript
+const debouncedValidation = useCallback(
+  debounce((value: string) => {
+    validateField(value);
+  }, 300),
+  []
+);
+
+const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  debouncedValidation(e.target.value);
+};
+```
+
+---
+
+## 10. SEGURIDAD Y AUTENTICACIÓN
+
+### 10.1 Verificación de Permisos
+
+#### 10.1.1 Validación de Sesión
+```typescript
+const verificarSesion = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    router.push('/auth');
+    return false;
+  }
+  return true;
+};
+
+// Aplicado en cada operación crítica
+const handleSave = async () => {
+  if (!await verificarSesion()) return;
+  // Proceder con guardado...
+};
+```
+
+#### 10.1.2 Row Level Security (RLS)
+```sql
+-- Política aplicada en Supabase
+CREATE POLICY "Users can only access their own restaurants" 
+ON restaurants FOR ALL 
+USING (owner_id = auth.uid());
+
+CREATE POLICY "Users can only modify their own restaurants" 
+ON restaurants FOR UPDATE 
+USING (owner_id = auth.uid());
+```
+
+### 10.2 Sanitización de Datos
+
+#### 10.2.1 Limpieza de Inputs
+```typescript
+const sanitizeInput = (input: string) => {
+  return input
+    .trim()                    // Eliminar espacios
+    .replace(/[<>]/g, '')      // Eliminar caracteres HTML
+    .substring(0, 255);        // Limitar longitud
+};
+
+const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { name, value } = e.target;
+  const sanitizedValue = sanitizeInput(value);
+  setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
+};
+```
+
+#### 10.2.2 Validación de Archivos
+```typescript
+const validarArchivoSeguro = (archivo: File): string | null => {
+  // Validación de tipo MIME
+  const tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg'];
+  if (!tiposPermitidos.includes(archivo.type)) {
+    return 'Tipo de archivo no permitido';
+  }
+  
+  // Validación de extensión
+  const extension = archivo.name.split('.').pop()?.toLowerCase();
+  const extensionesPermitidas = ['jpg', 'jpeg', 'png'];
+  if (!extension || !extensionesPermitidas.includes(extension)) {
+    return 'Extensión de archivo no válida';
+  }
+  
+  // Validación de tamaño
+  const tamañoMaximo = 5 * 1024 * 1024; // 5MB
+  if (archivo.size > tamañoMaximo) {
+    return 'Archivo demasiado grande';
+  }
+  
+  // Validación de nombre de archivo
+  if (!/^[a-zA-Z0-9._-]+$/.test(archivo.name)) {
+    return 'Nombre de archivo contiene caracteres no válidos';
+  }
+  
+  return null;
+};
+```
+
+---
+
+## 11. TESTING Y CALIDAD DE CÓDIGO
+
+### 11.1 Estrategia de Testing (Recomendada)
+
+#### 11.1.1 Tests Unitarios
+```typescript
+// Ejemplo de tests para validaciones
+describe('validateRestaurantInfo', () => {
+  test('should reject empty name', () => {
+    const data = { name: '', phone: '123456789', email: 'test@test.com' };
+    expect(validateRestaurantInfo(data)).toBe(false);
+  });
+
+  test('should reject invalid email', () => {
+    const data = { name: 'Test', phone: '123456789', email: 'invalid-email' };
+    expect(validateRestaurantInfo(data)).toBe(false);
+  });
+
+  test('should accept valid data', () => {
+    const data = { name: 'Test Restaurant', phone: '123456789', email: 'test@test.com' };
+    expect(validateRestaurantInfo(data)).toBe(true);
+  });
+});
+```
+
+#### 11.1.2 Tests de Integración
+```typescript
+// Ejemplo de test para flujo completo
+describe('Restaurant Configuration Flow', () => {
+  test('should complete full configuration process', async () => {
+    // Mock user authentication
+    mockSupabaseAuth();
+    
+    // Step 1: Information General
+    const infoComponent = render(<InformacionGeneralPage />);
+    await fillForm(infoComponent, validRestaurantInfo);
+    await clickContinue(infoComponent);
+    
+    // Step 2: Location
+    const locationComponent = render(<UbicacionPage />);
+    await selectLocation(locationComponent, validLocation);
+    await clickContinue(locationComponent);
+    
+    // Verify final state
+    expect(mockRouter.push).toHaveBeenCalledWith('/dashboard');
+  });
+});
+```
+
+### 11.2 Logs y Debugging
+
+#### 11.2.1 Sistema de Logs Estructurado
+```typescript
+const logger = {
+  info: (message: string, data?: any) => {
+    console.log(`ℹ️ [CONFIG] ${message}`, data);
+  },
+  error: (message: string, error?: any) => {
+    console.error(`❌ [CONFIG] ${message}`, error);
+  },
+  success: (message: string, data?: any) => {
+    console.log(`✅ [CONFIG] ${message}`, data);
+  }
+};
+
+// Aplicado en operaciones críticas
+const handleSave = async () => {
+  try {
+    logger.info('Iniciando guardado de información general');
+    await saveRestaurantInfo(formData);
+    logger.success('Información general guardada exitosamente', { restaurantId });
+  } catch (error) {
+    logger.error('Error guardando información general', error);
+    throw error;
+  }
+};
+```
+
+#### 11.2.2 Debug Mode
+```typescript
+// Información de debug solo en desarrollo
+{process.env.NODE_ENV === 'development' && (
+  <Card className="bg-gray-100">
+    <CardContent className="p-4">
+      <h4 className="font-bold mb-2 text-gray-700">Debug Info:</h4>
+      <div className="text-xs text-gray-600 space-y-1">
+        <p><strong>Restaurant ID:</strong> {restaurantId || 'null'}</p>
+        <p><strong>User Email:</strong> {userInfo?.email || 'null'}</p>
+        <p><strong>Form Valid:</strong> {isFormValid ? 'Yes' : 'No'}</p>
+        <p><strong>Current Step:</strong> {currentStep}</p>
+      </div>
+    </CardContent>
+  </Card>
+)}
+```
+
+---
+
+## 12. PROBLEMAS IDENTIFICADOS Y MEJORAS SUGERIDAS
+
+### 12.1 Problemas Críticos
+
+#### 12.1.1 Falta de `setup_step` en Ubicación
+```typescript
+// ❌ PROBLEMA: En ubicacion/page.tsx falta actualizar setup_step
+const { error } = await supabase
+  .from('restaurants')
+  .update({
+    address: formData.address,
+    // ... otros campos
+    updated_at: new Date().toISOString()
+    // ❌ FALTA: setup_step: 2
+  })
+  .eq('id', restaurantId);
+
+// ✅ SOLUCIÓN:
+const { error } = await supabase
+  .from('restaurants')
+  .update({
+    address: formData.address,
+    country_id: formData.country_id,
+    department_id: formData.department_id,
+    city_id: formData.city_id,
+    latitude: formData.latitude,
+    longitude: formData.longitude,
+    setup_step: 2,  // ✅ AGREGAR ESTO
+    updated_at: new Date().toISOString()
+  })
+  .eq('id', restaurantId);
+```
+
+#### 12.1.2 API de Subida de Archivos No Implementada
+```typescript
+// ❌ PROBLEMA: Solo simulación en logo-portada/page.tsx
+const subirImagen = async (archivo: File, tipo: 'logo' | 'cover'): Promise<string> => {
+  // TODO: Implementar API real de subida de archivos
+  await new Promise(resolve => setTimeout(resolve, 1500)); // Simular delay
+  const fakeUrl = `https://fake-cdn.spoon.com/${tipo}/${Date.now()}_${archivo.name}`;
+  return fakeUrl;
+};
+
+// ✅ SOLUCIÓN RECOMENDADA:
+const subirImagen = async (archivo: File, tipo: 'logo' | 'cover'): Promise<string> => {
+  const bucket = 'restaurant-images';
+  const fileName = `${tipo}/${Date.now()}_${archivo.name}`;
+  
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .upload(fileName, archivo);
+    
+  if (error) throw error;
+  
+  const { data: { publicUrl } } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(fileName);
+    
+  return publicUrl;
+};
+```
+
+### 12.2 Mejoras de UX
+
+#### 12.2.1 Guardado Automático
+```typescript
+// Implementar auto-save cada X segundos
+useEffect(() => {
+  const autoSave = setInterval(async () => {
+    if (hasUnsavedChanges && isFormValid) {
+      try {
+        await saveData();
+        toast('Cambios guardados automáticamente', { icon: '💾' });
+      } catch (error) {
+        console.error('Error en auto-save:', error);
+      }
+    }
+  }, 30000); // Cada 30 segundos
+
+  return () => clearInterval(autoSave);
+}, [hasUnsavedChanges, isFormValid]);
+```
+
+#### 12.2.2 Navegación con Prevención de Pérdida
+```typescript
+const useUnsavedChangesWarning = (hasUnsavedChanges: boolean) => {
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+};
+```
+
+### 12.3 Optimizaciones de Rendimiento
+
+#### 12.3.1 Lazy Loading de Pasos
+```typescript
+// Cargar componentes de pasos bajo demanda
+const InformacionGeneral = lazy(() => import('./informacion-general/page'));
+const Ubicacion = lazy(() => import('./ubicacion/page'));
+const HorarioComercial = lazy(() => import('./horario-comercial/page'));
+const LogoPortada = lazy(() => import('./logo-portada/page'));
+```
+
+#### 12.3.2 Paginación de Datos Geográficos
+```typescript
+// Para países/ciudades con muchos registros
+const loadCities = async (departmentId: string, page = 1, limit = 50) => {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .eq('department_id', departmentId)
+    .range((page - 1) * limit, page * limit - 1)
+    .order('population', { ascending: false });
+    
+  return { data, error, hasMore: data?.length === limit };
+};
+```
+
+---
+
+## 13. CASOS DE USO Y FLUJOS DE USUARIO
+
+### 13.1 Flujo de Usuario Nuevo
+
+```
+1. Usuario se registra en AuthPage
+2. Sistema crea perfil de usuario
+3. Redirección automática a /config-restaurante
+4. Hub muestra 0% progreso, todos los pasos pendientes
+5. Usuario hace clic en "Información General"
+6. Pre-rellenado automático de teléfono y email
+7. Usuario completa nombre y tipo de cocina
+8. Sistema crea restaurante con setup_step=1
+9. Redirección a ubicación con datos guardados
+10. Usuario completa ubicación → setup_step=2
+11. Usuario completa horarios → setup_step=3
+12. Usuario sube imágenes → setup_step=4, setup_completed=true
+13. Redirección final a dashboard
+```
+
+### 13.2 Flujo de Usuario Recurrente
+
+```
+1. Usuario inicia sesión en AuthPage
+2. Sistema detecta restaurante existente con setup_completed=false
+3. Cálculo de progreso actual basado en setup_step
+4. Redirección automática al paso pendiente
+5. Usuario continúa desde donde se quedó
+6. Datos previamente guardados se cargan automáticamente
+```
+
+### 13.3 Flujo de Edición Posterior
+
+```
+1. Usuario accede desde dashboard o menú
+2. Hub muestra progreso 100% con todos los pasos completados
+3. Usuario puede acceder a cualquier paso para editar
+4. Cambios se guardan inmediatamente
+5. No se modifica setup_completed (sigue siendo true)
+```
+
+---
+
+## 14. CONCLUSIONES Y ANÁLISIS FINAL
+
+### 14.1 Fortalezas del Módulo
+
+#### 14.1.1 Arquitectura Sólida
+- **Separación clara de responsabilidades** por paso
+- **Patrones consistentes** entre componentes
+- **Navegación inteligente** basada en estado
+- **Validación robusta** en múltiples niveles
+
+#### 14.1.2 Experiencia de Usuario Excelente
+- **Progreso visual claro** en todo momento
+- **Pre-rellenado inteligente** para reducir fricción
+- **Validación en tiempo real** con feedback inmediato
+- **Navegación flexible** entre pasos
+
+#### 14.1.3 Integración Completa
+- **Base de datos bien estructurada** con relaciones claras
+- **Servicios compartidos** bien utilizados
+- **Sistema de estado consistente** entre componentes
+
+### 14.2 Áreas de Mejora Críticas
+
+#### 14.2.1 Implementación Incompleta
+- **API de subida de archivos** solo simulada
+- **Campo setup_step** faltante en ubicación
+- **Recuperación de contraseña** no implementada
+
+#### 14.2.2 Optimizaciones Pendientes
+- **Auto-guardado** para prevenir pérdida de datos
+- **Caché inteligente** para datos geográficos
+- **Lazy loading** de componentes pesados
+
+#### 14.2.3 Testing y Calidad
+- **Tests unitarios** no implementados
+- **Tests de integración** ausentes
+- **Monitoring de errores** básico
+
+### 14.3 Impacto en el Negocio
+
+#### 14.3.1 Reducción de Fricción
+- **Onboarding fluido** aumenta conversión
+- **Pre-rellenado** reduce tiempo de configuración
+- **Validación clara** previene errores de usuario
+
+#### 14.3.2 Escalabilidad
+- **Arquitectura modular** permite agregar nuevos pasos
+- **Base de datos normalizada** soporta crecimiento
+- **Patrones reutilizables** facilitan mantenimiento
+
+### 14.4 Dependencias Críticas
+
+#### 14.4.1 Servicios Externos
+- **@spoon/shared:** Todas las operaciones de datos
+- **Supabase:** Base de datos, autenticación y storage
+- **Next.js:** Navegación y rendering
+
+#### 14.4.2 Datos Maestros
+- **Tipos de cocina:** Configuración del negocio
+- **Datos geográficos:** Cobertura y precisión
+- **Validaciones:** Reglas de negocio consistentes
+
+---
+
+## 15. RECOMENDACIONES ESTRATÉGICAS
+
+### 15.1 Corto Plazo (1-2 sprints)
+
+1. **Implementar API real de subida de archivos**
+2. **Corregir falta de setup_step en ubicación**
+3. **Agregar auto-guardado básico**
+4. **Implementar tests unitarios críticos**
+
+### 15.2 Mediano Plazo (1-2 meses)
+
+1. **Sistema de caché para datos geográficos**
+2. **Navegación con prevención de pérdida**
+3. **Optimización de carga de componentes**
+4. **Monitoring y analytics de conversión**
+
+### 15.3 Largo Plazo (3+ meses)
+
+1. **A/B testing del flujo de onboarding**
+2. **Personalización basada en tipo de restaurante**
+3. **Integración con servicios de mapas reales**
+4. **Configuración avanzada opcional**
+

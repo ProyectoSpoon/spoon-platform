@@ -1,0 +1,423 @@
+INFORME DETALLADO - MÓDULO DE AUTENTICACIÓN
+
+1. INFORMACIÓN GENERAL DEL MÓDULO
+(AuthPage Component)
+Tipo: Componente React de autenticación
+Framework: Next.js con TypeScript
+Propósito: Gestionar el login y registro de usuarios restauranteros en la plataforma SPOON
+
+2. ANÁLISIS DE IMPORTACIONES Y DEPENDENCIAS
+2.1 Directivas del Framework
+javascript'use client';
+
+Propósito: Indica que este es un Client Component en Next.js 13+
+Implicación: Se ejecuta en el navegador, permite usar hooks y eventos
+
+2.2 Hooks de React
+javascriptimport { useState } from 'react';
+
+useState: Hook para manejar estado local del componente
+Uso: Gestiona múltiples estados (formularios, UI, errores, carga)
+
+2.3 Iconos de Lucide React
+javascriptimport { Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+
+Eye/EyeOff: Iconos para mostrar/ocultar contraseñas
+ArrowLeft: Ícono de navegación (importado pero no utilizado)
+Loader2: Ícono de carga con animación de spinning
+
+2.4 Navegación de Next.js
+javascriptimport { useRouter } from 'next/navigation';
+
+useRouter: Hook para navegación programática
+Uso: Redirigir usuarios después de autenticación exitosa
+
+2.5 Sistema de Notificaciones
+javascriptimport toast, { Toaster } from 'react-hot-toast';
+
+toast: Función para mostrar notificaciones emergentes
+Toaster: Componente contenedor para renderizar las notificaciones
+
+2.6 Componentes de Next.js
+javascriptimport Link from 'next/link';
+
+Link: Componente optimizado para navegación entre páginas
+
+2.7 Funciones de la Capa de Servicios
+javascriptimport { signInUser, signUpUser, getUserProfile, getUserRestaurant } from '@spoon/shared';
+
+signInUser: Función para autenticar usuarios existentes
+signUpUser: Función para registrar nuevos usuarios
+getUserProfile: Obtiene datos del perfil del usuario
+getUserRestaurant: Obtiene información del restaurante del usuario
+
+
+3. ANÁLISIS DETALLADO DEL ESTADO DEL COMPONENTE
+3.1 Estados de Control de UI
+javascriptconst [modoRegistro, setModoRegistro] = useState(false);
+
+Propósito: Alternar entre vista de login (false) y registro (true)
+Tipo: boolean
+Comportamiento: Cambia toda la interfaz del formulario
+
+javascriptconst [cargando, setCargando] = useState(false);
+
+Propósito: Indicar cuando se está procesando una petición
+Uso: Deshabilita botones y muestra spinners durante operaciones async
+
+javascriptconst [error, setError] = useState<string | null>(null);
+
+Propósito: Almacenar mensajes de error para mostrar al usuario
+Tipo: string nullable
+Comportamiento: Se limpia automáticamente al cambiar inputs
+
+3.2 Estados de Visibilidad de Contraseñas
+javascriptconst [mostrarContrasena, setMostrarContrasena] = useState(false);
+const [mostrarConfirmPassword, setMostrarConfirmPassword] = useState(false);
+
+Propósito: Controlar la visibilidad de campos de contraseña
+Comportamiento: Alternan entre type="password" y type="text"
+
+3.3 Estados de Datos de Formularios
+3.3.1 Datos de Login
+javascriptconst [datosLogin, setDatosLogin] = useState({
+  correo: '',
+  contrasena: ''
+});
+
+Estructura: Objeto con campos mínimos para autenticación
+Validación: Básica (required en HTML)
+
+3.3.2 Datos de Registro
+javascriptconst [datosRegistro, setDatosRegistro] = useState({
+  first_name: '',
+  last_name: '',
+  phone: '',
+  email: '',
+  password: '',
+  confirmPassword: ''
+});
+
+Estructura: Objeto completo para creación de usuario
+Campos adicionales: Nombres, teléfono, confirmación de contraseña
+
+
+4. ANÁLISIS DE MANEJADORES DE EVENTOS
+4.1 Manejadores de Cambio de Input
+4.1.1 Login
+javascriptconst manejarCambioLogin = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { name, value } = e.target;
+  setDatosLogin(prev => ({ ...prev, [name]: value }));
+  setError(null);
+};
+
+Patrón: Destructuring de event target
+Actualización: Spread operator para inmutabilidad
+Side effect: Limpia errores al escribir
+
+4.1.2 Registro
+javascriptconst manejarCambioRegistro = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { name, value } = e.target;
+  setDatosRegistro(prev => ({ ...prev, [name]: value }));
+  setError(null);
+};
+
+Patrón idéntico al login
+Separación de responsabilidades: Estados independientes
+
+
+5. SISTEMA DE VALIDACIONES
+5.1 Función de Validación de Registro
+javascriptconst validarFormularioRegistro = () => {
+  if (!datosRegistro.first_name.trim()) return 'El nombre es requerido';
+  if (!datosRegistro.last_name.trim()) return 'El apellido es requerido';
+  if (!datosRegistro.email.trim()) return 'El correo electrónico es requerido';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datosRegistro.email)) 
+    return 'Correo electrónico inválido';
+  if (datosRegistro.password.length < 6) 
+    return 'La contraseña debe tener al menos 6 caracteres';
+  if (datosRegistro.password !== datosRegistro.confirmPassword) 
+    return 'Las contraseñas no coinciden';
+  if (!datosRegistro.phone.trim()) 
+    return 'El teléfono es requerido';
+  if (!/^\d{10}$/.test(datosRegistro.phone)) 
+    return 'El teléfono debe tener 10 dígitos';
+  return '';
+};
+Validaciones implementadas:
+
+Campos requeridos: trim() elimina espacios
+Email: Regex para formato válido
+Contraseña: Mínimo 6 caracteres
+Confirmación: Coincidencia exacta de contraseñas
+Teléfono: Exactamente 10 dígitos numéricos
+Retorno: String vacío indica éxito
+
+
+6. LÓGICA DE NAVEGACIÓN POST-AUTENTICACIÓN
+6.1 Función Helper para Pasos de Configuración
+javascriptconst getNextStepUrl = (currentStep: number) => {
+  switch (currentStep) {
+    case 1: return '/config-restaurante/informacion-general';
+    case 2: return '/config-restaurante/ubicacion';
+    case 3: return '/config-restaurante/horario-comercial';
+    case 4: return '/config-restaurante/logo-portada';
+    default: return '/config-restaurante';
+  }
+};
+
+Propósito: Mapear números de paso a URLs
+Pasos definidos: 4 pasos de configuración secuencial
+Fallback: Redirige a configuración base si paso inválido
+
+6.2 Verificación de Estado del Restaurante
+javascriptconst verificarConfiguracionRestaurante = async () => {
+  try {
+    const profile = await getUserProfile();
+    const restaurant = await getUserRestaurant();
+    
+    if (!profile) {
+      throw new Error('Error al obtener datos del usuario');
+    }
+
+    if (!restaurant) {
+      console.log('❌ Usuario no tiene restaurante, redirigiendo a configuración...');
+      toast.success('¡Bienvenido! Vamos a configurar tu restaurante.');
+      router.push('/config-restaurante');
+    } else {
+      // Lógica de restaurante existente...
+    }
+  } catch (restaurantError) {
+    console.error('❌ Error al verificar restaurante:', restaurantError);
+    router.push('/config-restaurante');
+  }
+};
+Flujos de decisión:
+
+Sin perfil: Error y excepción
+Sin restaurante: Ir a configuración inicial
+Con restaurante completo: Ir al dashboard
+Configuración incompleta: Continuar desde paso actual
+Error: Fallback a configuración
+
+
+7. MANEJADORES DE AUTENTICACIÓN
+7.1 Manejador de Login
+javascriptconst manejarLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setCargando(true);
+  setError(null);
+
+  try {
+    console.log('🔐 Intentando login con:', datosLogin.correo);
+    await signInUser(datosLogin.correo, datosLogin.contrasena);
+    toast.success('¡Bienvenido!');
+    await verificarConfiguracionRestaurante();
+  } catch (err: any) {
+    // Manejo de errores específicos...
+    setCargando(false);
+  }
+};
+Manejo de errores específicos:
+
+Invalid login credentials: "Email o contraseña incorrectos"
+Email not confirmed: "Debes confirmar tu email antes de iniciar sesión"
+Too many requests: "Demasiados intentos. Intenta de nuevo en unos minutos"
+
+7.2 Manejador de Registro
+javascriptconst manejarRegistro = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  const validationError = validarFormularioRegistro();
+  if (validationError) {
+    setError(validationError);
+    return;
+  }
+
+  setCargando(true);
+  setError(null);
+
+  try {
+    const result = await signUpUser({
+      email: datosRegistro.email,
+      password: datosRegistro.password,
+      first_name: datosRegistro.first_name,
+      last_name: datosRegistro.last_name,
+      phone: datosRegistro.phone
+    });
+
+    // Logs y redirección...
+    router.push('/config-restaurante');
+  } catch (error: any) {
+    // Manejo de errores...
+  }
+};
+Flujo del registro:
+
+Validación previa: Cliente-side antes de envío
+Llamada a API: signUpUser con datos completos
+Redirección automática: Siempre a configuración (usuarios nuevos)
+
+
+8. ANÁLISIS DE LA INTERFAZ DE USUARIO
+8.1 Estructura de Layout
+javascript<div className="flex min-h-screen">
+  {/* Columna izquierda - Información promocional */}
+  <div className="hidden md:flex w-1/2 relative">
+    {/* Imagen de fondo con overlay */}
+  </div>
+  
+  {/* Columna derecha - Formulario */}
+  <div className="w-full md:w-1/2 bg-white flex items-center justify-center p-8">
+    {/* Contenido del formulario */}
+  </div>
+</div>
+Características del diseño:
+
+Responsive: Oculta columna izquierda en móvil
+Split layout: 50/50 en desktop
+Imagen de fondo: Con filtros y overlay
+Centrado: Formulario centrado vertical y horizontalmente
+
+8.2 Contenido Promocional Dinámico
+8.2.1 Títulos y Descripciones Condicionales
+javascript<h1 className="text-4xl font-bold text-white mb-6">
+  {modoRegistro 
+    ? "Únete a la revolución gastronómica" 
+    : "Conecta con más clientes en tu zona"
+  }
+</h1>
+8.2.2 Características Destacadas
+
+Geolocalización: "Alcanza clientes en cualquier zona"
+Sistema de Reseñas: "Mejora tu servicio con feedback real"
+Notificaciones: "Mantén informados a tus clientes"
+Gestión de Domicilios: "Control total sobre entregas"
+
+8.3 Formularios Condicionales
+8.3.1 Formulario de Registro
+Campos implementados:
+
+Nombre y Apellido: Grid de 2 columnas
+Email: Validación HTML5 + custom
+Teléfono: Prefijo +57, máx 10 dígitos
+Contraseña: Con toggle de visibilidad
+Confirmar Contraseña: Validación de coincidencia
+
+8.3.2 Formulario de Login
+Campos minimalistas:
+
+Email: Input simple con placeholder
+Contraseña: Con toggle de visibilidad
+Recuperar contraseña: Placeholder (no implementado)
+
+
+9. SISTEMA DE NOTIFICACIONES Y FEEDBACK
+9.1 Implementación de Toast
+javascript<Toaster position="top-right" />
+
+Posición: Esquina superior derecha
+Tipos: Success, error, info
+Duración personalizable
+
+9.2 Alertas de Error
+javascript{error && (
+  <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+    <p className="text-red-700 text-sm">{error}</p>
+  </div>
+)}
+
+Diseño: Border-left rojo con fondo suave
+Condicional: Solo se muestra si hay error
+Responsive: Se adapta al contenedor
+
+
+10. FUNCIONES DE UTILIDAD Y HELPERS
+10.1 Toggle de Modo
+javascriptconst toggleModo = () => {
+  setModoRegistro(!modoRegistro);
+  setError(null);
+  setDatosLogin({ correo: '', contrasena: '' });
+  setDatosRegistro({
+    first_name: '', last_name: '', phone: '',
+    email: '', password: '', confirmPassword: ''
+  });
+  setMostrarContrasena(false);
+  setMostrarConfirmPassword(false);
+};
+Limpieza completa:
+
+Estado de modo: Alterna boolean
+Errores: Resetea mensajes
+Formularios: Limpia todos los campos
+UI: Resetea visibilidad de contraseñas
+
+
+11. CARACTERÍSTICAS DE SEGURIDAD
+11.1 Validación de Entrada
+
+Sanitización: trim() en todos los campos de texto
+Longitud máxima: Límites en inputs HTML
+Patrones de validación: Regex para email y teléfono
+
+11.2 Manejo de Contraseñas
+
+No exposición: Estados separados para visibilidad
+Validación de fortaleza: Mínimo 6 caracteres
+Confirmación: Validación de coincidencia
+
+
+12. ASPECTOS DE EXPERIENCIA DE USUARIO
+12.1 Estados de Carga
+javascript{cargando ? (
+  <div className="flex items-center">
+    <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+    <span>Iniciando sesión...</span>
+  </div>
+) : (
+  'Iniciar sesión'
+)}
+12.2 Feedback Inmediato
+
+Limpieza de errores: Al escribir en inputs
+Validación previa: Antes de envío
+Mensajes contextuales: Específicos por tipo de error
+
+
+13. INTEGRACIÓN CON SERVICIOS EXTERNOS
+13.1 Google Sign-In (Placeholder)
+javascript<button
+  type="button"
+  onClick={() => toast.error('Google Sign-In estará disponible próximamente')}
+  disabled={true}
+  className="...cursor-not-allowed"
+>
+
+Estado: No implementado, preparado para futuro
+UI: Botón deshabilitado con mensaje
+
+
+14. CONCLUSIONES Y OBSERVACIONES
+14.1 Fortalezas del Módulo
+
+Separación clara entre login y registro
+Validación robusta del lado cliente
+Manejo comprehensivo de errores
+UX fluida con feedback inmediato
+Diseño responsive y atractivo
+
+14.2 Áreas de Mejora Potencial
+
+Validación del servidor: Falta validación backend explícita
+Recuperación de contraseña: No implementada
+Google OAuth: Pendiente de implementación
+Testing: No hay evidencia de tests unitarios
+Accesibilidad: Podría mejorarse con ARIA labels
+
+14.3 Dependencias Críticas
+
+@spoon/shared: Todas las operaciones de autenticación
+next/navigation: Navegación post-autenticación
+react-hot-toast: Sistema de notificaciones
+
+Este módulo constituye la puerta de entrada principal a la aplicación y maneja el flujo crítico de onboarding de restauranteros, incluyendo la lógica de redirección basada en el estado de configuración del restaurante.
