@@ -1,14 +1,15 @@
-'use client';
+"use client";
 
-// Página principal de gestión de mesas - Layout 80/20 con panel lateral
+// Página principal de gestión de mesas - Layout 70/30 con panel lateral fijo (350px)
 import React, { useState } from 'react';
 import { useSetPageTitle } from '@spoon/shared/Context/page-title-context';
 import { Button } from '@spoon/shared/components/ui/Button';
 import { RefreshCw, DollarSign, Settings, AlertCircle, Plus } from 'lucide-react';
-import { useMesas } from '@spoon/shared//hooks/mesas/useMesas';
+import { useMesas } from '@spoon/shared/hooks/mesas';
 import MesaCard from './MesaCard';
 import MesaDetallesPanel from './MesaDetallesPanel';
 import ConfiguracionMesasModal from '@spoon/shared/components/mesas/ConfiguracionMesasModal';
+import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
 // Interface para distribución de zonas
 interface DistribucionZonas {
@@ -89,13 +90,7 @@ const MesasPage: React.FC = () => {
   // VALORES CALCULADOS
   // ========================================
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => formatCurrencyCOP(amount);
 
   // Usar estadísticas del sistema maestro si están disponibles
   const totalPendiente = configuracion.configuradas 
@@ -103,8 +98,18 @@ const MesasPage: React.FC = () => {
     : Object.values(mesasOcupadas).reduce((sum, mesa) => sum + mesa.total, 0);
     
   const mesasActivas = configuracion.configuradas
-    ? estadisticas.mesasOcupadas
+    ? mesasCompletas.filter(m => ['ocupada', 'en_cocina', 'servida', 'por_cobrar'].includes(m.estado)).length
     : Object.keys(mesasOcupadas).length;
+
+  const ordenesEnCocina = configuracion.configuradas
+    ? mesasCompletas.filter(m => m.estado === 'en_cocina').length
+    : 0;
+
+  const totalPorCobrar = configuracion.configuradas
+    ? mesasCompletas
+        .filter(m => m.estado === 'por_cobrar' && m.detallesOrden)
+        .reduce((sum, m) => sum + (m.detallesOrden?.total || 0), 0)
+    : 0;
 
   // ========================================
   // RENDERIZADO CONDICIONAL
@@ -122,187 +127,171 @@ const MesasPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Layout principal: 80% mesas + 20% panel lateral */}
-      <div className="flex h-screen">
-        
-        {/* ========================================
-            COLUMNA IZQUIERDA - 80% GESTIÓN DE MESAS
-            ======================================== */}
-        <div className="flex-1 flex flex-col p-6" style={{ width: '80%' }}>
-          <div className="max-w-7xl mx-auto space-y-6 flex-1">
-            
-            {/* Header con KPIs */}
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Gestión de Mesas</h1>
-                <p className="text-gray-500">
-                  {configuracion.configuradas 
-                    ? `${configuracion.totalMesas} mesas configuradas en ${configuracion.zonas.length} zona${configuracion.zonas.length > 1 ? 's' : ''}`
-                    : 'Control de mesas y cobros'
-                  }
-                  {mesaSeleccionada && ` • Mesa ${mesaSeleccionada} seleccionada`}
-                </p>
-              </div>
-              
-              <div className="flex gap-4 items-center">
-                {/* KPIs */}
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900">{mesasActivas}</div>
-                  <div className="text-sm text-gray-500">Mesas Activas</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(totalPendiente)}
-                  </div>
-                  <div className="text-sm text-gray-500">Total Pendiente</div>
-                </div>
-                
-                {/* Botones de acción */}
-                <div className="flex gap-2">
-                  {configuracion.configuradas && (
-                    <Button 
-                      onClick={cargarMesas}
-                      variant="outline"
-                      className="bg-white"
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Actualizar
-                    </Button>
-                  )}
-                  
-                  <Button 
-                    onClick={() => setModalConfiguracion(true)}
-                    variant="outline"
-                    className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-                    disabled={loadingConfiguracion}
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    {configuracion.configuradas ? 'Reconfigurar' : 'Configurar Mesas'}
-                  </Button>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header superior fijo de la vista */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="heading-page">Gestión de Mesas</h1>
+            <p className="subtitle">
+              {configuracion.configuradas
+                ? `${configuracion.totalMesas} mesas configuradas en ${configuracion.zonas.length} zona${configuracion.zonas.length > 1 ? 's' : ''}`
+                : 'Control de mesas y cobros'}
+              {mesaSeleccionada && ` • Mesa ${mesaSeleccionada} seleccionada`}
+            </p>
+          </div>
 
-            {/* ========================================
-                SISTEMA MAESTRO CONFIGURADO
-                ======================================== */}
-            {configuracion.configuradas ? (
-              <div className="flex-1 space-y-6">
-                {/* Estadísticas adicionales del sistema maestro */}
-                {configuracion.zonas.length > 1 && (
-                  <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                    <h3 className="font-bold text-gray-700 mb-2">Distribución por zonas:</h3>
-                    <div className="flex gap-4">
-                      {configuracion.zonas.map(zona => {
-                        const mesasZona = mesasCompletas.filter(m => m.zona === zona);
-                        const ocupadasZona = mesasZona.filter(m => m.ocupada).length;
-                        return (
-                          <div key={zona} className="text-center">
-                            <div className="text-lg font-bold text-gray-900">
-                              {ocupadasZona}/{mesasZona.length}
-                            </div>
-                            <div className="text-sm text-gray-500">{zona}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Grid de mesas - Sistema Maestro */}
-                <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-                  {mesasCompletas
-                    .filter(mesa => mesa.estado !== 'inactiva') // No mostrar mesas inactivas
-                    .map((mesa) => (
-                      <MesaCard
-                        key={mesa.numero}
-                        numero={mesa.numero}
-                        estado={mesa.ocupada ? 'ocupada' : 'vacia'}
-                        total={mesa.detallesOrden?.total}
-                        onClick={() => handleMesaClick(mesa.numero)}
-                        // Props adicionales del sistema maestro
-                        nombre={mesa.nombre}
-                        zona={mesa.zona}
-                        capacidad={mesa.capacidad}
-                        estadoMesa={mesa.estado}
-                      />
-                    ))
-                  }
-                </div>
-
-                {/* Resumen */}
-                {mesasActivas > 0 && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-bold text-blue-800">Resumen del día</h3>
-                        <p className="text-blue-700 text-sm">
-                          {mesasActivas} mesa{mesasActivas > 1 ? 's' : ''} pendiente{mesasActivas > 1 ? 's' : ''} de cobro
-                          {configuracion.zonas.length > 1 && ` • ${configuracion.zonas.length} zonas activas`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 text-blue-800">
-                        <DollarSign className="h-5 w-5" />
-                        <span className="text-xl font-bold">{formatCurrency(totalPendiente)}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* ========================================
-                  SISTEMA NO CONFIGURADO
-                  ======================================== */
-              <div className="bg-white border border-yellow-200 rounded-lg p-8 text-center">
-                <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  ¡Configura tus mesas para empezar!
-                </h3>
-                <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                  El sistema maestro de mesas te permite personalizar tu restaurante con nombres, zonas, 
-                  capacidades y mucho más. Es rápido y fácil de configurar.
-                </p>
-                
-                <div className="flex gap-4 justify-center">
-                  <Button
-                    onClick={() => setModalConfiguracion(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={loadingConfiguracion}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    {loadingConfiguracion ? 'Configurando...' : 'Configurar Mesas'}
-                  </Button>
-                </div>
-
-                {/* Información adicional */}
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <p className="text-sm text-gray-500">
-                    💡 <strong>Tip:</strong> Puedes configurar zonas como "Comedor", "Terraza", "VIP" 
-                    y personalizar cada mesa con nombres y capacidades específicas.
-                  </p>
-                </div>
-              </div>
+          <div className="flex items-center gap-2">
+            {configuracion.configuradas && (
+              <Button
+                onClick={cargarMesas}
+                variant="outline"
+                className="bg-white"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Actualizar
+              </Button>
             )}
+            <Button
+              onClick={() => setModalConfiguracion(true)}
+              variant="outline"
+              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              disabled={loadingConfiguracion}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              {configuracion.configuradas ? 'Reconfigurar' : 'Configurar Mesas'}
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* ========================================
-            COLUMNA DERECHA - 20% PANEL DE DETALLES ADMINISTRADOR
-            ======================================== */}
-        <div className="bg-white border-l border-gray-200" style={{ width: '20%', minWidth: '320px' }}>
-          <MesaDetallesPanel
-            mesaNumero={mesaSeleccionada}
-            isVisible={mesaSeleccionada !== null}
-            onCobrar={handleCobrarMesa}
-            onClose={handleCerrarPanel}
-            restaurantId={restaurantId}
-            // Props adicionales para funcionalidad de administrador
-            mesasOcupadas={mesasOcupadas}
-            mesasCompletas={mesasCompletas}
-          />
+      {/* Contenido principal: grid 70/30 con panel derecho de 350px */}
+      <div className="max-w-[1400px] mx-auto px-6 py-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_350px]">
+        {/* Columna izquierda */}
+        <div className="space-y-6 order-1 md:order-2 lg:order-1">
+          {/* KPIs compactos */}
+          <div className="flex w-full gap-3 overflow-x-auto lg:overflow-visible">
+            <div className="flex-[1_1_140px] bg-white border-l-4 border-emerald-500 rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
+              <div className="label-tertiary text-xs">Mesas activas</div>
+              <div className="mt-1 value-number">{mesasActivas}</div>
+            </div>
+            <div className="flex-[2_1_200px] bg-white border-l-4 border-indigo-500 rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
+              <div className="label-tertiary text-xs">Total pendiente</div>
+              <div className="mt-1 value-number text-indigo-700">{formatCurrency(totalPendiente)}</div>
+            </div>
+            {configuracion.configuradas && (
+              <div className="flex-[1_1_160px] bg-white border-l-4 border-sky-500 rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
+                <div className="label-tertiary text-xs">Órdenes en cocina</div>
+                <div className="mt-1 value-number text-sky-700">{ordenesEnCocina}</div>
+              </div>
+            )}
+            {configuracion.configuradas && (
+              <div className="flex-[2_1_200px] bg-white border-l-4 border-amber-500 rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
+                <div className="label-tertiary text-xs">Total por cobrar</div>
+                <div className="mt-1 value-number text-amber-700">{formatCurrency(totalPorCobrar)}</div>
+              </div>
+            )}
+            {configuracion.configuradas && configuracion.zonas.length > 1 && configuracion.zonas
+              .filter((zona: string) => {
+                const z = (zona || '').trim().toLowerCase();
+                return z !== 'principal' && z !== 'comedor principal';
+              })
+              .map((zona: string) => {
+              const mesasZona = mesasCompletas.filter(m => m.zona === zona);
+              const ocupadasZona = mesasZona.filter(m => m.ocupada).length;
+              return (
+                <div key={zona} className="flex-[1_1_150px] bg-white border-l-4 border-sky-500 rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
+                  <div className="label-tertiary text-xs">{zona}</div>
+                  <div className="mt-1 value-number text-[20px]">{ocupadasZona}/{mesasZona.length}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Contenido según configuración */}
+          {configuracion.configuradas ? (
+            <>
+              {/* Grid de mesas - auto-fit */}
+              <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))] [grid-auto-rows:1fr]">
+                {mesasCompletas
+                  .filter(mesa => mesa.estado !== 'inactiva')
+                  .map((mesa) => (
+                    <MesaCard
+                      key={mesa.numero}
+                      numero={mesa.numero}
+                      estado={mesa.ocupada ? 'ocupada' : 'vacia'}
+                      total={mesa.detallesOrden?.total}
+                      onClick={() => handleMesaClick(mesa.numero)}
+                      // Props adicionales del sistema maestro
+                      nombre={mesa.nombre}
+                      zona={mesa.zona}
+                      capacidad={mesa.capacidad}
+                      estadoMesa={mesa.estado}
+                      items={mesa.detallesOrden?.items?.length}
+                      comensales={mesa.detallesOrden?.comensales}
+                      inicioAtencion={mesa.detallesOrden?.fechaCreacion}
+                      seleccionada={mesaSeleccionada === mesa.numero}
+                    />
+                  ))
+                }
+              </div>
+
+              {/* Resumen */}
+              {mesasActivas > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="heading-section text-blue-800">Resumen del día</h3>
+                      <p className="text-blue-700 text-sm">
+                        {mesasActivas} mesa{mesasActivas > 1 ? 's' : ''} pendiente{mesasActivas > 1 ? 's' : ''} de cobro
+                        {configuracion.zonas.length > 1 && ` • ${configuracion.zonas.length} zonas activas`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-blue-800">
+                      <DollarSign className="h-5 w-5" />
+                      <span className="value-number">{formatCurrency(totalPendiente)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="bg-white border border-yellow-200 rounded-lg p-8 text-center">
+              <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+              <h3 className="heading-section text-gray-900 mb-2">
+                ¡Configura tus mesas para empezar!
+              </h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                El sistema maestro de mesas te permite personalizar tu restaurante con nombres, zonas,
+                capacidades y mucho más. Es rápido y fácil de configurar.
+              </p>
+              <div className="flex gap-4 justify-center">
+                <Button
+                  onClick={() => setModalConfiguracion(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={loadingConfiguracion}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {loadingConfiguracion ? 'Configurando...' : 'Configurar Mesas'}
+                </Button>
+              </div>
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <p className="text-sm text-gray-500">
+                  💡 <strong>Tip:</strong> Puedes configurar zonas como "Comedor", "Terraza", "VIP"
+                  y personalizar cada mesa con nombres y capacidades específicas.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Panel derecho fijo 350px */}
+  <div className="bg-white border border-slate-200 rounded-lg lg:rounded-none lg:border-0 lg:border-l lg:border-slate-200 lg:bg-white min-h-[400px] order-2 md:order-1 lg:order-2">
+          <MesaDetallesPanel
+            mesa={mesasCompletas.find(m => m.numero === mesaSeleccionada) || null}
+            onClose={handleCerrarPanel}
+          />
+        </div>
       </div>
 
       {/* Modal de configuración de mesas (mantiene funcionalidad) */}
@@ -318,3 +307,4 @@ const MesasPage: React.FC = () => {
 };
 
 export default MesasPage;
+

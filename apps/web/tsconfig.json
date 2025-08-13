@@ -19,8 +19,9 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@spoon/shared": ["../../packages/shared"]
+  "@/*": ["./src/*"],
+  "@spoon/shared": ["../../packages/shared"],
+  "packages/*": ["../../packages/*"]
     }
   },
   "include": [

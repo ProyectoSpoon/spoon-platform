@@ -1,6 +1,7 @@
 import React from 'react';
-import { Card, CardContent } from '@spoon/shared/components/ui/card';
+import { Card, CardContent } from '@spoon/shared/components/ui/Card';
 import { TrendingUp, DollarSign, Receipt, AlertCircle } from 'lucide-react';
+import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
 interface MetricasData {
   balance: number;
@@ -28,13 +29,7 @@ const MetricCard: React.FC<{
   badges?: Array<{ label: string; value: number; color: string }>;
 }> = ({ icon, label, value, subtitle, color, trend, badges = [] }) => {
   
-  const formatCurrency = (centavos: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
-    }).format(centavos / 100);
-  };
+  const formatCurrency = (centavos: number) => formatCurrencyCOP(centavos);
 
   const colorClasses = {
     green: {
@@ -71,26 +66,26 @@ const MetricCard: React.FC<{
 
   return (
     <Card className={`${classes.bg} ${classes.border} border transition-all duration-200 hover:shadow-md`}>
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Icono */}
-            <div className={`p-3 rounded-lg ${classes.iconBg}`}>
-              <div className={`w-6 h-6 ${classes.icon}`}>
+            <div className={`p-2.5 rounded-lg ${classes.iconBg}`}>
+              <div className={`w-5 h-5 ${classes.icon}`}>
                 {icon}
               </div>
             </div>
             
             {/* Contenido principal */}
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">
+              <p className="text-[13px] font-medium text-[#64748b] mb-1.5">
                 {label}
               </p>
-              <p className={`text-2xl font-bold ${classes.value}`}>
+              <p className={`text-[22px] leading-7 font-bold ${classes.value}`}>
                 {formatCurrency(value)}
               </p>
               {subtitle && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-[11px] text-[#94a3b8] mt-1">
                   {subtitle}
                 </p>
               )}
@@ -113,7 +108,7 @@ const MetricCard: React.FC<{
 
         {/* Badges adicionales para desglose */}
         {badges.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="flex flex-wrap gap-2 mt-3">
             {badges.map((badge, index) => (
               <span 
                 key={index}
@@ -177,7 +172,7 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[1, 2, 3].map((i) => (
           <Card key={i} className="animate-pulse">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
                 <div className="space-y-2">

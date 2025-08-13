@@ -137,7 +137,7 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">✅</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="heading-section text-gray-900 mb-2">
                 ¡Pago Procesado!
               </h3>
               <p className="text-gray-600">
@@ -147,10 +147,10 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
 
             {pagoExitoso.cambio > 0 && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                <div className="text-lg font-semibold text-yellow-800">
+                <div className="font-semibold text-yellow-800">
                   Cambio a entregar:
                 </div>
-                <div className="text-2xl font-bold text-yellow-900">
+                <div className="value-number text-yellow-900">
                   {formatCurrency(pagoExitoso.cambio)}
                 </div>
               </div>
@@ -187,13 +187,13 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
-                <span className="text-xl">
+                <span>
                   {orden.tipo === 'mesa' ? '🍽️' : '🚚'}
                 </span>
                 <h3 className="font-semibold">{orden.identificador}</h3>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold">
+                <div className="value-number">
                   {formatCurrency(orden.monto_total)}
                 </div>
               </div>
@@ -230,7 +230,7 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
                 type="number"
                 value={montoRecibido / 100}
                 onChange={(e) => setMontoRecibido(Math.round(parseFloat(e.target.value || '0') * 100))}
-                className="text-right text-lg"
+                className="text-right"
                 disabled={procesando}
                 min={orden.monto_total / 100}
               />

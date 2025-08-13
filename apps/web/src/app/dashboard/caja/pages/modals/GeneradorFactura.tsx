@@ -248,7 +248,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
       <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
+          <h3 className="heading-section flex items-center gap-2">
             <Receipt className="w-5 h-5" />
             Generar Factura
           </h3>
@@ -270,7 +270,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-600">Total a facturar:</p>
-              <p className="text-2xl font-bold">{formatearMonto(transaccion.monto_total)}</p>
+              <p className="value-number">{formatearMonto(transaccion.monto_total)}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">

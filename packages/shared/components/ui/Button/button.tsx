@@ -4,26 +4,26 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../../lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none",
+  "inline-flex items-center justify-center rounded-md text-[14px] font-medium transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3b82f6] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none",
   {
     variants: {
       variant: {
-        default: "bg-orange-600 text-white hover:bg-orange-700",
+        default: "bg-[#3B82F6] text-white hover:bg-[#60a5fa]",
         destructive: "bg-red-500 text-white hover:bg-red-600",
-        outline: "border border-gray-300 bg-transparent hover:bg-gray-50 text-gray-900",
-        secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200",
-        ghost: "bg-transparent hover:bg-gray-50 text-gray-900",
-        link: "text-orange-600 underline-offset-4 hover:underline bg-transparent",
+        outline: "border border-[#e2e8f0] bg-white hover:bg-[#f8fafc] text-[#1e293b]",
+        secondary: "bg-[#10b981] text-white hover:bg-[#34d399]",
+        ghost: "bg-transparent hover:bg-[#f8fafc] text-[#1e293b]",
+        link: "text-[#3b82f6] underline-offset-4 hover:underline bg-transparent",
         purple: "bg-purple-600 text-white hover:bg-purple-700",
-        blue: "bg-blue-600 text-white hover:bg-blue-700",
-        green: "bg-green-600 text-white hover:bg-green-700",
+        blue: "bg-[#3B82F6] text-white hover:bg-[#60a5fa]",
+        green: "bg-[#10b981] text-white hover:bg-[#34d399]",
       },
       size: {
         default: "h-10 py-2 px-4",
-        sm: "h-9 px-3 text-sm",
-        lg: "h-12 px-6 text-base font-semibold",
+        sm: "h-9 px-3 text-[14px]",
+        lg: "h-11 px-5 text-[14px] font-semibold",
         icon: "h-10 w-10",
-        full: "h-12 px-6 text-base font-semibold w-full",
+        full: "h-11 px-5 text-[14px] font-semibold w-full",
       },
     },
     defaultVariants: {

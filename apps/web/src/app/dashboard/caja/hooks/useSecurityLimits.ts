@@ -1,6 +1,7 @@
 // packages/shared/caja/hooks/useSecurityLimits.ts
 import { useState, useEffect } from 'react';
 import { supabase, getUserProfile } from '@spoon/shared/lib/supabase';
+import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
 interface SecurityLimits {
   limite_transaccion_normal: number;
@@ -36,13 +37,7 @@ export const useSecurityLimits = () => {
     obtenerLimites();
   }, []);
 
-  const formatearMonto = (centavos: number): string => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
-    }).format(centavos / 100);
-  };
+  const formatearMonto = (centavos: number): string => formatCurrencyCOP(centavos);
 
   const validarMonto = (monto: number, metodoPago: string): {
     valid: boolean;

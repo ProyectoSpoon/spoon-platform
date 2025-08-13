@@ -50,7 +50,7 @@ const ConfiguracionMesasModal: React.FC<ConfiguracionMesasModalProps> = ({
   useEffect(() => {
     if (isOpen && configuracionActual?.configuradas) {
       setTotalMesas(configuracionActual.totalMesas);
-      console.log('📊 Configuración actual cargada:', configuracionActual.totalMesas, 'mesas');
+      
     }
   }, [isOpen, configuracionActual]);
 
@@ -78,12 +78,12 @@ const ConfiguracionMesasModal: React.FC<ConfiguracionMesasModalProps> = ({
   };
 
   const handleConfigurar = async () => {
-    console.log('🔧 Configurando', totalMesas, 'mesas...');
+    
     
     try {
       // Pasamos solo el número total, sin distribución de zonas
       const success = await onConfigurar(totalMesas);
-      console.log('✅ Resultado:', success);
+      
       
       if (success) {
         onClose();

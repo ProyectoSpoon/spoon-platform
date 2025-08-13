@@ -8,7 +8,7 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   rightIcon?: React.ReactNode;
   label?: string;
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'outline' | 'filled';
+  variant?: 'default' | 'outline' | 'filled' | 'readOnly';
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -29,15 +29,16 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const inputId = props.id || generatedId;
 
     const sizeClasses = {
-      sm: 'h-9 px-3 text-sm',
-      md: 'h-10 px-4 text-sm',
-      lg: 'h-12 px-4 text-base'
+      sm: 'h-9 px-3 text-[14px]',
+      md: 'h-10 px-4 text-[14px]',
+      lg: 'h-11 px-4 text-[14px]'
     };
 
-    const variantClasses = {
-      default: 'border border-gray-300 bg-white',
-      outline: 'border-2 border-gray-300 bg-transparent',
-      filled: 'border-0 bg-gray-100'
+    const variantClasses: Record<NonNullable<InputProps['variant']>, string> = {
+      default: 'border border-[#e2e8f0] bg-white',
+      outline: 'border-2 border-[#e2e8f0] bg-transparent',
+      filled: 'border border-[#e2e8f0] bg-[#f8fafc]',
+      readOnly: 'border border-[#e2e8f0] bg-gray-50 text-gray-700'
     };
 
     return (
@@ -62,21 +63,24 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={type}
             className={cn(
-              "w-full rounded-lg transition-colors",
-              "focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent",
-              "placeholder:text-gray-400",
+              "w-full rounded-md transition-colors",
+              "focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent",
+              "placeholder:text-[#94a3b8] text-[#1e293b]",
               sizeClasses[size],
               variantClasses[variant],
               {
                 'border-red-500 focus:ring-red-500': error,
                 'pl-10': leftIcon,
                 'pr-10': rightIcon,
-                'opacity-60 cursor-not-allowed': disabled,
+                // Non-editable visual state (disabled or readOnly variant)
+                'cursor-default': disabled || variant === 'readOnly',
+                'focus:ring-0': disabled || variant === 'readOnly',
               },
               className
             )}
             ref={ref}
             disabled={disabled}
+            readOnly={variant === 'readOnly' ? true : props.readOnly}
             {...props}
           />
           
@@ -89,8 +93,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         
         {helperText && (
           <p className={cn(
-            "mt-2 text-xs",
-            error ? "text-red-600" : "text-gray-500"
+            "mt-2 text-[12px]",
+            error ? "text-red-600" : "text-[#94a3b8]"
           )}>
             {helperText}
           </p>

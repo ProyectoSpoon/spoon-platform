@@ -6,10 +6,36 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { useSpecialData } from '@spoon/shared/hooks/special-dishes/useSpecialData';
-import SpecialesPage from '../especiales/pages/SpecialesPage';
-import SpecialesWizardPage from './pages/SpecialesWizardPage';
-import EspecialesCombinationsPage from '../especiales/pages/EspecialesCombinationsPage';
+
+// Carga diferida de secciones pesadas
+const SpecialesPage = dynamic(() => import('./pages/SpecialesPage'), {
+  loading: () => (
+    <div className="min-h-[300px] flex items-center justify-center text-sm text-gray-500">
+      Cargando lista de especiales…
+    </div>
+  ),
+});
+
+const SpecialesWizardPage = dynamic(() => import('./pages/SpecialesWizardPage'), {
+  loading: () => (
+    <div className="min-h-[300px] flex items-center justify-center text-sm text-gray-500">
+      Cargando asistente…
+    </div>
+  ),
+});
+
+const EspecialesCombinationsPage = dynamic(
+  () => import('./pages/EspecialesCombinationsPage'),
+  {
+    loading: () => (
+      <div className="min-h-[300px] flex items-center justify-center text-sm text-gray-500">
+        Cargando combinaciones…
+      </div>
+    ),
+  }
+);
 
 export default function EspecialesMainPage() {
   const specialData = useSpecialData();
@@ -81,90 +107,30 @@ export default function EspecialesMainPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* ✅ HEADER DE PÁGINA */}
-      <div className="border-b border-gray-200 pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Platos Especiales
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Gestiona tus platos especiales con precios fijos
-            </p>
+    <div className="space-y-6 pt-2">
+      {/* ✅ STATS RÁPIDAS (sin título ni breadcrumbs) */}
+      <div className="flex items-center justify-end">
+        <div className="flex gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-orange-600">
+              {specialData.specialDishes.length}
+            </div>
+            <div className="text-sm text-gray-500">Especiales</div>
           </div>
-          
-          {/* ✅ STATS RÁPIDAS */}
-          <div className="flex gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {specialData.specialDishes.length}
-              </div>
-              <div className="text-sm text-gray-500">
-                Especiales
-              </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">
+              {specialData.specialDishes.filter(dish => dish.is_active).length}
             </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {specialData.specialDishes.filter(dish => dish.is_active).length}
-              </div>
-              <div className="text-sm text-gray-500">
-                Activos Hoy
-              </div>
+            <div className="text-sm text-gray-500">Activos Hoy</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600">
+              {specialData.specialCombinations.length}
             </div>
-            
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {specialData.specialCombinations.length}
-              </div>
-              <div className="text-sm text-gray-500">
-                Combinaciones
-              </div>
-            </div>
+            <div className="text-sm text-gray-500">Combinaciones</div>
           </div>
         </div>
       </div>
-
-      {/* ✅ BREADCRUMBS */}
-      <nav className="flex" aria-label="Breadcrumb">
-        <ol className="flex items-center space-x-2 text-sm">
-          <li>
-            <span className="text-gray-500">Dashboard</span>
-          </li>
-          <li>
-            <span className="text-gray-400">/</span>
-          </li>
-          <li>
-            <span className="text-gray-500">Carta</span>
-          </li>
-          <li>
-            <span className="text-gray-400">/</span>
-          </li>
-          <li>
-            <span className="text-orange-600 font-medium">Especiales</span>
-          </li>
-          
-          {/* ✅ BREADCRUMB DINÁMICO SEGÚN VISTA */}
-          {specialData.currentView !== 'list' && (
-            <>
-              <li>
-                <span className="text-gray-400">/</span>
-              </li>
-              <li>
-                <span className="text-gray-900 font-medium">
-                  {specialData.currentView === 'creation' || specialData.currentView === 'wizard' 
-                    ? (specialData.currentSpecialDish ? 'Editar' : 'Crear Nuevo')
-                    : specialData.currentView === 'combinations'
-                    ? `${specialData.currentSpecialDish?.dish_name || 'Combinaciones'}`
-                    : specialData.currentView
-                  }
-                </span>
-              </li>
-            </>
-          )}
-        </ol>
-      </nav>
 
       {/* ✅ CONTENIDO PRINCIPAL */}
       <div className="min-h-[600px]">

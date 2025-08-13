@@ -548,7 +548,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Grid className="w-12 h-12 text-gray-400" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+            <h3 className="heading-section text-gray-900 mb-4">
               {menuCombinations.length === 0 
                 ? 'No hay combinaciones disponibles'
                 : 'No se encontraron combinaciones'
@@ -580,7 +580,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                 <Trash2 className="w-8 h-8 text-red-600" />
               </div>
               
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="heading-section text-gray-900 mb-2">
                 ¿Eliminar combinación?
               </h3>
               

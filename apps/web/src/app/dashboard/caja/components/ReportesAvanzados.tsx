@@ -6,15 +6,10 @@ import { Calendar, TrendingUp, DollarSign, Clock, AlertCircle } from 'lucide-rea
 
 // Importar funciones de supabase
 import { getReportesVentas, getUserProfile } from '@spoon/shared/lib/supabase';
+import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
-// Función de formateo local (no depende de imports externos)
-const formatearMonto = (centavos: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0
-  }).format(centavos / 100);
-};
+// Usar helper compartido de moneda
+const formatearMonto = (centavos: number): string => formatCurrencyCOP(centavos);
 
 interface EstadisticasReporte {
   totalVentas: number;
@@ -63,7 +58,10 @@ export function ReportesAvanzados() {
     setError(null);
     
     try {
-      console.log('🔍 Cargando reportes para:', { restaurantId, periodo });
+      if (process.env.NODE_ENV !== 'production') {
+        // Debug no-ops en producción
+        console.log('🔍 Cargando reportes para:', { restaurantId, periodo });
+      }
       
       const { data, error: reporteError } = await getReportesVentas(restaurantId, periodo);
       
@@ -71,7 +69,9 @@ export function ReportesAvanzados() {
         throw reporteError;
       }
       
-      console.log('📊 Datos de reporte recibidos:', data);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📊 Datos de reporte recibidos:', data);
+      }
       setEstadisticas(data);
       
     } catch (err) {
@@ -175,7 +175,7 @@ export function ReportesAvanzados() {
                 <DollarSign className="w-5 h-5 text-green-600" />
                 <h4 className="font-semibold">Ventas Totales</h4>
               </div>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="value-number text-green-600">
                 {formatearMonto(estadisticas.totalVentas)}
               </p>
               <p className="text-sm text-gray-500">
@@ -188,7 +188,7 @@ export function ReportesAvanzados() {
                 <TrendingUp className="w-5 h-5 text-blue-600" />
                 <h4 className="font-semibold">Promedio por Venta</h4>
               </div>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="value-number text-blue-600">
                 {estadisticas.totalTransacciones > 0 
                   ? formatearMonto(Math.round(estadisticas.totalVentas / estadisticas.totalTransacciones))
                   : formatearMonto(0)
@@ -202,7 +202,7 @@ export function ReportesAvanzados() {
                 <Clock className="w-5 h-5 text-purple-600" />
                 <h4 className="font-semibold">Hora Pico</h4>
               </div>
-              <p className="text-2xl font-bold text-purple-600">
+              <p className="value-number text-purple-600">
                 {Object.entries(estadisticas.ventasPorHora || {})
                   .sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'N/A'}
                 {Object.keys(estadisticas.ventasPorHora || {}).length > 0 ? ':00' : ''}

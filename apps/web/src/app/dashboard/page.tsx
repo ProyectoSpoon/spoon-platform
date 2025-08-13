@@ -67,18 +67,18 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+          <h1 className="heading-page mb-4">
             ¡Bienvenido a SPOON! 🍽️
           </h1>
           
-          <p className="text-lg text-gray-700 mb-6">
+          <p className="subtitle mb-6">
             Tu plataforma para gestionar tu restaurante y conectar con más comensales
           </p>
           
           <div className="bg-white/60 rounded-lg p-4 inline-block">
             {mounted ? (
               <>
-                <div className="text-2xl font-bold text-orange-600 mb-1">
+                <div className="value-number text-orange-600 mb-1">
                   {formatTime(currentTime)}
                 </div>
                 <div className="text-sm text-gray-600 capitalize">
@@ -87,7 +87,7 @@ export default function DashboardPage() {
               </>
             ) : (
               <>
-                <div className="text-2xl font-bold text-orange-600 mb-1">
+                <div className="value-number text-orange-600 mb-1">
                   --:--:--
                 </div>
                 <div className="text-sm text-gray-600">
@@ -165,7 +165,7 @@ export default function DashboardPage() {
 
       {/* Estado actual */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Estado Actual</h2>
+  <h2 className="heading-section mb-4">Estado Actual</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -202,7 +202,7 @@ export default function DashboardPage() {
 
       {/* Información de SPOON */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Acerca de SPOON</h2>
+  <h2 className="heading-section mb-4">Acerca de SPOON</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>

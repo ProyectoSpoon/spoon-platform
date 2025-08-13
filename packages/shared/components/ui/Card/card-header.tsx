@@ -13,7 +13,7 @@ export function CardHeader({
 }: CardHeaderProps) {
   return (
     <div
-      className={cn("flex flex-col space-y-1.5 p-6 pb-3", className)}
+      className={cn("flex flex-col space-y-2 p-4 pb-2", className)}
       {...props}
     >
       {children}

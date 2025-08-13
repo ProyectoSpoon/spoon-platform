@@ -2,6 +2,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { ClipboardList, MapPin, CalendarDays, Image as LucideImage } from 'lucide-react';
+import { Grid } from '@spoon/shared/components/ui/Grid';
 import { useRouter } from 'next/navigation';
 import { getUserProfile, getUserRestaurant } from '@spoon/shared';
 import { 
@@ -31,7 +33,7 @@ const configSteps = [
     id: 'informacionGeneral',
     title: 'Información General',
     description: 'Datos básicos del restaurante: nombre, contacto y tipo de cocina',
-    icon: '📋',
+    icon: <ClipboardList className="w-6 h-6" />, // minimalista
     color: 'purple',
     route: '/config-restaurante/informacion-general',
     requiredFields: 4
@@ -40,7 +42,7 @@ const configSteps = [
     id: 'ubicacion',
     title: 'Ubicación',
     description: 'Dirección y ubicación geográfica del restaurante',
-    icon: '📍',
+    icon: <MapPin className="w-6 h-6" />, // minimalista
     color: 'blue',
     route: '/config-restaurante/ubicacion',
     requiredFields: 3
@@ -49,7 +51,7 @@ const configSteps = [
     id: 'horarios',
     title: 'Horarios',
     description: 'Horarios de atención y días de operación',
-    icon: '⏰',
+    icon: <CalendarDays className="w-6 h-6" />, // minimalista
     color: 'green',
     route: '/config-restaurante/horario-comercial',
     requiredFields: 2
@@ -58,7 +60,7 @@ const configSteps = [
     id: 'logoPortada',
     title: 'Logo y Portada',
     description: 'Imágenes representativas del restaurante',
-    icon: '🖼️',
+    icon: <LucideImage className="w-6 h-6" />, // minimalista
     color: 'orange',
     route: '/config-restaurante/logo-portada',
     requiredFields: 2
@@ -96,8 +98,10 @@ export default function ConfigRestaurantePage() {
       try {
         setCargando(true);
         
-        const profile = await getUserProfile();
-        const restaurant = await getUserRestaurant();
+        const [profile, restaurant] = await Promise.all([
+          getUserProfile(),
+          getUserRestaurant()
+        ]);
         
         if (profile) {
           setUserInfo(profile);
@@ -203,9 +207,7 @@ export default function ConfigRestaurantePage() {
           <p className="text-xl text-gray-600 mb-6">
             Tu socio tecnológico para hacer crecer tu restaurante
           </p>
-          <p className="text-gray-500 mb-8">
-            Estamos aquí para ayudarte a vender más con nuestro menú digital gratuito. Solo necesitamos configurar algunos detalles básicos para comenzar.
-          </p>
+          
           
           {/* Info del usuario */}
           {userInfo && (
@@ -227,65 +229,73 @@ export default function ConfigRestaurantePage() {
           </p>
         </div>
 
-        {/* Tarjetas de configuración */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+  {/* Tarjetas de configuración */}
+  <Grid className="mb-12 items-stretch">
           {configSteps.map((step) => {
             const isCompleted = progreso[step.id as keyof ConfigProgress] as boolean;
             const progressValue = isCompleted ? 100 : 0;
             const completedCount = isCompleted ? step.requiredFields : 0;
-            const colors = colorClasses[step.color as keyof typeof colorClasses];
-            
+            // Paleta y clases centralizadas
+            const iconBg = {
+              purple: 'bg-[#ede9fe]',
+              blue: 'bg-[#e0f2fe]',
+              green: 'bg-[#dcfce7]',
+              orange: 'bg-[#fff7ed]'
+            }[step.color];
+            const iconColor = {
+              purple: 'bg-[#a78bfa]',
+              blue: 'bg-[#3B82F6]',
+              green: 'bg-[#22C55E]',
+              orange: 'bg-[#FF6B00]'
+            }[step.color];
             return (
-              <Card key={step.id} variant="hover" className="relative">
-                {/* Icono de triángulo decorativo */}
+      <Card key={step.id} variant="hover" className="relative flex flex-col justify-between h-full">
+                {/* Icono decorativo */}
                 <div className="absolute top-4 right-4">
-                  <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 0L20 20H0L10 0z"/>
                   </svg>
                 </div>
-                
-                <CardHeader className="text-center">
-                  {/* Icono principal */}
-                  <div className={`w-16 h-16 ${colors.bg} rounded-full flex items-center justify-center mb-4 mx-auto`}>
-                    <div className={`w-8 h-8 ${colors.icon} rounded-full flex items-center justify-center text-white text-lg`}>
+                <CardHeader className="text-center flex flex-col items-center justify-center">
+                  <div className={`w-14 h-14 ${iconBg} rounded-full flex items-center justify-center mb-4 mx-auto`}>
+                    <div className={`w-8 h-8 ${iconColor} rounded-full flex items-center justify-center text-white text-xl`}>
                       {step.icon}
                     </div>
                   </div>
-                  
-                  <CardTitle className="mb-2">{step.title}</CardTitle>
-                  <CardDescription className="mb-6">
+                  <CardTitle className="mb-2 text-lg font-semibold">{step.title}</CardTitle>
+                  <CardDescription className="mb-6 text-sm text-gray-500">
                     {step.description}
                   </CardDescription>
                 </CardHeader>
-                
-                <CardContent className="text-center">
-                  {/* Progreso */}
+                <CardContent className="text-center flex flex-col flex-1 justify-end">
                   <div className="mb-4">
-                    <div className={`text-2xl font-bold mb-2 ${isCompleted ? 'text-green-600' : 'text-gray-500'}`}>
-                      {progressValue}%
-                    </div>
-                    <div className="text-xs text-gray-500 mb-3">
-                      {completedCount}/{step.requiredFields}
-                    </div>
+                    <div className={`text-2xl font-bold mb-2 transition-all duration-500 ${isCompleted ? 'text-[#22C55E] scale-110' : 'text-gray-400 scale-100'}`}>{progressValue}%</div>
+                    <div className="text-xs text-gray-500 mb-3">{completedCount}/{step.requiredFields}</div>
                     <div className="flex items-center justify-center">
-                      <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
-                        📋 {isCompleted ? 'Completado' : 'Pendiente'}
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 transition-all duration-500 ${isCompleted ? 'bg-[#dcfce7] text-[#22C55E] scale-105' : 'bg-[#e0f2fe] text-[#3B82F6] scale-100'}`}
+                        >
+                        {isCompleted ? (
+                          <svg className="w-4 h-4 text-[#22C55E] transition-all duration-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : null}
+                        {isCompleted ? 'Completado' : 'Pendiente'}
                       </span>
                     </div>
                   </div>
-                  
                   <Button 
-                    variant={step.color as any}
+                    variant={step.id === 'logoPortada' ? 'orange' : (step.color as any)}
                     size="full"
                     onClick={() => router.push(step.route)}
+                    className={step.id === 'logoPortada' ? 'bg-[#FF6B00] text-white hover:bg-orange-600' : ''}
                   >
-                    Configurar →
+                    {isCompleted ? 'Editar →' : 'Configurar →'}
                   </Button>
                 </CardContent>
               </Card>
             );
           })}
-        </div>
+    </Grid>
 
         {/* Estado general */}
         {!configuracionCompleta ? (
@@ -326,7 +336,7 @@ export default function ConfigRestaurantePage() {
               </p>
               <Button 
                 variant="green"
-                size="lg"
+                size="sm"
                 onClick={() => router.push('/dashboard')}
               >
                 ⏱️ Ir al Dashboard
@@ -335,26 +345,7 @@ export default function ConfigRestaurantePage() {
           </Card>
         )}
 
-        {/* Debug Info (solo en desarrollo) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-8 bg-gray-100 rounded-lg p-4 text-sm">
-            <h4 className="font-bold mb-2">Debug - Progreso Real:</h4>
-            <div className="grid grid-cols-4 gap-4 text-xs">
-              {configSteps.map((step) => {
-                const isCompleted = progreso[step.id as keyof ConfigProgress] as boolean;
-                return (
-                  <div key={step.id}>
-                    <strong>{step.title}:</strong> {isCompleted ? '✅ Completado' : '❌ Pendiente'}
-                  </div>
-                );
-              })}
-            </div>
-            <p className="mt-2">
-              <strong>Total:</strong> {progreso.totalCompleto}/{progreso.totalPasos} ({progreso.porcentaje}%)
-            </p>
-            <p><strong>Restaurant ID:</strong> {restaurantId}</p>
-          </div>
-        )}
+ 
 
       </div>
     </div>

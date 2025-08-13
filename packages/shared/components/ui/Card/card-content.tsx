@@ -13,7 +13,7 @@ export function CardContent({
 }: CardContentProps) {
   return (
     <div 
-      className={cn("p-6 pt-0", className)} 
+      className={cn("p-4", className)} 
       {...props}
     >
       {children}

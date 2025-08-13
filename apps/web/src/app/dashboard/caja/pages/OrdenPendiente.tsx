@@ -55,7 +55,7 @@ export const OrdenPendiente: React.FC<OrdenPendienteProps> = ({
           {/* Información de la orden */}
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-1">
-              <span className="text-lg">{getIconoTipo(orden.tipo)}</span>
+              <span>{getIconoTipo(orden.tipo)}</span>
               <h3 className="font-semibold text-gray-900">
                 {orden.identificador}
               </h3>
@@ -81,7 +81,7 @@ export const OrdenPendiente: React.FC<OrdenPendienteProps> = ({
           {/* Monto y botón */}
           <div className="flex flex-col items-end space-y-2">
             <div className="text-right">
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="value-number text-gray-900">
                 {formatCurrency(orden.monto_total)}
               </div>
             </div>
@@ -145,7 +145,7 @@ export const OrdenesVacias: React.FC<{
       <div className="text-6xl mb-4 opacity-50">
         {icono}
       </div>
-      <h3 className="text-lg font-medium text-gray-900 mb-2">
+  <h3 className="heading-section text-gray-900 mb-2">
         {titulo}
       </h3>
       <p className="text-sm text-gray-500 max-w-sm">
@@ -173,7 +173,7 @@ export const EstadisticasOrdenes: React.FC<{
             {totalOrdenes} {label} pendientes
           </span>
         </div>
-        <div className="font-semibold text-gray-900">
+  <div className="value-number text-gray-900">
           {formatCurrency(montoTotal)}
         </div>
       </div>

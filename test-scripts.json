@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "test:mesas": "jest --config jest.config.mesas.js",
+    "test:mesas:watch": "jest --config jest.config.mesas.js --watch",
+    "test:mesas:coverage": "jest --config jest.config.mesas.js --coverage",
+    "test:mesas:ci": "jest --config jest.config.mesas.js --coverage --watchAll=false --passWithNoTests"
+  }
+}

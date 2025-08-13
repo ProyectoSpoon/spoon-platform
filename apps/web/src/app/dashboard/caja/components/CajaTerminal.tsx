@@ -7,7 +7,7 @@ import { Input } from '@spoon/shared/components/ui/Input';
 import { ControlesCaja } from './ControlesCaja';
 import { OrdenPendiente, EstadisticasOrdenes, OrdenesVacias } from '../pages/OrdenPendiente';
 import { ModalProcesarPago } from '../pages/modals/ModalProcesarPago';
-import { ModalNuevoGasto } from '../pages/modals/ModalNuevoGasto';
+import GastoWizardSlideOver from '../pages/modals/GastoWizardSlideOver';
 import { useCaja } from '../../caja/hooks/useCaja';
 import { useCajaSesion } from '../../caja/hooks/useCajaSesion';
 import { useGastos } from '../../caja/hooks/useGastos';
@@ -16,6 +16,7 @@ import { SecurityAlert } from '../../caja/components/SecurityAlert';
 import { OrdenPendiente as OrdenPendienteType } from '../../caja/types/cajaTypes';
 import { formatCurrency, getIconoCategoria, getColorCategoria } from '../../caja/constants/cajaConstants';
 import { AlertTriangle, Shield, DollarSign } from 'lucide-react';
+import ActionBar from '@spoon/shared/components/ui/ActionBar';
 
 type TabActiva = 'movimientos' | 'arqueo' | 'reportes';
 type SubTabMovimientos = 'por_cobrar' | 'ingresos' | 'egresos';
@@ -203,6 +204,22 @@ const handleConfirmarPago = async (
             <div>
               <h3 className="font-medium text-gray-900">Límites de Seguridad</h3>
               <p className="text-xs text-gray-500">Controles automáticos</p>
+
+          {/* Barra de acciones fija para acciones frecuentes */}
+          <ActionBar
+            primary={{
+              label: 'Nuevo gasto',
+              onClick: handleNuevoGasto,
+              color: 'red',
+              disabled: estadoCaja !== 'abierta',
+            }}
+            secondary={{
+              label: loading ? 'Actualizando…' : 'Actualizar',
+              onClick: refrescar,
+              variant: 'outline',
+              disabled: loading,
+            }}
+          />
             </div>
           </div>
           
@@ -401,7 +418,7 @@ const handleConfirmarPago = async (
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Balance</p>
-                    <p className="text-xl font-bold text-gray-900">
+                    <p className="value-number text-gray-900">
                       {formatCurrency(metricas.balance)}
                     </p>
                   </div>
@@ -417,7 +434,7 @@ const handleConfirmarPago = async (
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Ventas del día</p>
-                    <p className="text-xl font-bold text-green-600">
+                    <p className="value-number text-green-600">
                       {formatCurrency(metricas.ventasTotales)}
                     </p>
                     {metricas.transaccionesDelDia.length > 0 && (
@@ -448,7 +465,7 @@ const handleConfirmarPago = async (
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Por cobrar</p>
-                    <p className="text-xl font-bold text-orange-600">
+                    <p className="value-number text-orange-600">
                       {formatCurrency(metricas.porCobrar)}
                     </p>
                     {totalOrdenesPendientes > 0 && (
@@ -469,7 +486,7 @@ const handleConfirmarPago = async (
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Gastos del día</p>
-                    <p className="text-xl font-bold text-red-600">
+                    <p className="value-number text-red-600">
                       {formatCurrency(metricas.gastosTotales)}
                     </p>
                     {gastos.length > 0 && (
@@ -580,7 +597,7 @@ const handleConfirmarPago = async (
                                       )}
                                     </div>
                                     
-                                    <div className="text-xl font-bold text-gray-900 mb-1">
+                                    <div className="value-number text-gray-900 mb-1">
                                       {formatCurrency(orden.monto_total)}
                                     </div>
                                     
@@ -673,7 +690,7 @@ const handleConfirmarPago = async (
                                   </div>
 
                                   <div className="text-right">
-                                    <div className="text-xl font-bold text-green-600">
+                                    <div className="value-number text-green-600">
                                       +{formatCurrency(transaccion.monto_total)}
                                     </div>
                                   </div>
@@ -798,7 +815,7 @@ const handleConfirmarPago = async (
                                   </div>
 
                                   <div className="text-right">
-                                    <div className="text-xl font-bold text-red-600">
+                                    <div className="value-number text-red-600">
                                       -{formatCurrency(gasto.monto)}
                                     </div>
                                   </div>
@@ -816,7 +833,7 @@ const handleConfirmarPago = async (
               {tabActiva === 'arqueo' && (
                 <div className="text-center py-12 text-gray-500">
                   <span className="text-6xl mb-4 block">🧮</span>
-                  <h3 className="text-lg font-medium mb-2">Arqueo de Caja</h3>
+                  <h3 className="heading-section mb-2">Arqueo de Caja</h3>
                   <p>Resumen y cierre del día</p>
                   <p className="text-sm">Próximamente disponible</p>
                 </div>
@@ -825,7 +842,7 @@ const handleConfirmarPago = async (
               {tabActiva === 'reportes' && (
                 <div className="text-center py-12 text-gray-500">
                   <span className="text-6xl mb-4 block">📊</span>
-                  <h3 className="text-lg font-medium mb-2">Reportes y Estadísticas</h3>
+                  <h3 className="heading-section mb-2">Reportes y Estadísticas</h3>
                   <p>Análisis de ventas y rendimiento</p>
                   <p className="text-sm">Próximamente disponible</p>
                 </div>
@@ -854,8 +871,8 @@ const handleConfirmarPago = async (
         loading={procesandoPago}
       />
 
-      {/* Modal de nuevo gasto */}
-      <ModalNuevoGasto
+      {/* Slide-over de nuevo gasto */}
+      <GastoWizardSlideOver
         isOpen={modalGastoAbierto}
         onClose={handleCerrarModalGasto}
         onConfirmar={handleConfirmarGasto}

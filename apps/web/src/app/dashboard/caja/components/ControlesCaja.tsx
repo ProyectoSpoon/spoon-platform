@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { Button } from '@spoon/shared/components/ui/Button';
-import { Input } from '@spoon/shared/components/ui//Input';
-import { Card, CardContent, CardHeader, CardTitle } from '@spoon/shared/components/ui//Card';
-import { useCajaSesion } from '@spoon/shared/caja/hooks/useCajaSesion';
+import { Input } from '@spoon/shared/components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '@spoon/shared/components/ui/Card';
+// Usar el hook real de la app (no el mock compartido)
+import { useCajaSesion } from '../hooks/useCajaSesion';
 import { formatCurrency, CAJA_CONFIG, CAJA_MESSAGES } from '@spoon/shared/caja/constants/cajaConstants';
 
 interface ControlesCajaProps {
@@ -40,6 +41,9 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
   };
 
   if (estadoCaja === 'abierta' && sesionActual) {
+    // Compatibilidad de campos entre hook real (DB) y posibles tipos antiguos del mock
+    const montoInicialCents = (sesionActual as any).montoInicial ?? (sesionActual as any).monto_inicial ?? 0;
+    const fechaAperturaIso = (sesionActual as any).fechaApertura ?? (sesionActual as any).abierta_at;
     return (
       <div className={`flex items-center justify-between ${className || ''}`}>
         <div className="flex items-center space-x-4">
@@ -48,13 +52,13 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
             <span className="text-sm font-medium text-green-700">Caja Abierta</span>
           </div>
           <div className="text-sm text-gray-600">
-            Monto inicial: <span className="font-semibold">{formatearMonto(sesionActual.monto_inicial)}</span>
+            Monto inicial: <span className="font-semibold">{formatearMonto(montoInicialCents)}</span>
           </div>
           <div className="text-sm text-gray-600">
-            Desde: {new Date(sesionActual.abierta_at).toLocaleTimeString('es-CO', { 
+            Desde: {fechaAperturaIso ? new Date(fechaAperturaIso).toLocaleTimeString('es-CO', { 
               hour: '2-digit', 
               minute: '2-digit' 
-            })}
+            }) : '—'}
           </div>
         </div>
 
@@ -166,7 +170,7 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
                       onClick={() => setMontoInicial(monto * 100)}
                       className="text-xs"
                     >
-                      ${monto.toLocaleString()}
+                      {new Intl.NumberFormat('es-CO').format(monto)}
                     </Button>
                   ))}
                 </div>

@@ -225,7 +225,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
             <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Plus className="w-12 h-12 text-orange-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+            <h3 className="heading-section text-gray-900 mb-4">
               No hay productos seleccionados
             </h3>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
@@ -247,7 +247,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
         <div className="fixed inset-0 z-40 bg-white/80 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white rounded-xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="heading-section text-gray-900 mb-2">
               Guardando menú...
             </h3>
             <p className="text-gray-600 text-sm">

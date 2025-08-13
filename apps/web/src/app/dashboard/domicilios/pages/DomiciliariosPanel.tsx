@@ -47,7 +47,7 @@ export default function DomiciliariosPanel({
     <div className="bg-white rounded-lg shadow-sm h-fit">
       <div className="px-4 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="heading-section text-gray-900">
             Domiciliarios ({domiciliarios.length})
           </h3>
           
@@ -59,7 +59,7 @@ export default function DomiciliariosPanel({
           </button>
         </div>
 
-        <div className="mt-3 flex space-x-4 text-sm">
+  <div className="mt-3 flex space-x-4 text-sm">
           <div className="flex items-center">
             <Circle className="w-3 h-3 text-green-500 mr-1" />
             <span className="text-gray-600">{disponibles} disponibles</span>

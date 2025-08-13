@@ -8,14 +8,12 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={cn(
-        "rounded-xl bg-white text-gray-950",
-        {
-          'border border-gray-100': bordered,
-          'shadow-sm': variant === 'default',
-          'shadow-sm hover:shadow-lg transition-shadow duration-200': withHover || variant === 'hover',
-          'shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden': variant === 'menu',
-          'border-l-4 border-l-orange-500': variant === 'accent',
-        },
+        // Base card per design system
+        "rounded-lg bg-white text-[#1e293b] border border-[#e2e8f0] shadow-[0_1px_3px_rgba(0,0,0,0.1)]",
+        // Optional subtle hover only when requested
+        withHover && "transition-colors duration-200 hover:shadow-md",
+        // Metric variants with left accent
+        variant === 'accent' && 'border-l-4 border-l-[#3b82f6]',
         className
       )}
       {...props}

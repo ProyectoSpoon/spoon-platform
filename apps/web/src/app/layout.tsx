@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { PageTitleProvider } from '@spoon/shared/Context/page-title-context'
+import { UserProvider } from '@spoon/shared/Context/user-context'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,9 +19,11 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <PageTitleProvider>
-          {children}
-        </PageTitleProvider>
+        <UserProvider>
+          <PageTitleProvider>
+            {children}
+          </PageTitleProvider>
+        </UserProvider>
       </body>
     </html>
   )

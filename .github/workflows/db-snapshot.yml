@@ -1,0 +1,39 @@
+name: DB Snapshot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *' # daily at 06:00 UTC
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: npm ci
+      - name: Run snapshot
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PGHOST: ${{ secrets.PGHOST }}
+          PGPORT: ${{ secrets.PGPORT }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+          PGSCHEMA: ${{ vars.PGSCHEMA || 'public' }}
+          PGSSLMODE: require
+        run: |
+          npm run db:snapshot:generate
+          npm run db:snapshot:compare || true
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-snapshots
+          path: |
+            docs/db/snapshots/*.md
+            docs/db/snapshots/*.txt

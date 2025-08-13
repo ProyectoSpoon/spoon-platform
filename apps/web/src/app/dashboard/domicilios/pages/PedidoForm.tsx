@@ -128,7 +128,7 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between p-6 border-b border-gray-200">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Nuevo Pedido</h2>
+          <h2 className="heading-section text-gray-900">Nuevo Pedido</h2>
           <p className="text-sm text-gray-600 mt-1">
             Tiempo estimado: {DEFAULT_ESTIMATED_TIME} minutos
           </p>
@@ -145,7 +145,7 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
         <div className="space-y-6">
           
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900 flex items-center">
+            <h3 className="heading-section flex items-center">
               <User className="w-5 h-5 mr-2" />
               Datos del Cliente
             </h3>
@@ -200,7 +200,7 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900 flex items-center">
+            <h3 className="heading-section flex items-center">
               <ShoppingCart className="w-5 h-5 mr-2" />
               Menu del Dia
             </h3>
@@ -218,7 +218,7 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
                       <h4 className="font-medium text-gray-900">
                         {combinacion.combination_name}
                       </h4>
-                      <p className="text-lg font-semibold text-gray-900 mt-1">
+                      <p className="value-number text-gray-900 mt-1">
                         ${combinacion.combination_price.toLocaleString()}
                       </p>
                     </div>
@@ -241,7 +241,7 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
 
           {items.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="heading-section">
                 Resumen del Pedido
               </h3>
 
@@ -317,7 +317,7 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
               <span>Domicilio:</span>
               <span>${Math.round(DEFAULT_DELIVERY_FEE / 100).toLocaleString()}</span>
             </div>
-            <div className="flex justify-between font-semibold text-lg border-t pt-2">
+            <div className="flex justify-between font-semibold value-number border-t pt-2">
               <span>Total:</span>
               <span>${Math.round(calcularTotal() / 100).toLocaleString()}</span>
             </div>

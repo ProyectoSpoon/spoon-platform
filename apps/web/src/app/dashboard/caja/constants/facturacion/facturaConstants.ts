@@ -417,13 +417,8 @@ export const SHORTCUTS = {
 // UTILIDADES DE FORMATO
 // =====================================
 
-export const formatearMonto = (centavos: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0
-  }).format(centavos / 100);
-};
+import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
+export const formatearMonto = (centavos: number): string => formatCurrencyCOP(centavos);
 
 export const formatearFecha = (fecha: string): string => {
   return new Date(fecha).toLocaleDateString('es-CO', {

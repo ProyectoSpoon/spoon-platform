@@ -127,7 +127,7 @@ export const useSpecialData = () => {
   // ✅ FUNCIÓN PARA NOTIFICACIONES
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     if (type === 'success') {
-      console.log('✅ SUCCESS:', message);
+      
       alert('✅ ' + message);
     } else {
       console.error('❌ ERROR:', message);
@@ -166,10 +166,10 @@ export const useSpecialData = () => {
 
   // ✅ FUNCIÓN PARA CARGAR PRODUCTOS POR CATEGORÍA (reutilizar lógica del menú del día)
   const loadProductsForCategory = useCallback(async (categoryId: string) => {
-    console.log(`📦 Cargando productos para especial: ${categoryId}`);
+    
     
     if (availableProducts[categoryId] || categoryId === 'configuracion-final') {
-      console.log(`⏭️ Saltando carga para ${categoryId} - ya existe`);
+      
       return;
     }
     
@@ -225,7 +225,7 @@ export const useSpecialData = () => {
         const dishes = await getRestaurantSpecialDishes(restaurant.id);
         setSpecialDishes(dishes);
         
-        console.log(`📋 ${dishes.length} platos especiales encontrados`);
+        
         
         // Si hay platos especiales, mostrar la lista
         if (dishes.length > 0) {
@@ -265,15 +265,15 @@ export const useSpecialData = () => {
         dish_price: dishPrice
       });
 
-      console.log('🎯 Plato especial creado:', newDish);
+      
 
       // 2. Agregar productos seleccionados
       await insertSpecialDishSelections(newDish.id, selectedProducts);
-      console.log('📦 Productos agregados al especial');
+      
 
       // 3. Generar combinaciones automáticas
       await generateSpecialCombinations(newDish.id, dishName, dishPrice);
-      console.log('🔄 Combinaciones generadas');
+      
 
       // 4. Recargar datos
       const updatedDishes = await getRestaurantSpecialDishes(restaurantId);
@@ -324,7 +324,7 @@ export const useSpecialData = () => {
       }));
       
       setSpecialCombinations(transformedCombinations);
-      console.log(`✅ ${combinations.length} combinaciones especiales cargadas`);
+      
       
     } catch (error) {
       console.error('Error cargando combinaciones:', error);

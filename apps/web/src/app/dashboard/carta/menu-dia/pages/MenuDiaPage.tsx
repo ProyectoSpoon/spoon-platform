@@ -137,7 +137,7 @@ export default function MenuDiaPage() {
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Menú del Día</h1>
+              <h1 className="heading-page">Menú del Día</h1>
               <p className="text-gray-600 mt-1">
                 Configura y gestiona el menú diario de tu restaurante
               </p>

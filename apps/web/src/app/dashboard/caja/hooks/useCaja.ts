@@ -9,7 +9,6 @@ import {
 import { CAJA_CONFIG, CAJA_MESSAGES } from '../../caja/constants/cajaConstants';
 import { useCajaSesion } from './useCajaSesion';
 import { 
-  executeSupabaseOperation, 
   executeWithRetry, 
   ERROR_CONFIGS,
   getCircuitBreakerStatus 
@@ -109,11 +108,12 @@ export const useCaja = () => {
 
       // WEBSOCKET 3: Escuchar cambios en órdenes (cuando se pagan)
       const subscriptionOrdenes = supabase
-        .channel(`ordenes-caja`)
+        .channel(`ordenes-caja-${sesionActual.restaurant_id || 'global'}`)
         .on('postgres_changes', {
           event: 'UPDATE',
           schema: 'public',
-          table: 'ordenes_mesa'
+          table: 'ordenes_mesa',
+          filter: sesionActual.restaurant_id ? `restaurant_id=eq.${sesionActual.restaurant_id}` : undefined
         }, (payload) => {
           if (payload.new.estado === 'pagada' && payload.old.estado === 'activa') {
             console.log('🍽️ Orden de mesa pagada:', payload.new);
@@ -127,7 +127,7 @@ export const useCaja = () => {
               porCobrar: prev.porCobrar - payload.new.monto_total
             }));
           }
-        })
+  })
         .subscribe();
 
       // Cleanup function
@@ -155,8 +155,7 @@ export const useCaja = () => {
           }
           return profile;
         },
-        ERROR_CONFIGS.DATA_FETCH,
-        'OBTENER_PERFIL_USUARIO'
+        ERROR_CONFIGS.DATABASE
       );
 
       console.log('📊 Obteniendo datos de caja con retry automático...');
@@ -184,8 +183,7 @@ export const useCaja = () => {
             if (error) throw error;
             return data || [];
           },
-          ERROR_CONFIGS.DATA_FETCH,
-          'OBTENER_ORDENES_MESA'
+          ERROR_CONFIGS.DATABASE
         ),
 
         // 2. Órdenes delivery pendientes
@@ -209,27 +207,24 @@ export const useCaja = () => {
             if (error) throw error;
             return data || [];
           },
-          ERROR_CONFIGS.DATA_FETCH,
-          'OBTENER_ORDENES_DELIVERY'
+          ERROR_CONFIGS.DATABASE
         ),
 
         // 3. Transacciones del día
         executeWithRetry(
           () => getTransaccionesDelDia(profile.restaurant_id!),
-          ERROR_CONFIGS.DATA_FETCH,
-          'OBTENER_TRANSACCIONES_DIA'
+          ERROR_CONFIGS.DATABASE
         ),
 
         // 4. Gastos del día
         executeWithRetry(
           () => getGastosDelDia(profile.restaurant_id!),
-          ERROR_CONFIGS.DATA_FETCH,
-          'OBTENER_GASTOS_DIA'
+          ERROR_CONFIGS.DATABASE
         )
       ]);
 
       // TRANSFORMAR Y COMBINAR DATOS
-      const mesasTransformadas: OrdenPendiente[] = mesasData.map(mesa => ({
+  const mesasTransformadas: OrdenPendiente[] = mesasData.map((mesa: any) => ({
         id: mesa.id,
         tipo: 'mesa',
         identificador: `Mesa ${mesa.numero_mesa}`,
@@ -238,7 +233,7 @@ export const useCaja = () => {
         detalles: mesa.nombre_mesero ? `Mesero: ${mesa.nombre_mesero}` : undefined
       }));
 
-      const deliveryTransformadas: OrdenPendiente[] = deliveryData.map(orden => ({
+  const deliveryTransformadas: OrdenPendiente[] = deliveryData.map((orden: any) => ({
         id: orden.id,
         tipo: 'delivery',
         identificador: orden.customer_name,
@@ -326,8 +321,7 @@ const procesarPago = async (
 
         return data;
       },
-      ERROR_CONFIGS.CRITICAL_PAYMENT,
-      `PROCESAR_PAGO_${orden.identificador}`
+      ERROR_CONFIGS.NETWORK
     );
 
     // Validar respuesta

@@ -51,6 +51,51 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // ========================================
+// UTILIDAD: CACHÉ EN MEMORIA + DEDUP DE PROMESAS
+// ========================================
+type CacheEntry<T> = { value: T; ts: number };
+const __ttlCache = new Map<string, CacheEntry<any>>();
+const __inFlight = new Map<string, Promise<any>>();
+
+function __cacheKey(name: string, key: string) {
+  return `${name}::${key}`;
+}
+
+export function invalidateCache(name: string, key?: string) {
+  if (key) {
+    __ttlCache.delete(__cacheKey(name, key));
+    return;
+  }
+  // Invalidar todas las entradas de un nombre
+  for (const k of Array.from(__ttlCache.keys())) {
+    if (k.startsWith(`${name}::`)) __ttlCache.delete(k);
+  }
+}
+
+async function withCache<T>(
+  name: string,
+  key: string,
+  ttlMs: number,
+  factory: () => Promise<T>
+): Promise<T> {
+  const k = __cacheKey(name, key);
+  const hit = __ttlCache.get(k);
+  if (hit && Date.now() - hit.ts < ttlMs) return hit.value as T;
+  if (__inFlight.has(k)) return __inFlight.get(k) as Promise<T>;
+  const p = (async () => {
+    try {
+      const val = await factory();
+      __ttlCache.set(k, { value: val, ts: Date.now() });
+      return val;
+    } finally {
+      __inFlight.delete(k);
+    }
+  })();
+  __inFlight.set(k, p);
+  return p;
+}
+
+// ========================================
 // TIPOS TYPESCRIPT PARA LAS TABLAS
 // ========================================
 
@@ -180,39 +225,94 @@ export const getCurrentUser = async () => {
 /**
  * Obtener el perfil completo del usuario desde la tabla users
  */
+// Pequeño caché en memoria para perfil de usuario (TTL 30s)
+let __profileCache: { value: User | null; ts: number } | null = null;
+let __profileInFlight: Promise<User | null> | null = null;
+
 export const getUserProfile = async (): Promise<User | null> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  // 1) Cache hit (30s)
+  if (__profileCache && Date.now() - __profileCache.ts < 30_000) {
+    return __profileCache.value;
+  }
 
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  // Evitar llamadas paralelas duplicadas
+  if (__profileInFlight) {
+    return __profileInFlight;
+  }
 
-  if (error) throw error;
-  return data;
+  __profileInFlight = (async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        __profileCache = { value: null, ts: Date.now() };
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      __profileCache = { value: data, ts: Date.now() };
+      return data;
+    } finally {
+      __profileInFlight = null;
+    }
+  })();
+
+  return __profileInFlight;
 };
 
 /**
  * Obtener el restaurante del usuario actual
  */
+// Pequeño caché en memoria para evitar llamadas repetidas en ventanas cortas
+let __restaurantCache: { value: Restaurant | null; ts: number } | null = null;
+let __restaurantInFlight: Promise<Restaurant | null> | null = null;
+
 export const getUserRestaurant = async (): Promise<Restaurant | null> => {
-  const profile = await getUserProfile();
-  if (!profile?.restaurant_id) return null;
-
-  const { data, error } = await supabase
-    .from('restaurants')
-    .select('*')
-    .eq('id', profile.restaurant_id)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') return null; // No encontrado
-    throw error;
+  // 1) Cache hit (30s)
+  if (__restaurantCache && Date.now() - __restaurantCache.ts < 30_000) {
+    return __restaurantCache.value;
   }
 
-  return data;
+  // 2) Obtener usuario autenticado y consultar restaurante por owner_id
+  if (__restaurantInFlight) {
+    return __restaurantInFlight;
+  }
+
+  __restaurantInFlight = (async () => {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        __restaurantCache = { value: null, ts: Date.now() };
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (error) {
+        if ((error as any).code === 'PGRST116') {
+          __restaurantCache = { value: null, ts: Date.now() };
+          return null; // No encontrado
+        }
+        throw error;
+      }
+
+      __restaurantCache = { value: data, ts: Date.now() };
+      return data;
+    } finally {
+      __restaurantInFlight = null;
+    }
+  })();
+
+  return __restaurantInFlight;
 };
 
 /**
@@ -386,6 +486,25 @@ export const subscribeToRestaurantUpdates = (
 };
 
 // ========================================
+// PRELOAD: CALENTAR CACHÉS EN CLIENTE
+// ========================================
+
+/**
+ * Precarga en paralelo el perfil de usuario y el restaurante (calienta cachés de 30s)
+ * Útil para layouts/páginas raíz para evitar múltiples llamadas repetidas en navegación.
+ */
+export const preloadUserAndRestaurant = async () => {
+  try {
+    await Promise.all([
+      getUserProfile().catch(() => null),
+      getUserRestaurant().catch(() => null),
+    ]);
+  } catch {
+    // no-op: preloading es best-effort
+  }
+};
+
+// ========================================
 // UTILIDADES PARA DEBUGGING
 // ========================================
 
@@ -499,27 +618,39 @@ export interface RestaurantMesa {
 }
 
 export const getRestaurantSpecialDishes = async (restaurantId: string): Promise<SpecialDish[]> => {
-  const { data, error } = await supabase
-    .from('special_dishes')
-    .select('*')
-    .eq('restaurant_id', restaurantId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
+  return withCache(
+    'getRestaurantSpecialDishes',
+    restaurantId,
+    30_000,
+    async () => {
+      const { data, error } = await supabase
+        .from('special_dishes')
+        .select('*')
+        .eq('restaurant_id', restaurantId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+  );
 };
 
 /**
  * Obtener especiales disponibles hoy para un restaurante
  */
 export const getAvailableSpecialsToday = async (restaurantId: string) => {
-  const { data, error } = await supabase
-    .rpc('get_available_specials_today', {
-      p_restaurant_id: restaurantId
-    });
-
-  if (error) throw error;
-  return data || [];
+  return withCache(
+    'getAvailableSpecialsToday',
+    restaurantId,
+    15_000,
+    async () => {
+      const { data, error } = await supabase
+        .rpc('get_available_specials_today', {
+          p_restaurant_id: restaurantId
+        });
+      if (error) throw error;
+      return data || [];
+    }
+  );
 };
 
 /**
@@ -547,6 +678,10 @@ export const createSpecialDish = async (
     .single();
 
   if (error) throw error;
+  // invalidar caches relacionados
+  invalidateCache('getRestaurantSpecialDishes', restaurantId);
+  invalidateCache('getAvailableSpecialsToday', restaurantId);
+  invalidateCache('getSpecialsStatusToday', restaurantId);
   return data;
 };
 
@@ -568,6 +703,10 @@ export const updateSpecialDish = async (
     .single();
 
   if (error) throw error;
+  // invalidaciones amplias (no tenemos restaurantId aquí)
+  invalidateCache('getRestaurantSpecialDishes');
+  invalidateCache('getAvailableSpecialsToday');
+  invalidateCache('getSpecialsStatusToday');
   return data;
 };
 
@@ -575,29 +714,41 @@ export const updateSpecialDish = async (
  * Obtener selecciones de productos para un plato especial
  */
 export const getSpecialDishSelections = async (specialDishId: string): Promise<SpecialDishSelection[]> => {
-  const { data, error } = await supabase
-    .from('special_dish_selections')
-    .select('*')
-    .eq('special_dish_id', specialDishId)
-    .order('category_name')
-    .order('selection_order');
-
-  if (error) throw error;
-  return data || [];
+  return withCache(
+    'getSpecialDishSelections',
+    specialDishId,
+    30_000,
+    async () => {
+      const { data, error } = await supabase
+        .from('special_dish_selections')
+        .select('*')
+        .eq('special_dish_id', specialDishId)
+        .order('category_name')
+        .order('selection_order');
+      if (error) throw error;
+      return data || [];
+    }
+  );
 };
 
 /**
  * Obtener combinaciones de un plato especial
  */
 export const getSpecialCombinations = async (specialDishId: string): Promise<SpecialCombination[]> => {
-  const { data, error } = await supabase
-    .from('generated_special_combinations')
-    .select('*')
-    .eq('special_dish_id', specialDishId)
-    .order('generated_at');
-
-  if (error) throw error;
-  return data || [];
+  return withCache(
+    'getSpecialCombinations',
+    specialDishId,
+    15_000,
+    async () => {
+      const { data, error } = await supabase
+        .from('generated_special_combinations')
+        .select('*')
+        .eq('special_dish_id', specialDishId)
+        .order('generated_at');
+      if (error) throw error;
+      return data || [];
+    }
+  );
 };
 
 /**
@@ -646,6 +797,9 @@ export const insertSpecialDishSelections = async (
 
     if (error) throw error;
   }
+  // invalidar caches dependientes
+  invalidateCache('getSpecialDishSelections', specialDishId);
+  invalidateCache('getSpecialCombinations', specialDishId);
 };
 
 /**
@@ -703,6 +857,7 @@ export const generateSpecialCombinations = async (
       .select();
 
     if (error) throw error;
+  invalidateCache('getSpecialCombinations', specialDishId);
     return data || [];
   }
 
@@ -729,6 +884,10 @@ export const toggleSpecialToday = async (
     });
 
   if (error) throw error;
+  // invalidaciones
+  invalidateCache('getAvailableSpecialsToday', restaurantId);
+  invalidateCache('getSpecialsStatusToday', restaurantId);
+  invalidateCache('getSpecialCombinations', specialDishId);
   return data?.[0] || null;
 };
 
@@ -750,6 +909,7 @@ export const updateSpecialCombination = async (
     .eq('id', combinationId);
 
   if (error) throw error;
+  invalidateCache('getSpecialCombinations');
 };
 
 /**
@@ -762,6 +922,10 @@ export const deleteSpecialDish = async (specialDishId: string): Promise<void> =>
     .eq('id', specialDishId);
 
   if (error) throw error;
+  invalidateCache('getRestaurantSpecialDishes');
+  invalidateCache('getAvailableSpecialsToday');
+  invalidateCache('getSpecialsStatusToday');
+  invalidateCache('getSpecialCombinations', specialDishId);
 };
 
 /**
@@ -774,49 +938,52 @@ export const deleteSpecialCombination = async (combinationId: string): Promise<v
     .eq('id', combinationId);
 
   if (error) throw error;
+  invalidateCache('getSpecialCombinations');
 };
 
 /**
  * Obtener estado de especiales para el dashboard
  */
 export const getSpecialsStatusToday = async (restaurantId: string) => {
-  const today = new Date().toISOString().split('T')[0];
-  
-  // Obtener especiales activos hoy
-  const { data: activeSpecials, error: activeError } = await supabase
-    .from('daily_special_activations')
-    .select(`
-      id,
-      special_dish_id,
-      is_active,
-      daily_max_quantity,
-      notes,
-      special_dishes!inner(
-        dish_name,
-        dish_price,
-        dish_description
-      )
-    `)
-    .eq('restaurant_id', restaurantId)
-    .eq('activation_date', today)
-    .eq('is_active', true);
-
-  if (activeError) throw activeError;
-
-  // Obtener todas las plantillas disponibles
-  const { data: allSpecials, error: allError } = await supabase
-    .from('special_dishes')
-    .select('*')
-    .eq('restaurant_id', restaurantId)
-    .eq('setup_completed', true)
-    .order('dish_name');
-
-  if (allError) throw allError;
-
-  return {
-    activeToday: activeSpecials || [],
-    allTemplates: allSpecials || []
-  };
+  return withCache(
+    'getSpecialsStatusToday',
+    restaurantId,
+    15_000,
+    async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const [{ data: activeSpecials, error: activeError }, { data: allSpecials, error: allError }] = await Promise.all([
+        supabase
+          .from('daily_special_activations')
+          .select(`
+            id,
+            special_dish_id,
+            is_active,
+            daily_max_quantity,
+            notes,
+            special_dishes!inner(
+              dish_name,
+              dish_price,
+              dish_description
+            )
+          `)
+          .eq('restaurant_id', restaurantId)
+          .eq('activation_date', today)
+          .eq('is_active', true),
+        supabase
+          .from('special_dishes')
+          .select('*')
+          .eq('restaurant_id', restaurantId)
+          .eq('setup_completed', true)
+          .order('dish_name'),
+      ]);
+      if (activeError) throw activeError;
+      if (allError) throw allError;
+      return {
+        activeToday: activeSpecials || [],
+        allTemplates: allSpecials || []
+      };
+    }
+  );
 };
 
 // ========================================
@@ -867,39 +1034,45 @@ export interface ItemOrdenMesaExtendido extends ItemOrdenMesa {
  */
 export const getMesasEstado = async (restaurantId: string) => {
   try {
-    console.log('🔍 getMesasEstado - Buscando mesas para restaurant:', restaurantId);
-    
-    // Obtener todas las órdenes activas con sus items
-    const { data: ordenes, error } = await supabase
-      .from('ordenes_mesa')
-      .select(`
-        id,
-        numero_mesa,
-        monto_total,
-        nombre_mesero,
-        fecha_creacion,
-        items_orden_mesa (
-          id,
-          cantidad,
-          precio_total,
-          tipo_item,
-          combinacion_id,
-          combinacion_especial_id,
-          generated_combinations (
-            combination_name,
-            combination_price
-          ),
-          generated_special_combinations (
-            combination_name,
-            combination_price
-          )
-        )
-      `)
-      .eq('restaurant_id', restaurantId)
-      .eq('estado', 'activa')
-      .order('fecha_creacion', { ascending: false });
+    const { data: ordenes, error } = await withCache(
+      'getMesasEstado',
+      restaurantId,
+      10_000,
+      async () => {
+        const { data, error } = await supabase
+          .from('ordenes_mesa')
+          .select(`
+            id,
+            numero_mesa,
+            monto_total,
+            nombre_mesero,
+            fecha_creacion,
+            items_orden_mesa (
+              id,
+              cantidad,
+              precio_total,
+              tipo_item,
+              combinacion_id,
+              combinacion_especial_id,
+              generated_combinations (
+                combination_name,
+                combination_price
+              ),
+              generated_special_combinations (
+                combination_name,
+                combination_price
+              )
+            )
+          `)
+          .eq('restaurant_id', restaurantId)
+          .eq('estado', 'activa')
+          .order('fecha_creacion', { ascending: false });
+        if (error) throw error;
+        return data || [];
+      }
+    ).then((data) => ({ data, error: null as any }));
 
-    console.log('📊 getMesasEstado - Datos recibidos:', { ordenes, error });
+    
 
     if (error) {
       console.error('❌ Error en getMesasEstado:', error);
@@ -942,7 +1115,7 @@ export const getMesasEstado = async (restaurantId: string) => {
       return acc;
     }, {} as Record<number, any>);
 
-    console.log('✅ getMesasEstado - Mesas procesadas:', mesasOcupadas);
+    
     return mesasOcupadas || {};
   } catch (error) {
     console.error('💥 Error en getMesasEstado:', error);
@@ -955,42 +1128,49 @@ export const getMesasEstado = async (restaurantId: string) => {
  */
 export const getDetallesMesa = async (restaurantId: string, mesaNumero: number) => {
   try {
-    console.log('🔍 getDetallesMesa - Buscando detalles:', { restaurantId, mesaNumero });
-    
-    const { data: ordenes, error } = await supabase
-      .from('ordenes_mesa')
-      .select(`
-        id,
-        numero_mesa,
-        monto_total,
-        nombre_mesero,
-        observaciones,
-        fecha_creacion,
-        items_orden_mesa (
-          id,
-          cantidad,
-          precio_unitario,
-          precio_total,
-          tipo_item,
-          observaciones_item,
-          generated_combinations (
-            combination_name,
-            combination_description,
-            combination_price
-          ),
-          generated_special_combinations (
-            combination_name,
-            combination_description,
-            combination_price
-          )
-        )
-      `)
-      .eq('restaurant_id', restaurantId)
-      .eq('numero_mesa', mesaNumero)
-      .eq('estado', 'activa')
-      .order('fecha_creacion', { ascending: false });
+    const { data: ordenes, error } = await withCache(
+      'getDetallesMesa',
+      `${restaurantId}:${mesaNumero}`,
+      10_000,
+      async () => {
+        const { data, error } = await supabase
+          .from('ordenes_mesa')
+          .select(`
+            id,
+            numero_mesa,
+            monto_total,
+            nombre_mesero,
+            observaciones,
+            fecha_creacion,
+            items_orden_mesa (
+              id,
+              cantidad,
+              precio_unitario,
+              precio_total,
+              tipo_item,
+              observaciones_item,
+              generated_combinations (
+                combination_name,
+                combination_description,
+                combination_price
+              ),
+              generated_special_combinations (
+                combination_name,
+                combination_description,
+                combination_price
+              )
+            )
+          `)
+          .eq('restaurant_id', restaurantId)
+          .eq('numero_mesa', mesaNumero)
+          .eq('estado', 'activa')
+          .order('fecha_creacion', { ascending: false });
+        if (error) throw error;
+        return data || [];
+      }
+    ).then((data) => ({ data, error: null as any }));
 
-    console.log('📊 getDetallesMesa - Datos recibidos:', { ordenes, error });
+    
 
     if (error) {
       console.error('❌ Error en getDetallesMesa:', error);
@@ -998,7 +1178,7 @@ export const getDetallesMesa = async (restaurantId: string, mesaNumero: number) 
     }
 
     if (!ordenes || ordenes.length === 0) {
-      console.log('📭 getDetallesMesa - No hay órdenes para esta mesa');
+      
       return {
         mesa: mesaNumero,
         items: [],
@@ -1014,19 +1194,14 @@ export const getDetallesMesa = async (restaurantId: string, mesaNumero: number) 
     const todosLosItems: any[] = [];
     
     ordenes.forEach((orden) => {
-      console.log('🔄 Procesando orden:', orden.id, 'Items:', orden.items_orden_mesa?.length);
+      
       
       orden.items_orden_mesa?.forEach((item: any) => {
         let nombreProducto = 'Producto sin nombre';
         let descripcionProducto = '';
         let precioProducto = item.precio_unitario;
         
-        console.log('🔍 Procesando item:', {
-          id: item.id,
-          tipo: item.tipo_item,
-          combinations: item.generated_combinations,
-          special_combinations: item.generated_special_combinations
-        });
+        
         
         if (item.tipo_item === 'menu_dia' && item.generated_combinations) {
           nombreProducto = item.generated_combinations.combination_name || 'Menú del día';
@@ -1038,11 +1213,7 @@ export const getDetallesMesa = async (restaurantId: string, mesaNumero: number) 
           precioProducto = item.generated_special_combinations.combination_price || item.precio_unitario;
         }
 
-        console.log('✅ Producto procesado:', { 
-          nombre: nombreProducto, 
-          precio: precioProducto, 
-          cantidad: item.cantidad 
-        });
+        
 
         todosLosItems.push({
           id: item.id,
@@ -1057,7 +1228,7 @@ export const getDetallesMesa = async (restaurantId: string, mesaNumero: number) 
       });
     });
 
-    console.log('📋 getDetallesMesa - Items finales:', todosLosItems);
+    
 
     const resultado = {
       mesa: mesaNumero,
@@ -1072,7 +1243,7 @@ export const getDetallesMesa = async (restaurantId: string, mesaNumero: number) 
       }))
     };
 
-    console.log('🎯 getDetallesMesa - Resultado final:', resultado);
+    
     return resultado;
   } catch (error) {
     console.error('💥 Error en getDetallesMesa:', error);
@@ -1085,7 +1256,7 @@ export const getDetallesMesa = async (restaurantId: string, mesaNumero: number) 
  */
 export const cobrarMesa = async (restaurantId: string, mesaNumero: number) => {
   try {
-    console.log('💰 cobrarMesa - Cobrando mesa:', { restaurantId, mesaNumero });
+    
     
     // Actualizar todas las órdenes activas de la mesa a estado 'pagada'
     const { error } = await supabase
@@ -1103,7 +1274,7 @@ export const cobrarMesa = async (restaurantId: string, mesaNumero: number) => {
       throw error;
     }
     
-    console.log('✅ cobrarMesa - Mesa cobrada exitosamente');
+    
     const { data: mesa } = await supabase
       .from('restaurant_mesas')
       .select('estado')
@@ -1111,9 +1282,13 @@ export const cobrarMesa = async (restaurantId: string, mesaNumero: number) => {
       .eq('numero', mesaNumero)
       .single();
     
-    console.log('🔍 Estado de mesa después del cobro:', mesa?.estado);
     
-    return { success: true };
+  // invalidar caches relacionadas
+  invalidateCache('getMesasRestaurante', restaurantId);
+  invalidateCache('getMesasEstado', restaurantId);
+  invalidateCache('getDetallesMesa', `${restaurantId}:${mesaNumero}`);
+  invalidateCache('getEstadoCompletoMesas', restaurantId);
+  return { success: true };
   } catch (error) {
     console.error('💥 Error en cobrarMesa:', error);
     throw error;
@@ -1142,7 +1317,7 @@ export const crearOrdenMesa = async (ordenData: {
   }[];
 }): Promise<OrdenMesa> => {
   try {
-    console.log('🆕 crearOrdenMesa - Creando nueva orden:', ordenData);
+    
     
     // 1. Crear la orden principal
     const { data: orden, error: ordenError } = await supabase
@@ -1162,7 +1337,7 @@ export const crearOrdenMesa = async (ordenData: {
       throw ordenError;
     }
 
-    console.log('✅ Orden creada:', orden.id);
+    
 
     const { data: mesa } = await supabase
       .from('restaurant_mesas')
@@ -1173,7 +1348,7 @@ export const crearOrdenMesa = async (ordenData: {
     
     if (mesa) {
       await updateEstadoMesa(mesa.id, 'ocupada');
-      console.log('✅ Mesa marcada como ocupada');
+      
     }
 
     // 2. Agregar los items
@@ -1197,8 +1372,12 @@ export const crearOrdenMesa = async (ordenData: {
       throw itemsError;
     }
 
-    console.log('✅ Items creados exitosamente');
-    return orden;
+  // invalidar vistas dependientes
+  invalidateCache('getMesasRestaurante', ordenData.restaurantId);
+  invalidateCache('getMesasEstado', ordenData.restaurantId);
+  invalidateCache('getDetallesMesa');
+  invalidateCache('getEstadoCompletoMesas', ordenData.restaurantId);
+  return orden;
   } catch (error) {
     console.error('💥 Error en crearOrdenMesa:', error);
     throw error;
@@ -1220,7 +1399,7 @@ export const agregarItemsAOrden = async (
   }[]
 ) => {
   try {
-    console.log('➕ agregarItemsAOrden - Agregando items a orden:', ordenId);
+    
     
     const itemsParaInsertar = items.map(item => ({
       orden_mesa_id: ordenId,
@@ -1242,8 +1421,9 @@ export const agregarItemsAOrden = async (
       throw error;
     }
 
-    console.log('✅ Items agregados exitosamente');
-    return { success: true };
+  invalidateCache('getMesasEstado');
+  invalidateCache('getEstadoCompletoMesas');
+  return { success: true };
   } catch (error) {
     console.error('💥 Error en agregarItemsAOrden:', error);
     throw error;
@@ -1257,7 +1437,7 @@ export const suscribirseACambiosMesas = (
   restaurantId: string,
   callback: (payload: any) => void
 ) => {
-  console.log('🔄 Configurando suscripción en tiempo real para restaurant:', restaurantId);
+  
   
   return supabase
     .channel(`mesas-${restaurantId}`)
@@ -1270,7 +1450,7 @@ export const suscribirseACambiosMesas = (
         filter: `restaurant_id=eq.${restaurantId}`
       },
       (payload) => {
-        console.log('🔔 Cambio detectado en ordenes_mesa:', payload);
+        
         callback(payload);
       }
     )
@@ -1282,7 +1462,7 @@ export const suscribirseACambiosMesas = (
         table: 'items_orden_mesa'
       },
       (payload) => {
-        console.log('🔔 Cambio detectado en items_orden_mesa:', payload);
+        
         callback(payload);
       }
     )
@@ -1298,21 +1478,20 @@ export const suscribirseACambiosMesas = (
  */
 export const getMesasRestaurante = async (restaurantId: string): Promise<RestaurantMesa[]> => {
   try {
-    console.log('🔍 getMesasRestaurante - Buscando mesas para restaurant:', restaurantId);
-    
-    const { data, error } = await supabase
-      .from('restaurant_mesas')
-      .select('*')
-      .eq('restaurant_id', restaurantId)
-      .order('numero');
-
-    if (error) {
-      console.error('❌ Error en getMesasRestaurante:', error);
-      throw error;
-    }
-
-    console.log('✅ getMesasRestaurante - Mesas encontradas:', data?.length || 0);
-    return data || [];
+    return await withCache(
+      'getMesasRestaurante',
+      restaurantId,
+      30_000,
+      async () => {
+        const { data, error } = await supabase
+          .from('restaurant_mesas')
+          .select('*')
+          .eq('restaurant_id', restaurantId)
+          .order('numero');
+        if (error) throw error;
+        return data || [];
+      }
+    );
   } catch (error) {
     console.error('💥 Error en getMesasRestaurante:', error);
     throw error;
@@ -1335,28 +1514,24 @@ export const configurarMesas = async (
   distribucion?: { [zona: string]: number }
 ): Promise<RestaurantMesa[]> => {
   try {
-    console.log('⚙️ configurarMesas - Configuración inteligente:', { restaurantId, totalMesas, distribucion });
+    
     
     // 1. CONSULTAR MESAS EXISTENTES
     const mesasExistentes = await getMesasRestaurante(restaurantId);
     const totalActual = mesasExistentes.length;
     
-    console.log('📊 Estado actual:', {
-      totalActual,
-      totalDeseado: totalMesas,
-      diferencia: totalMesas - totalActual
-    });
+    
 
     // 2. DETERMINAR QUÉ HACER
     if (totalActual === totalMesas) {
-      console.log('✅ Ya tienes la cantidad correcta de mesas');
+      
       return mesasExistentes;
     }
 
     if (totalMesas > totalActual) {
       // CASO A: AGREGAR MESAS (tu caso actual: 8 → 12)
       const mesasParaAgregar = totalMesas - totalActual;
-      console.log('➕ Agregando', mesasParaAgregar, 'mesas nuevas');
+      
       
       const mesasNuevas: any[] = [];
       
@@ -1384,22 +1559,21 @@ export const configurarMesas = async (
         throw error;
       }
       
-      console.log('✅ Mesas agregadas exitosamente:', data?.length || 0);
       
-      // Retornar todas las mesas (existentes + nuevas)
+      
+  // Retornar todas las mesas (existentes + nuevas)
+  invalidateCache('getMesasRestaurante', restaurantId);
       return await getMesasRestaurante(restaurantId);
       
     } else {
       // CASO B: QUITAR MESAS (ej: 12 → 8)
       const mesasParaQuitar = totalActual - totalMesas;
-      console.log('➖ Quitando', mesasParaQuitar, 'mesas sobrantes');
+      
       
       // Obtener las mesas con números más altos para eliminar
       const mesasAEliminar = mesasExistentes
         .sort((a, b) => b.numero - a.numero) // Ordenar descendente
         .slice(0, mesasParaQuitar); // Tomar las primeras N (números más altos)
-      
-      console.log('🗑️ Eliminando mesas:', mesasAEliminar.map(m => m.numero));
       
       const { error } = await supabase
         .from('restaurant_mesas')
@@ -1411,9 +1585,10 @@ export const configurarMesas = async (
         throw error;
       }
       
-      console.log('✅ Mesas eliminadas exitosamente');
       
-      // Retornar mesas restantes
+      
+  // Retornar mesas restantes
+  invalidateCache('getMesasRestaurante', restaurantId);
       return await getMesasRestaurante(restaurantId);
     }
     
@@ -1432,7 +1607,7 @@ export const reconfigurarMesasCompleto = async (
   distribucion?: { [zona: string]: number }
 ): Promise<RestaurantMesa[]> => {
   try {
-    console.log('🔄 reconfigurarMesasCompleto - Reset completo:', { restaurantId, totalMesas });
+    
     
     // 1. ELIMINAR TODAS LAS MESAS EXISTENTES
     const { error: deleteError } = await supabase
@@ -1441,7 +1616,7 @@ export const reconfigurarMesasCompleto = async (
       .eq('restaurant_id', restaurantId);
       
     if (deleteError) throw deleteError;
-    console.log('🗑️ Todas las mesas eliminadas');
+    
     
     // 2. CREAR MESAS NUEVAS
     const mesasNuevas: any[] = [];
@@ -1483,8 +1658,9 @@ export const reconfigurarMesasCompleto = async (
       
     if (error) throw error;
     
-    console.log('✅ reconfigurarMesasCompleto - Creadas', data?.length || 0, 'mesas nuevas');
-    return data || [];
+    
+  invalidateCache('getMesasRestaurante', restaurantId);
+  return data || [];
     
   } catch (error) {
     console.error('💥 Error en reconfigurarMesasCompleto:', error);
@@ -1500,7 +1676,7 @@ export const updateEstadoMesa = async (
   nuevoEstado: 'libre' | 'ocupada' | 'reservada' | 'inactiva'
 ): Promise<RestaurantMesa> => {
   try {
-    console.log('🔄 updateEstadoMesa - Actualizando mesa:', { mesaId, nuevoEstado });
+    
     
     const { data, error } = await supabase
       .from('restaurant_mesas')
@@ -1513,8 +1689,10 @@ export const updateEstadoMesa = async (
       .single();
 
     if (error) throw error;
-    console.log('✅ updateEstadoMesa - Mesa actualizada');
-    return data;
+    
+  // Invalidar por restaurant_id si se conoce (no lo tenemos aquí); invalidación amplia
+  invalidateCache('getMesasRestaurante');
+  return data;
   } catch (error) {
     console.error('💥 Error en updateEstadoMesa:', error);
     throw error;
@@ -1532,7 +1710,7 @@ export const crearMesa = async (mesaData: {
   capacidad?: number;
 }): Promise<RestaurantMesa> => {
   try {
-    console.log('➕ crearMesa - Creando nueva mesa:', mesaData);
+    
     
     const { data, error } = await supabase
       .from('restaurant_mesas')
@@ -1548,8 +1726,9 @@ export const crearMesa = async (mesaData: {
       .single();
 
     if (error) throw error;
-    console.log('✅ crearMesa - Mesa creada exitosamente');
-    return data;
+    
+  invalidateCache('getMesasRestaurante', mesaData.restaurantId);
+  return data;
   } catch (error) {
     console.error('💥 Error en crearMesa:', error);
     throw error;
@@ -1561,7 +1740,7 @@ export const crearMesa = async (mesaData: {
  */
 export const inactivarMesa = async (mesaId: string): Promise<void> => {
   try {
-    console.log('🚫 inactivarMesa - Inactivando mesa:', mesaId);
+    
     
     const { error } = await supabase
       .from('restaurant_mesas')
@@ -1572,7 +1751,8 @@ export const inactivarMesa = async (mesaId: string): Promise<void> => {
       .eq('id', mesaId);
 
     if (error) throw error;
-    console.log('✅ inactivarMesa - Mesa inactivada');
+    
+    invalidateCache('getMesasRestaurante');
   } catch (error) {
     console.error('💥 Error en inactivarMesa:', error);
     throw error;
@@ -1588,7 +1768,7 @@ export const verificarMesasConfiguradas = async (restaurantId: string): Promise<
   zonas: string[];
 }> => {
   try {
-    console.log('🔍 verificarMesasConfiguradas - Verificando para restaurant:', restaurantId);
+    
     
     const { data, error } = await supabase
       .from('restaurant_mesas')
@@ -1601,7 +1781,7 @@ export const verificarMesasConfiguradas = async (restaurantId: string): Promise<
     const totalMesas = data?.length || 0;
     const zonas = Array.from(new Set(data?.map(m => m.zona) || []));
 
-    console.log('✅ verificarMesasConfiguradas - Resultado:', { configuradas, totalMesas, zonas });
+    
     return { configuradas, totalMesas, zonas };
   } catch (error) {
     console.error('💥 Error en verificarMesasConfiguradas:', error);
@@ -1614,34 +1794,34 @@ export const verificarMesasConfiguradas = async (restaurantId: string): Promise<
  */
 export const getEstadoCompletoMesas = async (restaurantId: string) => {
   try {
-    console.log('🔍 getEstadoCompletoMesas - Buscando estado completo para restaurant:', restaurantId);
-    
-    // 1. Obtener todas las mesas configuradas
-    const mesas = await getMesasRestaurante(restaurantId);
-    
-    // 2. Obtener órdenes activas (como antes)
-    const mesasOcupadas = await getMesasEstado(restaurantId);
-    
-    // 3. Combinar información
-    const estadoCompleto = mesas.map(mesa => ({
-      numero: mesa.numero,
-      nombre: mesa.nombre,
-      zona: mesa.zona,
-      capacidad: mesa.capacidad_personas,
-      estado: mesa.estado,
-      // Si hay orden activa, agregar detalles
-      ocupada: mesasOcupadas[mesa.numero] ? true : false,
-      detallesOrden: mesasOcupadas[mesa.numero] || null
-    }));
-
-    console.log('✅ getEstadoCompletoMesas - Estado procesado:', estadoCompleto.length, 'mesas');
-    return {
-      mesas: estadoCompleto,
-      totalMesas: mesas.length,
-      mesasLibres: estadoCompleto.filter(m => !m.ocupada).length,
-      mesasOcupadas: estadoCompleto.filter(m => m.ocupada).length,
-      zonas: Array.from(new Set(mesas.map(m => m.zona)))
-    };
+    return withCache(
+      'getEstadoCompletoMesas',
+      restaurantId,
+      10_000,
+      async () => {
+        // 1. Obtener todas las mesas configuradas
+        const mesas = await getMesasRestaurante(restaurantId);
+        // 2. Obtener órdenes activas (como antes)
+        const mesasOcupadas = await getMesasEstado(restaurantId);
+        // 3. Combinar información
+        const estadoCompleto = mesas.map(mesa => ({
+          numero: mesa.numero,
+          nombre: mesa.nombre,
+          zona: mesa.zona,
+          capacidad: mesa.capacidad_personas,
+          estado: mesa.estado,
+          ocupada: mesasOcupadas[mesa.numero] ? true : false,
+          detallesOrden: mesasOcupadas[mesa.numero] || null
+        }));
+        return {
+          mesas: estadoCompleto,
+          totalMesas: mesas.length,
+          mesasLibres: estadoCompleto.filter(m => !m.ocupada).length,
+          mesasOcupadas: estadoCompleto.filter(m => m.ocupada).length,
+          zonas: Array.from(new Set(mesas.map(m => m.zona)))
+        };
+      }
+    );
   } catch (error) {
     console.error('💥 Error en getEstadoCompletoMesas:', error);
     throw error;
@@ -1657,7 +1837,7 @@ export const reconfigurarMesas = async (
   mantenerExistentes: boolean = true
 ): Promise<RestaurantMesa[]> => {
   try {
-    console.log('🔧 reconfigurarMesas - Reconfigurando:', { restaurantId, nuevoTotal, mantenerExistentes });
+    
     
     const mesasActuales = await getMesasRestaurante(restaurantId);
     const totalActual = mesasActuales.length;
@@ -1682,7 +1862,7 @@ export const reconfigurarMesas = async (
         .select();
         
       if (error) throw error;
-      console.log('✅ reconfigurarMesas - Agregadas:', mesasParaAgregar.length, 'mesas');
+      
       
     } else if (nuevoTotal < totalActual) {
       // Inactivar mesas sobrantes
@@ -1693,11 +1873,12 @@ export const reconfigurarMesas = async (
         .gt('numero', nuevoTotal);
         
       if (error) throw error;
-      console.log('✅ reconfigurarMesas - Inactivadas mesas del', nuevoTotal + 1, 'al', totalActual);
+      
     }
     
     // Devolver configuración actualizada
-    return await getMesasRestaurante(restaurantId);
+  invalidateCache('getMesasRestaurante', restaurantId);
+  return await getMesasRestaurante(restaurantId);
   } catch (error) {
     console.error('💥 Error en reconfigurarMesas:', error);
     throw error;
@@ -1709,7 +1890,7 @@ export const reconfigurarMesas = async (
  */
 export const limpiarConfiguracionMesas = async (restaurantId: string): Promise<void> => {
   try {
-    console.log('🧹 limpiarConfiguracionMesas - Limpiando restaurant:', restaurantId);
+    
     
     // Solo inactivar, no eliminar (por integridad referencial)
     const { error } = await supabase
@@ -1718,7 +1899,8 @@ export const limpiarConfiguracionMesas = async (restaurantId: string): Promise<v
       .eq('restaurant_id', restaurantId);
 
     if (error) throw error;
-    console.log('✅ limpiarConfiguracionMesas - Todas las mesas inactivadas');
+    
+    invalidateCache('getMesasRestaurante', restaurantId);
   } catch (error) {
     console.error('💥 Error en limpiarConfiguracionMesas:', error);
     throw error;
@@ -1781,9 +1963,9 @@ export const getSesionCajaActiva = async (restaurantId: string): Promise<CajaSes
       .eq('estado', 'abierta')
       .order('abierta_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error && (error as any).code && (error as any).code !== 'PGRST116') {
       throw error;
     }
 
@@ -1833,11 +2015,23 @@ export const abrirSesionCaja = async (
 /**
  * Cerrar sesión de caja
  */
+/**
+ * Cerrar sesión de caja CON VALIDACIÓN
+ */
 export const cerrarSesionCaja = async (
+  restaurantId: string,
   sesionId: string,
   notas?: string
 ): Promise<CajaSesion> => {
   try {
+    // 1. VALIDAR antes de cerrar
+    const validacion = await validarCierreCaja(restaurantId);
+    
+    if (!validacion.puedeSerrar) {
+      throw new Error(validacion.mensaje);
+    }
+    
+    // 2. Si todo está bien, cerrar normalmente
     const { data, error } = await supabase
       .from('caja_sesiones')
       .update({
@@ -1850,9 +2044,12 @@ export const cerrarSesionCaja = async (
       .single();
 
     if (error) throw error;
+    
+    
     return data;
+    
   } catch (error) {
-    console.error('Error cerrando caja:', error);
+    console.error('❌ Error cerrando caja:', error);
     throw error;
   }
 };
@@ -2449,7 +2646,7 @@ export const ponerMesaMantenimiento = async (
   motivo: string
 ): Promise<void> => {
   try {
-    console.log('🔧 ponerMesaMantenimiento - Mesa:', mesaNumero, 'Motivo:', motivo);
+    
     
     const { error } = await supabase
       .from('restaurant_mesas')
@@ -2462,7 +2659,7 @@ export const ponerMesaMantenimiento = async (
       .eq('numero', mesaNumero);
 
     if (error) throw error;
-    console.log('✅ Mesa puesta en mantenimiento exitosamente');
+    
   } catch (error) {
     console.error('💥 Error poniendo mesa en mantenimiento:', error);
     throw error;
@@ -2477,7 +2674,7 @@ export const activarMesaManual = async (
   mesaNumero: number
 ): Promise<void> => {
   try {
-    console.log('✅ activarMesaManual - Activando mesa:', mesaNumero);
+    
     
     const { error } = await supabase
       .from('restaurant_mesas')
@@ -2490,7 +2687,7 @@ export const activarMesaManual = async (
       .eq('numero', mesaNumero);
 
     if (error) throw error;
-    console.log('✅ Mesa activada exitosamente');
+    
   } catch (error) {
     console.error('💥 Error activando mesa:', error);
     throw error;
@@ -2511,7 +2708,7 @@ export const reservarMesaManual = async (
   }
 ): Promise<void> => {
   try {
-    console.log('📅 reservarMesaManual - Mesa:', mesaNumero, 'Cliente:', datosReserva.nombreCliente);
+    
     
     // Crear notas de reserva completas
     const notasReserva = [
@@ -2533,7 +2730,7 @@ export const reservarMesaManual = async (
       .eq('numero', mesaNumero);
 
     if (error) throw error;
-    console.log('✅ Mesa reservada exitosamente');
+    
   } catch (error) {
     console.error('💥 Error reservando mesa:', error);
     throw error;
@@ -2548,7 +2745,7 @@ export const liberarReservaManual = async (
   mesaNumero: number
 ): Promise<void> => {
   try {
-    console.log('🔓 liberarReservaManual - Liberando mesa:', mesaNumero);
+    
     
     const { error } = await supabase
       .from('restaurant_mesas')
@@ -2561,7 +2758,7 @@ export const liberarReservaManual = async (
       .eq('numero', mesaNumero);
 
     if (error) throw error;
-    console.log('✅ Reserva liberada exitosamente');
+    
   } catch (error) {
     console.error('💥 Error liberando reserva:', error);
     throw error;
@@ -2577,7 +2774,7 @@ export const inactivarMesaManual = async (
   motivo: string
 ): Promise<void> => {
   try {
-    console.log('🚫 inactivarMesaManual - Mesa:', mesaNumero, 'Motivo:', motivo);
+    
     
     const { error } = await supabase
       .from('restaurant_mesas')
@@ -2590,7 +2787,7 @@ export const inactivarMesaManual = async (
       .eq('numero', mesaNumero);
 
     if (error) throw error;
-    console.log('✅ Mesa inactivada exitosamente');
+    
   } catch (error) {
     console.error('💥 Error inactivando mesa:', error);
     throw error;
@@ -2605,7 +2802,7 @@ export const eliminarOrdenMesa = async (
   mesaNumero: number
 ): Promise<void> => {
   try {
-    console.log('🗑️ eliminarOrdenMesa - Mesa:', mesaNumero);
+    
     
     // 1. Obtener órdenes activas de la mesa
     const { data: ordenes, error: errorOrdenes } = await supabase
@@ -2618,7 +2815,7 @@ export const eliminarOrdenMesa = async (
     if (errorOrdenes) throw errorOrdenes;
 
     if (!ordenes || ordenes.length === 0) {
-      console.log('ℹ️ No hay órdenes activas para eliminar');
+      
       return;
     }
 
@@ -2640,7 +2837,7 @@ export const eliminarOrdenMesa = async (
 
     if (errorOrden) throw errorOrden;
 
-    console.log('✅ Orden eliminada exitosamente - Mesa liberada automáticamente por trigger');
+    
   } catch (error) {
     console.error('💥 Error eliminando orden:', error);
     throw error;
@@ -2659,7 +2856,7 @@ export const getHistorialMesa = async (
   cambiosRecientes: string[];
 }> => {
   try {
-    console.log('📋 getHistorialMesa - Consultando historial mesa:', mesaNumero);
+    
     
     // 1. Obtener información actual de la mesa
     const { data: mesa, error: errorMesa } = await supabase
@@ -2719,7 +2916,7 @@ export const actualizarNotasMesa = async (
   nuevasNotas: string
 ): Promise<void> => {
   try {
-    console.log('📝 actualizarNotasMesa - Mesa:', mesaNumero, 'Notas:', nuevasNotas);
+    
     
     const { error } = await supabase
       .from('restaurant_mesas')
@@ -2731,9 +2928,83 @@ export const actualizarNotasMesa = async (
       .eq('numero', mesaNumero);
 
     if (error) throw error;
-    console.log('✅ Notas actualizadas exitosamente');
+    
   } catch (error) {
     console.error('💥 Error actualizando notas:', error);
     throw error;
   }
 };
+
+/**
+ * Validar si se puede cerrar la caja (sin órdenes pendientes)
+ */
+/**
+ * Validar si se puede cerrar la caja (sin órdenes pendientes)
+ */
+export const validarCierreCaja = async (restaurantId: string): Promise<{
+  puedeSerrar: boolean;
+  ordenesPendientes: any[];
+  totalPendiente: number;
+  mensaje: string;
+}> => {
+  try {
+    
+    
+    // Obtener órdenes de mesa pendientes
+    const ordenesMesa = await getOrdenesMesasPendientes(restaurantId);
+    
+    // Obtener órdenes de delivery pendientes  
+    const ordenesDelivery = await getOrdenesDeliveryPendientes(restaurantId);
+    
+    // NORMALIZAR los datos para evitar errores de TypeScript
+    const mesasNormalizadas = ordenesMesa.map(orden => ({
+      id: orden.id,
+      tipo: 'mesa' as const,
+      identificador: `Mesa ${orden.numero_mesa}`,
+      total: orden.monto_total, // ← Normalizado
+      fecha: orden.fecha_creacion
+    }));
+    
+    const deliveryNormalizado = ordenesDelivery.map(orden => ({
+      id: orden.id,
+      tipo: 'delivery' as const,
+      identificador: orden.customer_name,
+      total: orden.total_amount, // ← Normalizado
+      fecha: orden.created_at
+    }));
+    
+    const todasLasPendientes = [...mesasNormalizadas, ...deliveryNormalizado];
+    
+    // Ahora puedo usar .total sin problemas
+    const totalPendiente = todasLasPendientes.reduce((sum, orden) => {
+      return sum + (orden.total || 0);
+    }, 0);
+    
+    const puedeSerrar = todasLasPendientes.length === 0;
+    
+    let mensaje = '';
+    if (!puedeSerrar) {
+      const mesasPendientes = mesasNormalizadas.map(o => o.identificador).join(', ');
+      const deliveryPendientes = deliveryNormalizado.length > 0 ? 
+        `${deliveryNormalizado.length} delivery(s)` : '';
+      
+      mensaje = `No puedes cerrar la caja. Tienes pagos pendientes:\n\n`;
+      if (mesasPendientes) mensaje += `🍽️ Mesas: ${mesasPendientes}\n`;
+      if (deliveryPendientes) mensaje += `🚚 Delivery: ${deliveryPendientes}\n`;
+      mensaje += `\n💰 Total pendiente: ${formatearMonto(totalPendiente * 100)}`;
+      mensaje += `\n\n⚠️ Cobra todas las órdenes antes de cerrar la caja.`;
+    }
+    
+    return {
+      puedeSerrar,
+      ordenesPendientes: todasLasPendientes,
+      totalPendiente,
+      mensaje
+    };
+    
+  } catch (error) {
+    console.error('❌ Error validando cierre de caja:', error);
+    throw error;
+  }
+};
+

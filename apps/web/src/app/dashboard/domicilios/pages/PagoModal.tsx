@@ -31,7 +31,7 @@ export default function PagoModal({ pedidoId, onSubmit, onClose, loading }: Pago
         
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <h3 className="heading-section text-gray-900 flex items-center">
               <DollarSign className="w-5 h-5 mr-2 text-green-600" />
               Registrar Pago
             </h3>

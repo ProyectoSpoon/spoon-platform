@@ -5,16 +5,59 @@ import { Producto, MenuCombinacion } from '../../types/menu-dia/menuTypes';
 import { CATEGORIAS_MENU_CONFIG } from '../../constants/menu-dia/menuConstants';
 
 export const MenuApiService = {
+  // ================================
+  // Utilidad de caché ligera local
+  // ================================
+  // Nota: caché en memoria por proceso (TTL corto)
+  _cache: new Map<string, { value: any; ts: number }>(),
+  _inFlight: new Map<string, Promise<any>>(),
+  _key(name: string, key: string) {
+    return `${name}::${key}`;
+  },
+  _invalidate(name: string, key?: string) {
+    if (key) {
+      this._cache.delete(this._key(name, key));
+      return;
+    }
+    for (const k of Array.from(this._cache.keys())) {
+      if (k.startsWith(`${name}::`)) this._cache.delete(k);
+    }
+  },
+  async _withCache<T>(name: string, key: string, ttlMs: number, factory: () => Promise<T>): Promise<T> {
+    const k = this._key(name, key);
+    const hit = this._cache.get(k);
+    if (hit && Date.now() - hit.ts < ttlMs) return hit.value as T;
+    if (this._inFlight.has(k)) return this._inFlight.get(k) as Promise<T>;
+    const p = (async () => {
+      try {
+        const val = await factory();
+        this._cache.set(k, { value: val, ts: Date.now() });
+        return val;
+      } finally {
+        this._inFlight.delete(k);
+      }
+    })();
+    this._inFlight.set(k, p);
+    return p;
+  },
   async getProductsByCategory(categoryId: string): Promise<Producto[]> {
     const categoryConfig = CATEGORIAS_MENU_CONFIG.find(c => c.id === categoryId);
     if (!categoryConfig || !categoryConfig.uuid) return [];
-    
-    const { data, error } = await supabase
-      .from('universal_products')
-      .select('*')
-      .eq('category_id', categoryConfig.uuid)
-      .eq('is_verified', true)
-      .order('name');
+    const { data, error } = await this._withCache(
+      'getProductsByCategory',
+      categoryId,
+      60_000,
+      async () => {
+        const { data, error } = await supabase
+          .from('universal_products')
+          .select('*')
+          .eq('category_id', categoryConfig.uuid)
+          .eq('is_verified', true)
+          .order('name');
+        if (error) throw error;
+        return data || [];
+      }
+    ).then((d) => ({ data: d, error: null as any }));
 
     if (error) throw error;
     
@@ -30,36 +73,64 @@ export const MenuApiService = {
   },
 
   async getTodayMenu(restaurantId: string) {
-    const { data, error } = await supabase
-      .from('daily_menus')
-      .select('*')
-      .eq('restaurant_id', restaurantId)
-      .eq('status', 'active')
-      .eq('menu_date', new Date().toISOString().split('T')[0])
-      .single();
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await this._withCache(
+      'getTodayMenu',
+      `${restaurantId}:${today}`,
+      15_000,
+      async () => {
+        const { data, error } = await supabase
+          .from('daily_menus')
+          .select('*')
+          .eq('restaurant_id', restaurantId)
+          .eq('status', 'active')
+          .eq('menu_date', today)
+          .single();
+        if (error && (error as any).code !== 'PGRST116') throw error;
+        return data || null;
+      }
+    ).then((d) => ({ data: d, error: null as any }));
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error) throw error;
     return data;
   },
 
   async getMenuCombinations(dailyMenuId: string) {
-    const { data, error } = await supabase
-      .from('generated_combinations')
-      .select('*')
-      .eq('daily_menu_id', dailyMenuId)
-      .order('generated_at');
+    const { data, error } = await this._withCache(
+      'getMenuCombinations',
+      dailyMenuId,
+      15_000,
+      async () => {
+        const { data, error } = await supabase
+          .from('generated_combinations')
+          .select('*')
+          .eq('daily_menu_id', dailyMenuId)
+          .order('generated_at');
+        if (error) throw error;
+        return data || [];
+      }
+    ).then((d) => ({ data: d, error: null as any }));
 
     if (error) throw error;
     return data || [];
   },
 
   async getMenuSelections(dailyMenuId: string) {
-    const { data, error } = await supabase
-      .from('daily_menu_selections')
-      .select('*')
-      .eq('daily_menu_id', dailyMenuId)
-      .order('category_name', { ascending: true })
-      .order('selection_order', { ascending: true });
+    const { data, error } = await this._withCache(
+      'getMenuSelections',
+      dailyMenuId,
+      30_000,
+      async () => {
+        const { data, error } = await supabase
+          .from('daily_menu_selections')
+          .select('*')
+          .eq('daily_menu_id', dailyMenuId)
+          .order('category_name', { ascending: true })
+          .order('selection_order', { ascending: true });
+        if (error) throw error;
+        return data || [];
+      }
+    ).then((d) => ({ data: d, error: null as any }));
 
     if (error) throw error;
     return data || [];
@@ -78,6 +149,11 @@ export const MenuApiService = {
       .single();
 
     if (menuError) throw menuError;
+  // invalidaciones
+  const today = new Date().toISOString().split('T')[0];
+  this._invalidate('getTodayMenu', `${restaurantId}:${today}`);
+  this._invalidate('getMenuCombinations');
+  this._invalidate('getMenuSelections');
     return newMenu;
   },
 
@@ -91,6 +167,7 @@ export const MenuApiService = {
       .eq('id', menuId);
 
     if (error) throw error;
+  this._invalidate('getTodayMenu');
   },
 
   async insertMenuSelections(dailyMenuId: string, selectedProducts: any) {
@@ -111,13 +188,15 @@ export const MenuApiService = {
       });
     });
 
-    if (selections.length > 0) {
+  if (selections.length > 0) {
       const { error } = await supabase
         .from('daily_menu_selections')
         .insert(selections);
 
       if (error) throw error;
     }
+  this._invalidate('getMenuSelections', dailyMenuId);
+  this._invalidate('getMenuCombinations', dailyMenuId);
   },
 
   async insertProteinQuantities(dailyMenuId: string, proteinQuantities: any) {
@@ -128,13 +207,14 @@ export const MenuApiService = {
       unit_type: 'units'
     }));
 
-    if (proteinEntries.length > 0) {
+  if (proteinEntries.length > 0) {
       const { error } = await supabase
         .from('protein_quantities')
         .insert(proteinEntries);
 
       if (error) throw error;
     }
+  this._invalidate('getTodayMenu');
   },
 
   async insertCombinations(dailyMenuId: string, combinations: any[]) {
@@ -144,6 +224,7 @@ export const MenuApiService = {
       .select();
 
     if (error) throw error;
+  this._invalidate('getMenuCombinations', dailyMenuId);
     return data;
   },
 
@@ -159,6 +240,7 @@ export const MenuApiService = {
       .eq('id', combinationId);
 
     if (error) throw error;
+  this._invalidate('getMenuCombinations');
   },
 
   async deleteCombination(combinationId: string) {
@@ -168,14 +250,17 @@ export const MenuApiService = {
       .eq('id', combinationId);
 
     if (error) throw error;
+  this._invalidate('getMenuCombinations');
   },
 
   async deleteMenuSelections(dailyMenuId: string) {
-    await supabase.from('daily_menu_selections').delete().eq('daily_menu_id', dailyMenuId);
+  await supabase.from('daily_menu_selections').delete().eq('daily_menu_id', dailyMenuId);
+  this._invalidate('getMenuSelections', dailyMenuId);
   },
 
   async deleteProteinQuantities(dailyMenuId: string) {
-    await supabase.from('protein_quantities').delete().eq('daily_menu_id', dailyMenuId);
+  await supabase.from('protein_quantities').delete().eq('daily_menu_id', dailyMenuId);
+  this._invalidate('getTodayMenu');
   },
 
   async deleteCombinations(dailyMenuId: string) {
@@ -185,5 +270,6 @@ export const MenuApiService = {
       .eq('daily_menu_id', dailyMenuId);
 
     if (error) throw error;
+  this._invalidate('getMenuCombinations', dailyMenuId);
   }
 };

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useCallback, Dispatch, SetStateAction } from 'react';
+import ActionBar from '@spoon/shared/components/ui/ActionBar';
 import { 
   X, ChevronLeft, ChevronRight, Check, Search, Heart, Star, 
   AlertTriangle, RefreshCw 
@@ -537,93 +538,70 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
             )}
           </div>
 
-          {/* FOOTER */}
-          <div className="p-6 border-t bg-white">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={handlePrevStep}
-                disabled={currentStep === 0}
-                className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Anterior
-              </button>
-              
-              <div className="text-center">
-                <div className="text-sm text-gray-600 mb-2">
-                  {!isLastStep && selectedInCategory.length === 0 
-                    ? `⚠️ Selecciona al menos 1 ${currentCategory?.nombre?.toLowerCase()}`
-                    : `✅ ${isLastStep ? 'Listo para finalizar' : 'Puedes continuar'}`
+          {/* FOOTER - reusable CTA bar */}
+          <ActionBar
+            primary={{
+              label: isLastStep ? 'Finalizar' : 'Siguiente',
+              onClick: isLastStep ? () => {
+                const principiosCategory = CATEGORIAS_MENU_CONFIG.find((cat: any) => cat.id === 'principios');
+                const proteinasCategory = CATEGORIAS_MENU_CONFIG.find((cat: any) => cat.id === 'proteinas');
+                const principios = principiosCategory ? (selectedProducts[principiosCategory.id] || []) : [];
+                const proteinas = proteinasCategory ? (selectedProducts[proteinasCategory.id] || []) : [];
+                const combinations: MenuCombinacion[] = [];
+                let index = 1;
+                for (const principio of principios) {
+                  for (const proteina of proteinas) {
+                    combinations.push({
+                      id: `combo-${index}`,
+                      nombre: `${principio.name} con ${proteina.name}`,
+                      descripcion: `Combinación de ${principio.name} acompañado de ${proteina.name}`,
+                      precio: menuPrice,
+                      disponible: true,
+                      entrada: selectedProducts['entradas']?.[0],
+                      principio: principio,
+                      proteina: proteina,
+                      acompanamiento: selectedProducts['acompanamientos'] || [],
+                      bebida: selectedProducts['bebidas']?.[0],
+                      favorito: false,
+                      especial: false,
+                      cantidad: proteinQuantities[proteina.id] || 10,
+                      fechaCreacion: new Date().toISOString(),
+                      isEditing: false
+                    });
+                    index++;
                   }
-                </div>
-                <div className="flex gap-1">
-                  {Array.from({ length: 6 }, (_, i) => (
-                    <div
-                      key={i}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        i <= currentStep ? 'bg-orange-500' : 'bg-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
+                }
+                onComplete(combinations);
+              } : handleNextStep,
+              color: isLastStep ? 'orange' : 'indigo',
+              disabled: !isLastStep && selectedInCategory.length === 0,
+            }}
+            secondary={{
+              label: 'Anterior',
+              onClick: handlePrevStep,
+              variant: 'outline',
+              disabled: currentStep === 0,
+            }}
+          >
+            <div className="flex items-center justify-center mb-2">
+              <div className="text-sm text-gray-600 mr-4">
+                {!isLastStep && selectedInCategory.length === 0 
+                  ? `⚠️ Selecciona al menos 1 ${currentCategory?.nombre?.toLowerCase()}`
+                  : `✅ ${isLastStep ? 'Listo para finalizar' : 'Puedes continuar'}`
+                }
               </div>
-              
-              <button
-                onClick={isLastStep ? () => {
-                  // Lógica de finalización
-                  const principiosCategory = CATEGORIAS_MENU_CONFIG.find((cat: any) => cat.id === 'principios');
-                  const proteinasCategory = CATEGORIAS_MENU_CONFIG.find((cat: any) => cat.id === 'proteinas');
-                  const principios = principiosCategory ? (selectedProducts[principiosCategory.id] || []) : [];
-                  const proteinas = proteinasCategory ? (selectedProducts[proteinasCategory.id] || []) : [];
-                  
-                  console.log('🔍 Principios encontrados:', principios.length);
-                  console.log('🔍 Proteínas encontradas:', proteinas.length);
-                  console.log('🔍 Selected products:', selectedProducts);
-                  
-                  // Generar combinaciones
-                  const combinations: MenuCombinacion[] = [];
-                  let index = 1;
-                  
-                  for (const principio of principios) {
-                    for (const proteina of proteinas) {
-                      combinations.push({
-                        id: `combo-${index}`, // ID temporal
-                        nombre: `${principio.name} con ${proteina.name}`,
-                        descripcion: `Combinación de ${principio.name} acompañado de ${proteina.name}`,
-                        precio: menuPrice,
-                        disponible: true,
-                        entrada: selectedProducts['entradas']?.[0], // Primera entrada si existe
-                        principio: principio,
-                        proteina: proteina,
-                        acompanamiento: selectedProducts['acompanamientos'] || [],
-                        bebida: selectedProducts['bebidas']?.[0], // Primera bebida si existe
-                        favorito: false,
-                        especial: false,
-                        cantidad: proteinQuantities[proteina.id] || 10,
-                        fechaCreacion: new Date().toISOString(),
-                        isEditing: false
-                      });
-                      index++;
-                    }
-                  }
-                  
-                  console.log('🎯 Combinaciones generadas:', combinations.length);
-                  
-                  // Ejecutar callback de finalización
-                  onComplete(combinations);
-                } : handleNextStep}
-                disabled={!isLastStep && selectedInCategory.length === 0}
-                className={`flex items-center px-6 py-2 rounded-lg transition-colors ${
-                  (!isLastStep && selectedInCategory.length === 0)
-                    ? 'bg-gray-400 cursor-not-allowed text-gray-200'
-                    : 'bg-orange-600 hover:bg-orange-700 text-white'
-                }`}
-              >
-                {isLastStep ? 'Finalizar' : 'Siguiente'}
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </button>
+              <div className="flex gap-1">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div
+                    key={i}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      i <= currentStep ? 'bg-orange-500' : 'bg-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          </ActionBar>
         </div>
       </div>
     </div>

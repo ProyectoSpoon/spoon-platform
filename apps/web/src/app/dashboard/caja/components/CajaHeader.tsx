@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Button } from '@spoon/shared/components/ui/button';
+import { Button } from '@spoon/shared/components/ui/Button';
 import { Store, Plus, Receipt } from 'lucide-react';
+import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
 interface CajaHeaderProps {
   estadoCaja: 'abierta' | 'cerrada';
@@ -10,6 +11,8 @@ interface CajaHeaderProps {
   onNuevaVenta: () => void;
   onNuevoGasto: () => void;
   loading?: boolean;
+  requiereSaneamiento?: boolean;
+  onCerrarSesionPrevia?: () => void;
 }
 
 export const CajaHeader: React.FC<CajaHeaderProps> = ({
@@ -19,28 +22,33 @@ export const CajaHeader: React.FC<CajaHeaderProps> = ({
   onCerrarCaja,
   onNuevaVenta,
   onNuevoGasto,
-  loading = false
+  loading = false,
+  requiereSaneamiento = false,
+  onCerrarSesionPrevia
 }) => {
   const [showVentaOptions, setShowVentaOptions] = useState(false);
 
   return (
-    <div className="flex items-center justify-between py-4 border-b border-gray-100">
+    <div className="flex items-center justify-between py-2">
       {/* Título y estado de caja */}
       <div className="flex items-center space-x-4">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Movimientos
-        </h1>
+  <h1 className="text-[14px] font-semibold text-gray-900">Movimientos</h1>
         
         {/* Indicador de estado de caja - sutil */}
         {estadoCaja === 'abierta' && (
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-green-700 font-medium">
+            <span className="text-[12px] text-green-700 font-medium">
               Caja Abierta
             </span>
             {ordensPendientes > 0 && (
-              <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+              <span className="text-[12px] bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
                 {ordensPendientes} pendientes
+              </span>
+            )}
+            {requiereSaneamiento && (
+              <span className="text-[12px] bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                Sesión previa detectada
               </span>
             )}
           </div>
@@ -50,7 +58,7 @@ export const CajaHeader: React.FC<CajaHeaderProps> = ({
       {/* Acciones principales */}
       <div className="flex items-center space-x-3">
         {/* Botón Abrir/Cerrar Caja */}
-        <Button
+  <Button
           variant="outline"
           onClick={estadoCaja === 'cerrada' ? onAbrirCaja : onCerrarCaja}
           disabled={loading}
@@ -65,8 +73,20 @@ export const CajaHeader: React.FC<CajaHeaderProps> = ({
           {estadoCaja === 'cerrada' ? 'Abrir caja' : 'Cerrar caja'}
         </Button>
 
+        {/* Botón saneador: cerrar sesión previa */}
+        {requiereSaneamiento && (
+          <Button
+            variant="outline"
+            onClick={onCerrarSesionPrevia}
+            disabled={loading}
+            className="bg-yellow-50 text-yellow-800 border-yellow-200 hover:bg-yellow-100"
+          >
+            Cerrar sesión previa
+          </Button>
+        )}
+
         {/* Botón Nueva Venta - Simplificado */}
-        <Button
+  <Button
           onClick={onNuevaVenta}
           disabled={estadoCaja === 'cerrada' || loading}
           className="bg-green-600 hover:bg-green-700 text-white"
@@ -97,17 +117,11 @@ export const CajaStatus: React.FC<{
 }> = ({ sesionActual, estadoCaja }) => {
   if (estadoCaja === 'cerrada' || !sesionActual) return null;
 
-  const formatCurrency = (centavos: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
-    }).format(centavos / 100);
-  };
+  const formatCurrency = (centavos: number) => formatCurrencyCOP(centavos);
 
   return (
-    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-      <div className="flex items-center justify-between text-sm">
+    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+      <div className="flex items-center justify-between text-[12px]">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -125,7 +139,7 @@ export const CajaStatus: React.FC<{
         </div>
         
         {sesionActual.usuario_nombre && (
-          <span className="text-green-600 text-xs">
+          <span className="text-green-600 text-[12px]">
             👤 {sesionActual.usuario_nombre}
           </span>
         )}

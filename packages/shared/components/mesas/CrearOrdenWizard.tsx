@@ -75,7 +75,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
     
     setLoadingCombinaciones(true);
     try {
-      console.log('🔍 Cargando combinaciones para restaurant:', restaurantId);
+      
       
       // 1. Cargar menús del día actual usando JOIN con daily_menus
       const today = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
@@ -105,7 +105,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
         .eq('setup_completed', true);
 
       if (errorSpecialDishes) {
-        console.warn('⚠️ Error cargando special dishes:', errorSpecialDishes);
+        
       }
 
       const specialDishIds = specialDishes?.map(dish => dish.id) || [];
@@ -121,7 +121,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
           .order('combination_name');
 
         if (errorEspeciales) {
-          console.warn('⚠️ Error cargando especiales:', errorEspeciales);
+          
         } else {
           especiales = especialesData || [];
         }
@@ -139,11 +139,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
         }))
       ];
 
-      console.log('✅ Combinaciones cargadas:', {
-        menusDia: menusDia?.length || 0,
-        especiales: especiales?.length || 0,
-        total: menusFormateados.length
-      });
+      
 
       setCombinaciones(menusFormateados);
       
@@ -183,7 +179,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
       setItemsSeleccionados(prev => [...prev, nuevoItem]);
     }
 
-    console.log('➕ Item agregado:', combinacion.combination_name);
+    
   };
 
   const cambiarCantidad = (combinacionId: string, nuevaCantidad: number) => {
@@ -237,7 +233,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
       return;
     }
 
-    console.log('🚀 Creando orden con items:', itemsSeleccionados);
+    
     
     setCreandoOrden(true);
     try {

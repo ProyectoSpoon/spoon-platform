@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@spoon/shared/components/ui/Button';
 import { getDetallesMesa } from '@spoon/shared/lib/supabase';
 import { X, DollarSign, Clock } from 'lucide-react';
-import type { ItemMesa } from '@spoon/shared/types/mesas/mesasTypes';
+import type { ItemMesa } from '@spoon/shared/types/mesas';
 
 interface MesaModalProps {
   mesaNumero: number;

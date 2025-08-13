@@ -1,4 +1,5 @@
 import { MetodoPago, CategoriaGasto } from '../../caja/types/cajaTypes';
+import { formatCurrencyCOP, parseCurrencyToCents } from '@spoon/shared/lib/utils';
 
 // Métodos de pago disponibles
 export const METODOS_PAGO: { value: MetodoPago; label: string; icon: string }[] = [
@@ -42,19 +43,9 @@ export const CAJA_MESSAGES = {
 };
 
 // Utilidades de formato
-export const formatCurrency = (centavos: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0
-  }).format(centavos / 100);
-};
+export const formatCurrency = (centavos: number): string => formatCurrencyCOP(centavos);
 
-export const parseCurrency = (currency: string): number => {
-  // Convertir "$25,000" a 2500000 centavos
-  const number = currency.replace(/[^\d]/g, '');
-  return parseInt(number) * 100;
-};
+export const parseCurrency = (currency: string): number => parseCurrencyToCents(currency);
 
 // Categorías de gastos disponibles
 export const CATEGORIAS_GASTOS: { value: CategoriaGasto; label: string; icon: string; color: string }[] = [

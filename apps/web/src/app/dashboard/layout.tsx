@@ -1,7 +1,9 @@
 // src/app/dashboard/layout.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { preloadUserAndRestaurant } from '@spoon/shared';
+import { NotificationProvider } from 'packages/shared/Context/notification-context';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -117,6 +119,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           
           return (
             <Link
+              prefetch
               key={item.href}
               href={item.href}
               className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
@@ -184,7 +187,7 @@ function Header() {
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Bienvenido de vuelta</h1>
+          <h1 className="heading-page">Bienvenido de vuelta</h1>
           <p className="text-sm text-gray-600">Restaurante de Prueba • Medellín, Antioquia</p>
         </div>
         
@@ -219,24 +222,31 @@ export default function DashboardLayout({
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Precalentar datos de usuario/restaurante para evitar llamadas repetidas
+  useEffect(() => {
+    preloadUserAndRestaurant();
+  }, []);
+
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
-      {/* Barra lateral */}
-      <Sidebar 
-        collapsed={sidebarCollapsed} 
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
-      />
-      
-      {/* Contenido principal */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <Header />
-        
-        {/* Contenido de la página */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+    <NotificationProvider>
+      <div className="h-screen flex overflow-hidden bg-gray-50">
+        {/* Barra lateral */}
+        <Sidebar 
+          collapsed={sidebarCollapsed} 
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+        />
+        {/* Contenido principal */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <Header />
+          {/* Contenido de la página */}
+          <main className="flex-1 overflow-y-auto">
+            <div className="px-4 sm:px-6 lg:px-8 py-6">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </NotificationProvider>
   );
 }

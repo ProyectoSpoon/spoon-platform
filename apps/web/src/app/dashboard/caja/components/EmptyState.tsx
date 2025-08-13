@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '@spoon/shared/components/ui/button';
-import { Card, CardContent } from '@spoon/shared/components/ui/card';
+import { Button } from '@spoon/shared/components/ui/Button';
+import { Card, CardContent } from '@spoon/shared/components/ui/Card';
 
 interface EmptyStateProps {
   icon: string;

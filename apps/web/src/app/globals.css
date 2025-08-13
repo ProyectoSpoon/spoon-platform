@@ -12,7 +12,8 @@
   }
   
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  @apply bg-gray-50 text-gray-900 antialiased;
   }
 }
 
@@ -29,4 +30,16 @@
   .input-field {
     @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent;
   }
+
+  /* Tipografía unificada */
+  .heading-page { @apply text-[18px] font-semibold text-gray-900; }
+
+  .heading-section { @apply text-[16px] font-semibold text-gray-900; }
+
+  .subtitle { @apply text-[14px] text-gray-600; }
+
+  .value-number { @apply text-[22px] font-bold text-gray-900; }
+
+  .label-tertiary { @apply text-[13px] font-medium text-[#64748b]; }
+  .subtle-text { @apply text-[11px] text-[#94a3b8]; }
 }

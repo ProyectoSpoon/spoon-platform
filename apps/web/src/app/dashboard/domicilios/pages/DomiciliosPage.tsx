@@ -52,7 +52,7 @@ export default function DomiciliosPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="heading-section text-gray-900 mb-2">
             Cargando sistema de domicilios...
           </h3>
           <p className="text-gray-600 text-sm">
@@ -67,13 +67,13 @@ export default function DomiciliosPage() {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Domicilios</h1>
+          <h1 className="heading-page mb-6">Domicilios</h1>
           
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Truck className="w-12 h-12 text-orange-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+            <h3 className="heading-section mb-4">
               No hay menu configurado para hoy
             </h3>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
@@ -100,7 +100,7 @@ export default function DomiciliosPage() {
         <div className="mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Domicilios</h1>
+              <h1 className="heading-page">Domicilios</h1>
               <p className="text-gray-600 mt-1">
                 Gestiona los pedidos y domiciliarios de hoy
               </p>
@@ -134,7 +134,7 @@ export default function DomiciliosPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pendientes</p>
-                <p className="text-2xl font-semibold text-gray-900">{pendientes}</p>
+                <p className="value-number text-gray-900">{pendientes}</p>
               </div>
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function DomiciliosPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">En Ruta</p>
-                <p className="text-2xl font-semibold text-gray-900">{enRuta}</p>
+                <p className="value-number text-gray-900">{enRuta}</p>
               </div>
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function DomiciliosPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Entregados</p>
-                <p className="text-2xl font-semibold text-gray-900">{entregados}</p>
+                <p className="value-number text-gray-900">{entregados}</p>
               </div>
             </div>
           </div>
@@ -170,7 +170,7 @@ export default function DomiciliosPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Dia</p>
-                <p className="text-lg font-semibold text-gray-900">${Math.round(totalDia / 100).toLocaleString()}</p>
+                <p className="value-number text-gray-900">${Math.round(totalDia / 100).toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function DomiciliosPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Disponibles</p>
-                <p className="text-2xl font-semibold text-gray-900">{disponibles}</p>
+                <p className="value-number text-gray-900">{disponibles}</p>
               </div>
             </div>
           </div>

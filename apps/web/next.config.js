@@ -10,7 +10,7 @@ const nextConfig = {
   
   // Configuraciones adicionales
   images: {
-    domains: ['lwwmmufsdtbetgieofo.supabase.co'], // Tu dominio de Supabase
+  domains: ['lwwmmufsdtbetgieoefo.supabase.co'], // Tu dominio de Supabase (corregido)
   },
 }
 

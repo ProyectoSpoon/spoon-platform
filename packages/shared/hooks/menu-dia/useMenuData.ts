@@ -40,7 +40,7 @@ export const useMenuData = () => {
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     // Notificación simple con alert por ahora - puedes mejorar después
     if (type === 'success') {
-      console.log('✅ SUCCESS:', message);
+      
       alert('✅ ' + message);
     } else {
       console.error('❌ ERROR:', message);
@@ -50,10 +50,10 @@ export const useMenuData = () => {
 
   // ✅ FUNCIÓN PARA CARGAR PRODUCTOS POR CATEGORÍA
   const loadProductsForCategory = useCallback(async (categoryId: string) => {
-    console.log(`📦 Intentando cargar productos para: ${categoryId}`);
+    
     
     if (availableProducts[categoryId] || categoryId === 'configuracion-final') {
-      console.log(`⏭️ Saltando carga para ${categoryId} - ya existe o es config final`);
+      
       return;
     }
     
@@ -90,25 +90,25 @@ export const useMenuData = () => {
         // Verificar si hay menú activo del día
         const todayMenu = await MenuApiService.getTodayMenu(restaurant.id);
         if (todayMenu) {
-          console.log('📋 Menú del día encontrado:', todayMenu.id);
+          
           setCurrentMenu(todayMenu);
           setMenuPrice(todayMenu.menu_price);
           
           // Cargar combinaciones existentes
-            console.log('🔍 Buscando combinaciones para menú:', todayMenu.id);
+            
           const combinations = await MenuApiService.getMenuCombinations(todayMenu.id);
-            console.log('🔍 Combinaciones encontradas:', combinations);
-            console.log('🔍 Cantidad de combinaciones:', combinations.length);
+            
+            
             // ✅ VERIFICACIÓN DIRECTA EN SUPABASE
             const { data: directCheck, error: directError } = await supabase
               .from('generated_combinations')
               .select('*')
               .eq('daily_menu_id', todayMenu.id);
 
-            console.log('🔍 Verificación directa en Supabase:');
-            console.log('   - Data:', directCheck);
-            console.log('   - Error:', directError);
-            console.log('   - Cantidad directa:', directCheck?.length || 0);
+            
+            
+            
+            
           if (combinations.length > 0) {
             // Menú completo con combinaciones
             const transformedCombinations = combinations.map(combo => ({
@@ -123,7 +123,7 @@ export const useMenuData = () => {
             }));
             
             setMenuCombinations(transformedCombinations);
-            console.log(`✅ ${combinations.length} combinaciones cargadas`);
+            
 
             // ✅ CARGAR PRODUCTOS SELECCIONADOS
             const { data: menuSelections } = await supabase
@@ -153,7 +153,6 @@ export const useMenuData = () => {
               }
               
               setSelectedProducts(reconstructedProducts);
-              console.log('✅ Productos seleccionados cargados:', Object.keys(reconstructedProducts));
             }
 
             // ✅ CARGAR CANTIDADES DE PROTEÍNAS
@@ -168,7 +167,7 @@ export const useMenuData = () => {
                 quantities[item.protein_product_id] = item.planned_quantity;
               });
               setProteinQuantities(quantities);
-              console.log('✅ Cantidades de proteínas cargadas:', quantities);
+              
             }
             
             // Cambiar a vista de combinaciones si hay datos completos
@@ -176,7 +175,7 @@ export const useMenuData = () => {
             
           } else {
             // Menú existe pero sin combinaciones - está incompleto
-            console.log('⚠️ Menú encontrado pero sin combinaciones - menú incompleto');
+            
             setCurrentView('creation');
             
             setTimeout(() => {
@@ -184,7 +183,7 @@ export const useMenuData = () => {
             }, 1000);
           }
         } else {
-          console.log('📋 No hay menú del día, empezando desde cero');
+          
           setCurrentView('creation');
         }
       }
@@ -245,3 +244,4 @@ export const useMenuData = () => {
     loadInitialData
   };
 };
+

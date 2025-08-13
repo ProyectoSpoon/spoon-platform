@@ -87,7 +87,7 @@ export default function PedidosTable({
   if (pedidos.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <h3 className="heading-section text-gray-900 mb-2">
           No hay pedidos hoy
         </h3>
         <p className="text-gray-600">
@@ -100,7 +100,7 @@ export default function PedidosTable({
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="heading-section text-gray-900">
           Pedidos de Hoy ({pedidos.length})
         </h3>
       </div>
@@ -146,7 +146,7 @@ export default function PedidosTable({
 
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="value-number text-gray-900">
                       ${Math.round((pedido.total_amount + pedido.delivery_fee) / 100).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500">
@@ -292,7 +292,7 @@ export default function PedidosTable({
               {pedidoParaPago === pedido.id && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
                   <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    <h3 className="heading-section text-gray-900 mb-4">
                       Registrar Pago
                     </h3>
                     

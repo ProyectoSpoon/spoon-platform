@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CajaSesion } from '../../caja/types/cajaTypes';
 import { supabase, getUserProfile } from '@spoon/shared/lib/supabase';
 import { CAJA_MESSAGES } from '../../caja/constants/cajaConstants';
@@ -8,6 +8,8 @@ export const useCajaSesion = () => {
   const [estadoCaja, setEstadoCaja] = useState<'abierta' | 'cerrada'>('cerrada');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [requiereSaneamiento, setRequiereSaneamiento] = useState(false);
+  const saneadorEjecutado = useRef(false);
 
   // Verificar si hay sesión abierta al cargar
   useEffect(() => {
@@ -27,7 +29,7 @@ export const useCajaSesion = () => {
         .eq('estado', 'abierta')
         .order('abierta_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         throw error;
@@ -36,6 +38,27 @@ export const useCajaSesion = () => {
       if (data) {
         setSesionActual(data);
         setEstadoCaja('abierta');
+        // Saneador: si la sesión es de un día anterior, intentar cierre automático una vez
+        try {
+          const inicioHoy = new Date();
+          inicioHoy.setHours(0, 0, 0, 0);
+          const abiertaAt = new Date((data as any).abierta_at || (data as any).fechaApertura);
+          if (abiertaAt && abiertaAt < inicioHoy) {
+            if (!saneadorEjecutado.current) {
+              saneadorEjecutado.current = true;
+              const cierre = await cerrarCaja('Cierre automático: sesión previa');
+              if (!cierre.success) {
+                setRequiereSaneamiento(true);
+              } else {
+                setRequiereSaneamiento(false);
+              }
+            }
+          } else {
+            setRequiereSaneamiento(false);
+          }
+        } catch {
+          setRequiereSaneamiento(true);
+        }
       } else {
         setSesionActual(null);
         setEstadoCaja('cerrada');
@@ -110,7 +133,38 @@ const abrirCaja = async (montoInicial: number, notas?: string) => {
         throw new Error('No hay sesión activa para cerrar');
       }
 
-      const { data, error } = await supabase
+      // Validación previa: no cerrar si hay órdenes pendientes por cobrar
+      const profile = await getUserProfile();
+      if (!profile?.restaurant_id) {
+        throw new Error('Usuario sin restaurante asignado');
+      }
+
+      // Intentar validar con RPC si existe; de lo contrario, fallback a consulta simple
+      try {
+        const { data: validacion } = await supabase.rpc('validar_cierre_caja', {
+          p_restaurant_id: profile.restaurant_id,
+          p_sesion_id: sesionActual.id
+        });
+        if (validacion && validacion.bloqueado) {
+          throw new Error(validacion.mensaje || 'No se puede cerrar la caja. Hay pendientes.');
+        }
+      } catch {
+        // Fallback: verificar órdenes activas
+        const { data: ordenesPend, error: errPend } = await supabase
+          .from('ordenes_mesa')
+          .select('id')
+          .eq('restaurant_id', profile.restaurant_id)
+          .eq('estado', 'activa')
+          .limit(1);
+        if (errPend) {
+          console.warn('Advertencia al validar cierre (fallback):', errPend);
+        }
+        if (ordenesPend && ordenesPend.length > 0) {
+          throw new Error('No se puede cerrar la caja: hay órdenes de mesa activas.');
+        }
+      }
+
+  const { data, error } = await supabase
         .from('caja_sesiones')
         .update({
           estado: 'cerrada',
@@ -143,6 +197,8 @@ const abrirCaja = async (montoInicial: number, notas?: string) => {
     error,
     abrirCaja,
     cerrarCaja,
-    refrescarSesion: verificarSesionAbierta
+  refrescarSesion: verificarSesionAbierta,
+  requiereSaneamiento,
+  cerrarSesionPrevia: () => cerrarCaja('Cierre manual de sesión previa')
   };
 };

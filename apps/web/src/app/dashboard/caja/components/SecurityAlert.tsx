@@ -1,5 +1,6 @@
 // packages/shared/caja/components/SecurityAlert.tsx
 import React from 'react';
+import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 import { AlertTriangle, Shield, DollarSign } from 'lucide-react';
 
 interface SecurityAlertProps {
@@ -37,13 +38,7 @@ export const SecurityAlert: React.FC<SecurityAlertProps> = ({
     }
   };
 
-  const formatearMonto = (centavos: number): string => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
-    }).format(centavos / 100);
-  };
+  const formatearMonto = (centavos: number): string => formatCurrencyCOP(centavos);
 
   return (
     <div className={`p-4 rounded-lg border ${getBgColor()}`}>

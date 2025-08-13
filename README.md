@@ -20,15 +20,21 @@ Convertir a SPOON en el sistema operativo central para la cadena de suministro d
 
 ## 🚀 Stack Tecnológico
 - **Frontend**: React + TypeScript + TailwindCSS
-- **Backend**: Supabase + PostgreSQL
 - **Arquitectura**: Multitenant con Row Level Security
 - **Deployment**: Vercel + Supabase Cloud
 
 ## 📦 Instalación
 
-\\\ash
-# Instalar dependencias
 npm install
+### Database snapshot (schema)
+
+Provide DB connection via env vars (PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD, optional PGSCHEMA, PGSSLMODE). See `scripts/db/ENV_EXAMPLE.txt`.
+
+- Generate snapshot: `npm run db:snapshot:generate`
+- Compare with human doc: `npm run db:snapshot:compare`
+- Both: `npm run db:snapshot`
+
+Outputs to `docs/db/snapshots/` and prints file paths.
 
 # Desarrollo
 npm run dev

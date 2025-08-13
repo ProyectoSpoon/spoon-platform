@@ -1,7 +1,7 @@
 import React from 'react';
-import { Button } from '@spoon/shared/components/ui/button';
-import { Input } from '@spoon/shared/components/ui/input';
-import { Card, CardContent } from '@spoon/shared/components/ui/card';
+import { Button } from '@spoon/shared/components/ui/Button';
+import { Input } from '@spoon/shared/components/ui/Input';
+import { Card, CardContent } from '@spoon/shared/components/ui/Card';
 import { Filter, Search, Calendar, Download } from 'lucide-react';
 
 type TabActiva = 'movimientos' | 'arqueo' | 'reportes';

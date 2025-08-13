@@ -78,3 +78,6 @@ export interface User extends BaseTenant {
 }
 
 export type UserRole = 'admin' | 'manager' | 'staff' | 'viewer';
+
+// Mesa types
+export type { Mesa } from './mesas';

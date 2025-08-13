@@ -19,6 +19,7 @@ import {
   Ban
 } from 'lucide-react';
 
+import { Tabs } from '@spoon/shared';
 // Importar funciones de supabase
 import { 
   getUserProfile, 
@@ -195,7 +196,7 @@ export default function SistemaFacturacion() {
             <div className="flex items-center gap-3">
               <Receipt className="w-8 h-8 text-blue-600" />
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Sistema de Facturación</h1>
+                <h1 className="heading-page">Sistema de Facturación</h1>
                 <p className="text-sm text-gray-500">Gestión completa de facturas</p>
               </div>
             </div>
@@ -219,29 +220,16 @@ export default function SistemaFacturacion() {
       {/* Navigation Tabs */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {[
-              { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
-              { id: 'facturas', label: 'Facturas', icon: FileText },
-              { id: 'reportes', label: 'Reportes', icon: Calendar }
-            ].map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
+          <Tabs
+            className=""
+            activeId={activeTab}
+            onChange={(id) => setActiveTab(id as any)}
+            items={[
+              { id: 'dashboard', label: 'Dashboard', icon: <TrendingUp className="w-4 h-4" /> },
+              { id: 'facturas', label: 'Facturas', icon: <FileText className="w-4 h-4" /> },
+              { id: 'reportes', label: 'Reportes', icon: <Calendar className="w-4 h-4" /> }
+            ]}
+          />
         </div>
       </div>
 
@@ -258,7 +246,7 @@ export default function SistemaFacturacion() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Facturas Hoy</p>
-                    <p className="text-2xl font-bold">{estadisticas.facturasHoy}</p>
+                    <p className="value-number">{estadisticas.facturasHoy}</p>
                   </div>
                 </div>
               </div>
@@ -270,7 +258,7 @@ export default function SistemaFacturacion() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Ventas Hoy</p>
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="value-number text-green-600">
                       {formatearMonto(estadisticas.ventasHoy)}
                     </p>
                   </div>
@@ -284,7 +272,7 @@ export default function SistemaFacturacion() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Transacciones</p>
-                    <p className="text-2xl font-bold">{estadisticas.transaccionesHoy}</p>
+                    <p className="value-number">{estadisticas.transaccionesHoy}</p>
                   </div>
                 </div>
               </div>
@@ -296,7 +284,7 @@ export default function SistemaFacturacion() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Pendientes</p>
-                    <p className="text-2xl font-bold text-orange-600">
+                    <p className="value-number text-orange-600">
                       {estadisticas.facturasPendientes}
                     </p>
                   </div>
@@ -308,7 +296,7 @@ export default function SistemaFacturacion() {
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-6 border-b">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">Facturas Recientes</h3>
+                  <h3 className="heading-section">Facturas Recientes</h3>
                   <button
                     onClick={() => setActiveTab('facturas')}
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -474,7 +462,7 @@ export default function SistemaFacturacion() {
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-6 border-b">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">Facturas ({facturas.length})</h3>
+                  <h3 className="heading-section">Facturas ({facturas.length})</h3>
                   <div className="flex gap-2">
                     <button className="px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
                       <Download className="w-4 h-4" />
@@ -588,7 +576,7 @@ export default function SistemaFacturacion() {
 
         {activeTab === 'reportes' && (
           <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold mb-4">Reportes de Facturación</h3>
+            <h3 className="heading-section mb-4">Reportes de Facturación</h3>
             <p className="text-gray-600">
               Los reportes detallados estarán disponibles próximamente. 
               Por ahora, puedes usar el dashboard para ver estadísticas básicas.
