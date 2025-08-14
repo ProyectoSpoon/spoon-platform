@@ -1,3 +1,4 @@
+"use client";
 // packages/shared/components/ui/Toast/toaster.tsx
 import React from 'react';
 import { useToast } from './use-toast';

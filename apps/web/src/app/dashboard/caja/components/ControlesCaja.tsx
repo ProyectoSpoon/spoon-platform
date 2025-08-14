@@ -48,13 +48,13 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
       <div className={`flex items-center justify-between ${className || ''}`}>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-green-700">Caja Abierta</span>
+            <div className="w-3 h-3 bg-[color:var(--sp-success-500)] rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-[color:var(--sp-success-700)]">Caja Abierta</span>
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-[color:var(--sp-neutral-600)]">
             Monto inicial: <span className="font-semibold">{formatearMonto(montoInicialCents)}</span>
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-[color:var(--sp-neutral-600)]">
             Desde: {fechaAperturaIso ? new Date(fechaAperturaIso).toLocaleTimeString('es-CO', { 
               hour: '2-digit', 
               minute: '2-digit' 
@@ -66,13 +66,13 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
           variant="outline"
           onClick={() => setShowCerrarModal(true)}
           disabled={loading}
-          className="text-red-600 border-red-200 hover:bg-red-50"
+          className="text-[color:var(--sp-error-600)] border-[color:var(--sp-error-200)] hover:bg-[color:var(--sp-error-50)]"
         >
           Cerrar Caja
         </Button>
 
         {showCerrarModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-[color:color-mix(in_srgb,black_50%,transparent)] flex items-center justify-center z-50">
             <Card className="w-full max-w-md">
               <CardHeader>
                 <CardTitle>Cerrar Caja</CardTitle>
@@ -99,7 +99,7 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
                   <Button
                     onClick={handleCerrarCaja}
                     disabled={loading}
-                    className="flex-1 bg-red-600 hover:bg-red-700"
+                    className="flex-1 bg-[color:var(--sp-error-600)] hover:bg-[color:var(--sp-error-700)]"
                   >
                     {loading ? 'Cerrando...' : 'Cerrar Caja'}
                   </Button>
@@ -115,21 +115,21 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
   return (
     <div className={`flex items-center justify-between ${className || ''}`}>
       <div className="flex items-center space-x-2">
-        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-        <span className="text-sm font-medium text-gray-600">Caja Cerrada</span>
+  <div className="w-3 h-3 bg-[color:var(--sp-neutral-400)] rounded-full"></div>
+  <span className="text-sm font-medium text-[color:var(--sp-neutral-600)]">Caja Cerrada</span>
       </div>
 
       <Button
         onClick={() => setShowAbrirModal(true)}
         disabled={loading}
-        className="bg-green-600 hover:bg-green-700"
+  className="bg-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-700)]"
       >
         <span className="mr-2">🏪</span>
         Abrir Caja
       </Button>
 
       {showAbrirModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div className="fixed inset-0 bg-[color:color-mix(in_srgb,black_50%,transparent)] flex items-center justify-center z-50">
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle>Abrir Caja</CardTitle>
@@ -144,7 +144,7 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
                   placeholder="50000"
                   className="text-right"
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[color:var(--sp-neutral-500)]">
                   Equivale a: {formatearMonto(montoInicial)}
                 </p>
               </div>

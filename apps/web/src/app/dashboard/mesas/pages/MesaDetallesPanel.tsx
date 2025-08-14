@@ -90,13 +90,13 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
   // Si no hay mesa, mostrar estado vacío
   if (!mesa) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50">
+      <div className="h-full flex items-center justify-center bg-[color:var(--sp-neutral-50)]">
         <div className="text-center p-8">
           <span className="text-6xl mb-4 block">🍽️</span>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-[color:var(--sp-neutral-900)] mb-2">
             Selecciona una mesa
           </h3>
-          <p className="text-gray-500">
+          <p className="text-[color:var(--sp-neutral-500)]">
             Haz clic en una mesa para ver sus detalles
           </p>
         </div>
@@ -105,36 +105,36 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-[color:var(--sp-surface)]">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 z-10">
+      <div className="flex items-center justify-between p-6 border-b border-[color:var(--sp-border)] sticky top-0 bg-[color:var(--sp-surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--sp-surface)]/80 z-10">
         <div className="flex items-center space-x-3">
           <div className={`p-3 rounded-xl ${
-            mesa.estado === 'libre' ? 'bg-green-100' :
-            mesa.estado === 'ocupada' ? 'bg-red-100' :
-            mesa.estado === 'reservada' ? 'bg-yellow-100' :
-            mesa.estado === 'en_cocina' ? 'bg-blue-100' :
-            mesa.estado === 'servida' ? 'bg-purple-100' :
-            mesa.estado === 'por_cobrar' ? 'bg-rose-100' :
-            'bg-gray-100'
+            mesa.estado === 'libre' ? 'bg-[color:var(--sp-success-100)]' :
+            mesa.estado === 'ocupada' ? 'bg-[color:var(--sp-error-100)]' :
+            mesa.estado === 'reservada' ? 'bg-[color:var(--sp-warning-100)]' :
+            mesa.estado === 'en_cocina' ? 'bg-[color:var(--sp-primary-100)]' :
+            mesa.estado === 'servida' ? 'bg-[color:var(--sp-info-100)]' :
+            mesa.estado === 'por_cobrar' ? 'bg-[color:var(--sp-warning-100)]' :
+            'bg-[color:var(--sp-neutral-100)]'
           }`}>
             <span className={`text-2xl ${
-              mesa.estado === 'libre' ? 'text-green-600' :
-              mesa.estado === 'ocupada' ? 'text-red-600' :
-              mesa.estado === 'reservada' ? 'text-yellow-600' :
-              mesa.estado === 'en_cocina' ? 'text-blue-600' :
-              mesa.estado === 'servida' ? 'text-purple-600' :
-              mesa.estado === 'por_cobrar' ? 'text-rose-600' :
-              'text-gray-600'
+              mesa.estado === 'libre' ? 'text-[color:var(--sp-success-600)]' :
+              mesa.estado === 'ocupada' ? 'text-[color:var(--sp-error-600)]' :
+              mesa.estado === 'reservada' ? 'text-[color:var(--sp-warning-600)]' :
+              mesa.estado === 'en_cocina' ? 'text-[color:var(--sp-primary-600)]' :
+              mesa.estado === 'servida' ? 'text-[color:var(--sp-info-600)]' :
+              mesa.estado === 'por_cobrar' ? 'text-[color:var(--sp-warning-600)]' :
+              'text-[color:var(--sp-neutral-600)]'
             }`}>
               👥
             </span>
           </div>
           <div>
-            <h2 className="heading-section text-gray-900">
+            <h2 className="heading-section text-[color:var(--sp-neutral-900)]">
               {mesa.nombre || `Mesa ${mesa.numero}`}
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-[color:var(--sp-neutral-500)]">
               {mesa.zona} • Capacidad {mesa.capacidad} {mesa.capacidad === 1 ? 'persona' : 'personas'}
               {mesa.detallesOrden?.comensales != null && ` • 👥 ${mesa.detallesOrden.comensales} ${mesa.detallesOrden.comensales === 1 ? 'persona' : 'personas'}`}
             </p>
@@ -142,7 +142,7 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
         </div>
         <button
           onClick={onClose}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 hover:bg-[color:var(--sp-neutral-100)] rounded-lg transition-colors"
         >
           ✕
         </button>
@@ -154,15 +154,15 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
     {mesa.detallesOrden && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="heading-section text-gray-900">Orden actual</h3>
+              <h3 className="heading-section text-[color:var(--sp-neutral-900)]">Orden actual</h3>
         {(mesa.detallesOrden.created_at || mesa.detallesOrden.fechaCreacion) && (
-                <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                <div className="text-xs text-[color:var(--sp-neutral-500)] bg-[color:var(--sp-neutral-100)] px-2 py-1 rounded-full">
           ⏱️ {formatTime(mesa.detallesOrden.fechaCreacion || mesa.detallesOrden.created_at)}
                 </div>
               )}
             </div>
-      {Array.isArray(mesa.detallesOrden.items) && mesa.detallesOrden.items.length > 0 ? (
-              <div className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white">
+  {Array.isArray(mesa.detallesOrden.items) && mesa.detallesOrden.items.length > 0 ? (
+      <div className="divide-y divide-[color:var(--sp-border)] rounded-lg border border-[color:var(--sp-border)] bg-[color:var(--sp-surface-elevated)]">
         {mesa.detallesOrden.items.map((it: any, idx: number) => {
                   const nombre = it?.nombre || it?.name || it?.titulo || 'Item';
                   const cantidad = it?.cantidad ?? it?.qty ?? it?.quantity ?? 1;
@@ -172,22 +172,22 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
                   return (
                     <div key={idx} className="flex items-center justify-between p-3">
                       <div className="min-w-0">
-                        <div className="text-sm font-medium text-gray-900 truncate">{nombre}</div>
-                        <div className="text-xs text-gray-500">x{cantidad}{obs ? ` • - ${obs}` : ''}</div>
+                        <div className="text-sm font-medium text-[color:var(--sp-neutral-900)] truncate">{nombre}</div>
+                        <div className="text-xs text-[color:var(--sp-neutral-500)]">x{cantidad}{obs ? ` • - ${obs}` : ''}</div>
                       </div>
-                      <div className="text-sm font-semibold text-gray-900">{formatCurrency(subtotal)}</div>
+                      <div className="text-sm font-semibold text-[color:var(--sp-neutral-900)]">{formatCurrency(subtotal)}</div>
                     </div>
                   );
                 })}
-                <div className="flex items-center justify-between p-3 bg-gray-50">
-                  <div className="text-sm font-medium text-gray-700">Total</div>
-                  <div className="text-base font-semibold text-gray-900">
+                <div className="flex items-center justify-between p-3 bg-[color:var(--sp-neutral-50)]">
+                  <div className="text-sm font-medium text-[color:var(--sp-neutral-700)]">Total</div>
+                  <div className="text-base font-semibold text-[color:var(--sp-neutral-900)]">
           {formatCurrency(mesa.detallesOrden.total || 0)}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-gray-50 border border-dashed border-gray-200 rounded-lg text-sm text-gray-500">
+              <div className="p-4 bg-[color:var(--sp-neutral-50)] border border-dashed border-[color:var(--sp-neutral-200)] rounded-lg text-sm text-[color:var(--sp-neutral-500)]">
                 No hay items en la orden.
               </div>
             )}
@@ -196,17 +196,17 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
 
         {/* Estado actual */}
         <div className="mb-6">
-          <h3 className="heading-section text-gray-900 mb-3">
+          <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-3">
             Estado Actual
           </h3>
           <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-            mesa.estado === 'libre' ? 'bg-green-100 text-green-800' :
-            mesa.estado === 'ocupada' ? 'bg-red-100 text-red-800' :
-            mesa.estado === 'reservada' ? 'bg-yellow-100 text-yellow-800' :
-            mesa.estado === 'en_cocina' ? 'bg-blue-100 text-blue-800' :
-            mesa.estado === 'servida' ? 'bg-purple-100 text-purple-800' :
-            mesa.estado === 'por_cobrar' ? 'bg-rose-100 text-rose-800' :
-            'bg-gray-100 text-gray-800'
+            mesa.estado === 'libre' ? 'bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)]' :
+            mesa.estado === 'ocupada' ? 'bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)]' :
+            mesa.estado === 'reservada' ? 'bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-800)]' :
+            mesa.estado === 'en_cocina' ? 'bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-800)]' :
+            mesa.estado === 'servida' ? 'bg-[color:var(--sp-info-100)] text-[color:var(--sp-info-800)]' :
+            mesa.estado === 'por_cobrar' ? 'bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-800)]' :
+            'bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-800)]'
           }`}>
             {mesa.estado === 'libre' && '🟢 Libre'}
             {mesa.estado === 'ocupada' && '🔴 Ocupada'}
@@ -222,21 +222,21 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
         <div className="grid grid-cols-1 gap-4 mb-6">
           <div className="flex items-center space-x-2">
             <span>📍</span>
-            <span className="text-sm text-gray-600">Zona: {mesa.zona}</span>
+            <span className="text-sm text-[color:var(--sp-neutral-600)]">Zona: {mesa.zona}</span>
           </div>
           <div className="flex items-center space-x-2">
             <span>👥</span>
-            <span className="text-sm text-gray-600">Capacidad: {mesa.capacidad} personas</span>
+            <span className="text-sm text-[color:var(--sp-neutral-600)]">Capacidad: {mesa.capacidad} personas</span>
           </div>
         </div>
 
         {/* Notas */}
         {mesa.notas && (
           <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-900 mb-2">
+            <h4 className="text-sm font-medium text-[color:var(--sp-neutral-900)] mb-2">
               📝 Notas
             </h4>
-            <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+            <p className="text-sm text-[color:var(--sp-neutral-600)] bg-[color:var(--sp-neutral-50)] p-3 rounded-lg">
               {mesa.notas}
             </p>
           </div>
@@ -264,15 +264,15 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
             break;
           case 'en_cocina':
             primary = { label: 'Marcar servida', onClick: () => handleAccion('Servida'), color: 'emerald' };
-            secondary = { label: 'Editar orden', onClick: handleEditarOrden, variant: 'default', className: 'bg-slate-600 hover:bg-slate-700 text-white' };
+            secondary = { label: 'Editar orden', onClick: handleEditarOrden, variant: 'default', className: 'bg-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-800)] text-[color:var(--sp-on-surface-inverted)]' };
             break;
           case 'servida':
             primary = { label: 'Solicitar cuenta', onClick: () => handleAccion('Solicitar Cuenta'), color: 'indigo' };
-            secondary = { label: 'Editar orden', onClick: handleEditarOrden, variant: 'default', className: 'bg-slate-600 hover:bg-slate-700 text-white' };
+            secondary = { label: 'Editar orden', onClick: handleEditarOrden, variant: 'default', className: 'bg-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-800)] text-[color:var(--sp-on-surface-inverted)]' };
             break;
           case 'por_cobrar':
             primary = { label: 'Procesar pago', onClick: () => handleAccion('Cobrar'), color: 'emerald' }; // verde oscuro #059669
-            secondary = { label: 'Liberar mesa', onClick: () => handleAccion('Liberar'), variant: 'default', className: 'bg-amber-500 hover:bg-amber-600 text-white' }; // naranja #f59e0b
+            secondary = { label: 'Liberar mesa', onClick: () => handleAccion('Liberar'), variant: 'default', className: 'bg-amber-500 hover:bg-amber-600 text-[color:var(--sp-on-warning)]' }; // naranja #f59e0b
             break;
           case 'reservada':
             primary = { label: 'Cancelar reserva', onClick: () => handleAccion('Cancelar Reserva'), color: 'yellow' };
@@ -291,7 +291,7 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
             secondary={secondary}
           >
             {mesa.detallesOrden?.fechaCreacion || mesa.detallesOrden?.created_at ? (
-              <div className="flex items-center justify-between text-xs text-gray-600">
+              <div className="flex items-center justify-between text-xs text-[color:var(--sp-neutral-600)]">
                 <span>⏱️ Tiempo en mesa: <strong>{formatTime(mesa.detallesOrden?.fechaCreacion || mesa.detallesOrden?.created_at)}</strong></span>
                 {typeof mesa.detallesOrden?.comensales === 'number' && (
                   <span>👥 {mesa.detallesOrden?.comensales} {mesa.detallesOrden?.comensales === 1 ? 'persona' : 'personas'}</span>

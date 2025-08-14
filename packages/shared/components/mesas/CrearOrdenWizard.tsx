@@ -1,5 +1,5 @@
 // CrearOrdenWizard.tsx - Modal para crear órdenes con menús del día
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@spoon/shared/components/ui/Button';
 import { 
   X, 
@@ -38,7 +38,7 @@ interface ItemSeleccionado {
 interface CrearOrdenWizardProps {
   isOpen: boolean;
   onClose: () => void;
-  onCrearOrden: (items: ItemSeleccionado[]) => Promise<boolean>;
+  onCrearOrden: (_items: ItemSeleccionado[]) => Promise<boolean>;
   restaurantId: string;
   mesaNumero: number;
   loading?: boolean;
@@ -70,7 +70,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
   // FUNCIONES DE CARGA
   // ========================================
 
-  const cargarCombinaciones = async () => {
+  const cargarCombinaciones = useCallback(async () => {
     if (!restaurantId) return;
     
     setLoadingCombinaciones(true);
@@ -105,7 +105,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
         .eq('setup_completed', true);
 
       if (errorSpecialDishes) {
-        
+        console.warn('Error cargando special_dishes:', errorSpecialDishes);
       }
 
       const specialDishIds = specialDishes?.map(dish => dish.id) || [];
@@ -121,7 +121,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
           .order('combination_name');
 
         if (errorEspeciales) {
-          
+          console.warn('Error cargando generated_special_combinations:', errorEspeciales);
         } else {
           especiales = especialesData || [];
         }
@@ -149,7 +149,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
     } finally {
       setLoadingCombinaciones(false);
     }
-  };
+  }, [restaurantId]);
 
   // ========================================
   // FUNCIONES DE MANEJO DE ITEMS
@@ -265,7 +265,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
     if (isOpen && restaurantId) {
       cargarCombinaciones();
     }
-  }, [isOpen, restaurantId]);
+  }, [isOpen, restaurantId, cargarCombinaciones]);
 
   // ========================================
   // RENDERIZADO
@@ -274,24 +274,24 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[color:color-mix(in oklab,var(--sp-neutral-950)_60%,transparent)]">
+      <div className="bg-[color:var(--sp-neutral-50)] rounded-lg shadow-xl max-w-6xl w-full h-[90vh] overflow-hidden flex flex-col">
         
         {/* Header */}
-        <div className="bg-blue-600 text-white p-6 flex justify-between items-center">
+  <div className="bg-[color:var(--sp-info-600)] text-[color:var(--sp-on-info)] p-6 flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold flex items-center gap-2">
               <ChefHat className="h-6 w-6" />
               Crear Orden - Mesa {mesaNumero}
             </h2>
-            <p className="text-blue-200 text-sm">
+      <p className="text-[color:var(--sp-info-200)] text-sm">
               Selecciona los productos del menú del día
             </p>
           </div>
           <button
             onClick={handleClose}
             disabled={creandoOrden || loading}
-            className="text-white hover:text-gray-300 disabled:opacity-50"
+  className="text-[color:var(--sp-on-info)] hover:text-[color:var(--sp-neutral-300)] disabled:opacity-50"
           >
             <X className="h-6 w-6" />
           </button>
@@ -306,16 +306,16 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
             
             {loadingCombinaciones ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Cargando menú del día...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--sp-info-600)] mx-auto mb-4"></div>
+                <p className="text-[color:var(--sp-neutral-600)]">Cargando menú del día...</p>
               </div>
             ) : combinaciones.length > 0 ? (
               <div className="space-y-6">
                 
                 {/* Menús del Día */}
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-bold text-[color:var(--sp-neutral-900)] mb-4 flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-[color:var(--sp-info-600)]" />
                     Menú del Día - {new Date().toLocaleDateString('es-CO')} ({combinaciones.filter(c => c.tipo === 'menu_dia').length})
                   </h3>
                   
@@ -330,22 +330,22 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                             className={`
                               border-2 rounded-lg p-3 transition-all cursor-pointer
                               ${cantidad > 0 
-                                ? 'border-blue-500 bg-blue-50' 
-                                : 'border-gray-200 bg-white hover:border-gray-300'
+                                ? 'border-[color:var(--sp-info-500)] bg-[color:var(--sp-info-50)]' 
+                                : 'border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-neutral-50)] hover:border-[color:var(--sp-neutral-300)]'
                               }
                             `}
                             onClick={() => agregarItem(combinacion)}
                           >
                             <div className="flex justify-between items-start mb-2">
-                              <h4 className="font-bold text-gray-900 text-sm leading-tight">
+                              <h4 className="font-bold text-[color:var(--sp-neutral-900)] text-sm leading-tight">
                                 {combinacion.combination_name}
                               </h4>
                               <div className="text-right ml-2">
-                                <div className="font-bold text-green-600">
+                                <div className="font-bold text-[color:var(--sp-success-600)]">
                                   {formatCurrency(combinacion.combination_price)}
                                 </div>
                                 {cantidad > 0 && (
-                                  <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                                  <div className="bg-[color:var(--sp-info-500)] text-[color:var(--sp-on-info)] text-xs px-2 py-1 rounded-full">
                                     {cantidad}x
                                   </div>
                                 )}
@@ -353,7 +353,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                             </div>
                             
                             {combinacion.combination_description && (
-                              <p className="text-gray-600 text-xs mb-2 line-clamp-2">
+                              <p className="text-[color:var(--sp-neutral-600)] text-xs mb-2 line-clamp-2">
                                 {combinacion.combination_description}
                               </p>
                             )}
@@ -362,22 +362,22 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                               <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                 <button
                                   onClick={() => cambiarCantidad(combinacion.id, cantidad - 1)}
-                                  className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200"
+                                  className="w-8 h-8 rounded-full bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-600)] flex items-center justify-center hover:bg-[color:var(--sp-error-200)]"
                                 >
                                   <Minus className="h-4 w-4" />
                                 </button>
-                                <span className="font-bold text-gray-900 min-w-[2rem] text-center">
+                                <span className="font-bold text-[color:var(--sp-neutral-900)] min-w-[2rem] text-center">
                                   {cantidad}
                                 </span>
                                 <button
                                   onClick={() => cambiarCantidad(combinacion.id, cantidad + 1)}
-                                  className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200"
+                                  className="w-8 h-8 rounded-full bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-600)] flex items-center justify-center hover:bg-[color:var(--sp-success-200)]"
                                 >
                                   <Plus className="h-4 w-4" />
                                 </button>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2 text-blue-600">
+                              <div className="flex items-center gap-2 text-[color:var(--sp-info-600)]">
                                 <Plus className="h-4 w-4" />
                                 <span className="text-sm font-medium">Agregar</span>
                               </div>
@@ -392,8 +392,8 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                 {/* Platos Especiales */}
                 {combinaciones.filter(c => c.tipo === 'especial').length > 0 && (
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-orange-500" />
+                    <h3 className="text-lg font-bold text-[color:var(--sp-neutral-900)] mb-4 flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-[color:var(--sp-warning-500)]" />
                       Platos Especiales ({combinaciones.filter(c => c.tipo === 'especial').length})
                     </h3>
                     
@@ -408,23 +408,23 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                               className={`
                                 border-2 rounded-lg p-3 transition-all cursor-pointer
                                 ${cantidad > 0 
-                                  ? 'border-orange-500 bg-orange-50' 
-                                  : 'border-orange-200 bg-gradient-to-r from-orange-50 to-yellow-50 hover:border-orange-300'
+                                  ? 'border-[color:var(--sp-warning-500)] bg-[color:var(--sp-warning-50)]' 
+                                  : 'border-[color:var(--sp-warning-200)] bg-gradient-to-r from-[color:var(--sp-warning-50)] to-[color:var(--sp-warning-100)] hover:border-[color:var(--sp-warning-300)]'
                                 }
                               `}
                               onClick={() => agregarItem(combinacion)}
                             >
                               <div className="flex justify-between items-start mb-2">
-                                <h4 className="font-bold text-gray-900 text-sm leading-tight flex items-center gap-1">
-                                  <Sparkles className="h-4 w-4 text-orange-500" />
+                                <h4 className="font-bold text-[color:var(--sp-neutral-900)] text-sm leading-tight flex items-center gap-1">
+                                  <Sparkles className="h-4 w-4 text-[color:var(--sp-warning-500)]" />
                                   {combinacion.combination_name}
                                 </h4>
                                 <div className="text-right ml-2">
-                                  <div className="font-bold text-orange-600">
+                                  <div className="font-bold text-[color:var(--sp-warning-600)]">
                                     {formatCurrency(combinacion.combination_price)}
                                   </div>
                                   {cantidad > 0 && (
-                                    <div className="bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+                                    <div className="bg-[color:var(--sp-warning-500)] text-[color:var(--sp-on-warning)] text-xs px-2 py-1 rounded-full">
                                       {cantidad}x
                                     </div>
                                   )}
@@ -432,7 +432,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                               </div>
                               
                               {combinacion.combination_description && (
-                                <p className="text-gray-600 text-xs mb-2 line-clamp-2">
+                                <p className="text-[color:var(--sp-neutral-600)] text-xs mb-2 line-clamp-2">
                                   {combinacion.combination_description}
                                 </p>
                               )}
@@ -441,22 +441,22 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                   <button
                                     onClick={() => cambiarCantidad(combinacion.id, cantidad - 1)}
-                                    className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200"
+                                    className="w-8 h-8 rounded-full bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-600)] flex items-center justify-center hover:bg-[color:var(--sp-error-200)]"
                                   >
                                     <Minus className="h-4 w-4" />
                                   </button>
-                                  <span className="font-bold text-gray-900 min-w-[2rem] text-center">
+                                  <span className="font-bold text-[color:var(--sp-neutral-900)] min-w-[2rem] text-center">
                                     {cantidad}
                                   </span>
                                   <button
                                     onClick={() => cambiarCantidad(combinacion.id, cantidad + 1)}
-                                    className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200"
+                                    className="w-8 h-8 rounded-full bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-600)] flex items-center justify-center hover:bg-[color:var(--sp-success-200)]"
                                   >
                                     <Plus className="h-4 w-4" />
                                   </button>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-2 text-orange-600">
+                                <div className="flex items-center gap-2 text-[color:var(--sp-warning-600)]">
                                   <Plus className="h-4 w-4" />
                                   <span className="text-sm font-medium">Agregar</span>
                                 </div>
@@ -470,9 +470,9 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                 )}
               </div>
             ) : (
-              <div className="text-center py-12 text-gray-500">
-                <ChefHat className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-medium text-gray-700 mb-2">
+              <div className="text-center py-12 text-[color:var(--sp-neutral-500)]">
+                <ChefHat className="h-16 w-16 mx-auto mb-4 text-[color:var(--sp-neutral-300)]" />
+                <h3 className="text-lg font-medium text-[color:var(--sp-neutral-700)] mb-2">
                   No hay menús disponibles
                 </h3>
                 <p className="text-sm">
@@ -485,15 +485,15 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
           {/* ========================================
               COLUMNA DERECHA - RESUMEN DE ORDEN (30%)
               ======================================== */}
-          <div className="w-80 bg-gray-50 border-l border-gray-200 flex flex-col min-h-0">
+          <div className="w-80 bg-[color:var(--sp-neutral-50)] border-l border-[color:var(--sp-neutral-200)] flex flex-col min-h-0">
             
             {/* Header del resumen */}
-            <div className="p-4 border-b border-gray-200 bg-white">
-              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+            <div className="p-4 border-b border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-neutral-50)]">
+              <h3 className="font-bold text-[color:var(--sp-neutral-900)] flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5" />
                 Resumen de Orden
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-[color:var(--sp-neutral-600)]">
                 Mesa {mesaNumero}
               </p>
             </div>
@@ -503,14 +503,14 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
               {itemsSeleccionados.length > 0 ? (
                 <div className="space-y-3">
                   {itemsSeleccionados.map((item) => (
-                    <div key={item.combinacionId} className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div key={item.combinacionId} className="bg-[color:var(--sp-neutral-50)] rounded-lg p-3 border border-[color:var(--sp-neutral-200)]">
                       <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-gray-900 text-sm leading-tight">
+                        <h4 className="font-medium text-[color:var(--sp-neutral-900)] text-sm leading-tight">
                           {item.nombre}
                         </h4>
                         <button
                           onClick={() => cambiarCantidad(item.combinacionId, 0)}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-[color:var(--sp-error-500)] hover:text-[color:var(--sp-error-700)]"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -520,26 +520,26 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => cambiarCantidad(item.combinacionId, item.cantidad - 1)}
-                            className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"
+                            className="w-7 h-7 rounded-full bg-[color:var(--sp-neutral-100)] flex items-center justify-center hover:bg-[color:var(--sp-neutral-200)]"
                           >
                             <Minus className="h-3 w-3" />
                           </button>
-                          <span className="font-bold text-gray-900 min-w-[1.5rem] text-center">
+                          <span className="font-bold text-[color:var(--sp-neutral-900)] min-w-[1.5rem] text-center">
                             {item.cantidad}
                           </span>
                           <button
                             onClick={() => cambiarCantidad(item.combinacionId, item.cantidad + 1)}
-                            className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"
+                            className="w-7 h-7 rounded-full bg-[color:var(--sp-neutral-100)] flex items-center justify-center hover:bg-[color:var(--sp-neutral-200)]"
                           >
                             <Plus className="h-3 w-3" />
                           </button>
                         </div>
                         
                         <div className="text-right">
-                          <div className="font-bold text-gray-900">
+                          <div className="font-bold text-[color:var(--sp-neutral-900)]">
                             {formatCurrency(item.precio * item.cantidad)}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-[color:var(--sp-neutral-500)]">
                             {formatCurrency(item.precio)} c/u
                           </div>
                         </div>
@@ -548,8 +548,8 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <ShoppingCart className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <div className="text-center py-8 text-[color:var(--sp-neutral-500)]">
+                  <ShoppingCart className="h-12 w-12 mx-auto mb-3 text-[color:var(--sp-neutral-300)]" />
                   <p className="text-sm">
                     Selecciona productos del menú para agregarlos a la orden
                   </p>
@@ -558,21 +558,21 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
             </div>
 
             {/* Total y botones */}
-            <div className="p-4 border-t border-gray-200 bg-white space-y-3">
+            <div className="p-4 border-t border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-neutral-50)] space-y-3">
               
               {/* Total */}
-              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <div className="bg-[color:var(--sp-success-50)] rounded-lg p-4 border border-[color:var(--sp-success-200)]">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-gray-900 flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-green-600" />
+                  <span className="font-bold text-[color:var(--sp-neutral-900)] flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-[color:var(--sp-success-600)]" />
                     TOTAL:
                   </span>
-                  <span className="text-2xl font-bold text-green-600">
+                  <span className="text-2xl font-bold text-[color:var(--sp-success-600)]">
                     {formatCurrency(calcularTotal())}
                   </span>
                 </div>
                 {itemsSeleccionados.length > 0 && (
-                  <div className="text-sm text-green-700 mt-1">
+                  <div className="text-sm text-[color:var(--sp-success-700)] mt-1">
                     {itemsSeleccionados.reduce((sum, item) => sum + item.cantidad, 0)} productos seleccionados
                   </div>
                 )}
@@ -583,11 +583,11 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                 <Button
                   onClick={handleCrearOrden}
                   disabled={itemsSeleccionados.length === 0 || creandoOrden || loading}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-lg"
+                  className="w-full bg-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-700)] text-[color:var(--sp-on-success)] font-bold py-3 text-lg"
                 >
                   {creandoOrden ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[color:var(--sp-on-success)] mr-2"></div>
                       Creando Orden...
                     </>
                   ) : (
@@ -609,7 +609,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
                 
                 {/* Info del total */}
                 {itemsSeleccionados.length > 0 && (
-                  <div className="text-xs text-center text-gray-500 mt-2">
+                  <div className="text-xs text-center text-[color:var(--sp-neutral-500)] mt-2">
                     💡 Al crear la orden, la Mesa {mesaNumero} quedará ocupada
                   </div>
                 )}

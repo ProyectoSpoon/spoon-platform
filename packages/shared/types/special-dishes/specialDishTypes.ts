@@ -342,12 +342,12 @@ export const formatSpecialPrice = (price: number): string => {
 export const getSpecialStatusColor = (status: SpecialDishStatus): string => {
   switch (status) {
     case SpecialDishStatus.DRAFT:
-      return 'bg-gray-100 text-gray-800';
+  return 'bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-800)]';
     case SpecialDishStatus.ACTIVE:
-      return 'bg-green-100 text-green-800';
+  return 'bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)]';
     case SpecialDishStatus.INACTIVE:
-      return 'bg-red-100 text-red-800';
+  return 'bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)]';
     default:
-      return 'bg-gray-100 text-gray-800';
+  return 'bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-800)]';
   }
 };

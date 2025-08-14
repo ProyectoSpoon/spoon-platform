@@ -132,7 +132,7 @@ export default function ConfiguracionPage() {
       <div className="mx-auto max-w-7xl px-6 md:px-8 py-8">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <span className="text-gray-600">Cargando configuración...</span>
+              <span className="text-[color:var(--sp-neutral-600)]">Cargando configuración...</span>
           </div>
         </div>
       </div>

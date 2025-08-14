@@ -40,8 +40,8 @@ export const OrdenPendiente: React.FC<OrdenPendienteProps> = ({
 
   const getColorBorde = (tipo: 'mesa' | 'delivery') => {
     return tipo === 'mesa' 
-      ? 'border-l-blue-500 hover:border-l-blue-600' 
-      : 'border-l-green-500 hover:border-l-green-600';
+      ? 'border-l-[color:var(--sp-info-500)] hover:border-l-[color:var(--sp-info-600)]' 
+      : 'border-l-[color:var(--sp-success-500)] hover:border-l-[color:var(--sp-success-600)]';
   };
 
   return (
@@ -56,23 +56,23 @@ export const OrdenPendiente: React.FC<OrdenPendienteProps> = ({
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-1">
               <span>{getIconoTipo(orden.tipo)}</span>
-              <h3 className="font-semibold text-gray-900">
+              <h3 className="font-semibold text-[color:var(--sp-neutral-900)]">
                 {orden.identificador}
               </h3>
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+              <span className="text-xs bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-600)] px-2 py-1 rounded-full">
                 {orden.tipo === 'mesa' ? 'Mesa' : 'Delivery'}
               </span>
             </div>
             
             {/* Detalles adicionales */}
             {orden.detalles && (
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-[color:var(--sp-neutral-600)] mb-2">
                 {orden.detalles}
               </p>
             )}
             
             {/* Tiempo transcurrido */}
-            <div className="flex items-center space-x-4 text-xs text-gray-500">
+            <div className="flex items-center space-x-4 text-xs text-[color:var(--sp-neutral-500)]">
               <span>⏰ {formatearTiempo(orden.fecha_creacion)}</span>
               <span>ID: {orden.id.slice(-8)}</span>
             </div>
@@ -81,7 +81,7 @@ export const OrdenPendiente: React.FC<OrdenPendienteProps> = ({
           {/* Monto y botón */}
           <div className="flex flex-col items-end space-y-2">
             <div className="text-right">
-              <div className="value-number text-gray-900">
+              <div className="value-number text-[color:var(--sp-neutral-900)]">
                 {formatCurrency(orden.monto_total)}
               </div>
             </div>
@@ -90,11 +90,11 @@ export const OrdenPendiente: React.FC<OrdenPendienteProps> = ({
               onClick={() => onProcesarPago(orden)}
               disabled={loading}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2"
+        className="bg-[color:var(--sp-info-600)] hover:bg-[color:var(--sp-info-700)] text-[color:var(--sp-on-info)] px-4 py-2"
             >
               {loading ? (
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-4 h-4 border-2 border-[color:var(--sp-on-info)] border-t-transparent rounded-full animate-spin"></div>
                   <span>Procesando...</span>
                 </div>
               ) : (
@@ -145,10 +145,10 @@ export const OrdenesVacias: React.FC<{
       <div className="text-6xl mb-4 opacity-50">
         {icono}
       </div>
-  <h3 className="heading-section text-gray-900 mb-2">
+  <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-2">
         {titulo}
       </h3>
-      <p className="text-sm text-gray-500 max-w-sm">
+      <p className="text-sm text-[color:var(--sp-neutral-500)] max-w-sm">
         {descripcion}
       </p>
     </div>
@@ -165,15 +165,15 @@ export const EstadisticasOrdenes: React.FC<{
   const label = tipo === 'mesas' ? 'Mesas' : 'Deliveries';
 
   return (
-    <div className="bg-gray-50 rounded-lg p-3 mb-4">
+  <div className="bg-[color:var(--sp-neutral-50)] rounded-lg p-3 mb-4">
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center space-x-2">
           <span>{icono}</span>
-          <span className="font-medium text-gray-700">
+      <span className="font-medium text-[color:var(--sp-neutral-700)]">
             {totalOrdenes} {label} pendientes
           </span>
         </div>
-  <div className="value-number text-gray-900">
+  <div className="value-number text-[color:var(--sp-neutral-900)]">
           {formatCurrency(montoTotal)}
         </div>
       </div>

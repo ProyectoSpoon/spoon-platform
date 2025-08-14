@@ -6,7 +6,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import MesaDetailsHeader from '../components/MesaDetailsHeader';
+import MesaDetailsHeader from '../../components/MesaDetailsHeader';
 import { Mesa } from '@spoon/shared/types/mesas';
 
 const mockMesa: Mesa = {
@@ -54,7 +54,7 @@ describe('MesaDetailsHeader', () => {
     );
 
     const header = container.firstChild as HTMLElement;
-    expect(header).toHaveClass('bg-green-600');
+    expect(header).toHaveClass('bg-[color:var(--sp-success-600)]');
   });
 
   test('botón cerrar funciona correctamente', () => {
@@ -80,10 +80,10 @@ describe('MesaDetailsHeader', () => {
 
   test('diferentes estados usan colores correctos', () => {
     const estados = [
-      { estado: 'ocupada' as const, colorClass: 'bg-red-600' },
-      { estado: 'reservada' as const, colorClass: 'bg-yellow-600' },
-      { estado: 'inactiva' as const, colorClass: 'bg-gray-700' },
-      { estado: 'mantenimiento' as const, colorClass: 'bg-orange-600' }
+      { estado: 'ocupada' as const, colorClass: 'bg-[color:var(--sp-error-600)]' },
+      { estado: 'reservada' as const, colorClass: 'bg-[color:var(--sp-warning-600)]' },
+      { estado: 'inactiva' as const, colorClass: 'bg-[color:var(--sp-neutral-700)]' },
+      { estado: 'mantenimiento' as const, colorClass: 'bg-[color:var(--sp-warning-600)]' }
     ];
 
     estados.forEach(({ estado, colorClass }) => {

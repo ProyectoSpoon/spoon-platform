@@ -79,33 +79,33 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
   const pathname = usePathname();
 
   return (
-    <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${
+  <div className={`bg-[color:var(--sp-surface)] border-r border-[color:var(--sp-border)] transition-all duration-300 ${
       collapsed ? 'w-16' : 'w-64'
     } flex flex-col h-full`}>
       
       {/* Header del sidebar */}
-      <div className="p-4 border-b border-gray-200">
+  <div className="p-4 border-b border-[color:var(--sp-border)]">
         <div className="flex items-center justify-between">
           {!collapsed && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">S</span>
+              <div className="w-8 h-8 bg-[color:var(--sp-primary-600)] rounded-lg flex items-center justify-center">
+                <span className="text-[color:var(--sp-on-primary)] font-bold text-sm">S</span>
               </div>
               <div>
-                <h1 className="font-semibold text-gray-900">SPOON</h1>
-                <p className="text-xs text-gray-500">Dashboard</p>
+                <h1 className="font-semibold text-[color:var(--sp-neutral-900)]">SPOON</h1>
+                <p className="text-xs text-[color:var(--sp-neutral-500)]">Dashboard</p>
               </div>
             </div>
           )}
           
           <button
             onClick={onToggle}
-            className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+            className="p-1.5 rounded-md hover:bg-[color:var(--sp-neutral-100)] transition-colors"
           >
             {collapsed ? (
-              <ChevronRight className="h-4 w-4 text-gray-600" />
+              <ChevronRight className="h-4 w-4 text-[color:var(--sp-neutral-600)]" />
             ) : (
-              <ChevronLeft className="h-4 w-4 text-gray-600" />
+              <ChevronLeft className="h-4 w-4 text-[color:var(--sp-neutral-600)]" />
             )}
           </button>
         </div>
@@ -119,17 +119,17 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           
           return (
             <Link
-              prefetch
+              prefetch={false}
               key={item.href}
               href={item.href}
               className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                 isActive
-                  ? 'bg-orange-50 text-orange-600 border border-orange-200'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-[color:var(--sp-primary-50)] text-[color:var(--sp-primary-600)] border border-[color:var(--sp-primary-200)]'
+                  : 'text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-50)] hover:text-[color:var(--sp-neutral-900)]'
               }`}
             >
               <Icon className={`h-5 w-5 flex-shrink-0 ${
-                isActive ? 'text-orange-600' : 'text-gray-500 group-hover:text-gray-700'
+                isActive ? 'text-[color:var(--sp-primary-600)]' : 'text-[color:var(--sp-neutral-500)] group-hover:text-[color:var(--sp-neutral-700)]'
               }`} />
               
               {!collapsed && (
@@ -140,12 +140,12 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
                         {item.label}
                       </span>
                       {item.badge && (
-                        <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-600 rounded-full">
+                        <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-600)] rounded-full">
                           {item.badge}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-xs text-[color:var(--sp-neutral-500)] truncate">
                       {item.description}
                     </p>
                   </div>
@@ -157,23 +157,23 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
       </nav>
 
       {/* Footer del sidebar */}
-      <div className="p-4 border-t border-gray-200">
+  <div className="p-4 border-t border-[color:var(--sp-border)]">
         {!collapsed && (
-          <div className="mb-3 p-3 bg-blue-50 rounded-lg">
+          <div className="mb-3 p-3 bg-[color:var(--sp-info-50)] rounded-lg">
             <div className="flex items-center gap-2 mb-1">
-              <Bell className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-900">Recordatorio</span>
+              <Bell className="h-4 w-4 text-[color:var(--sp-info-600)]" />
+              <span className="text-sm font-medium text-[color:var(--sp-info-900)]">Recordatorio</span>
             </div>
-            <p className="text-xs text-blue-700">
+            <p className="text-xs text-[color:var(--sp-info-700)]">
               Configura tu menú de hoy para aparecer en búsquedas.
             </p>
           </div>
         )}
         
-        <button className={`w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors ${
+        <button className={`w-full flex items-center gap-3 px-3 py-2 text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-50)] rounded-lg transition-colors ${
           collapsed ? 'justify-center' : ''
         }`}>
-          <LogOut className="h-5 w-5 text-gray-500" />
+          <LogOut className="h-5 w-5 text-[color:var(--sp-neutral-500)]" />
           {!collapsed && <span className="text-sm">Cerrar Sesión</span>}
         </button>
       </div>
@@ -184,28 +184,28 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
 // ✅ COMPONENTE DE HEADER
 function Header() {
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+  <header className="bg-[color:var(--sp-surface)] border-b border-[color:var(--sp-border)] px-6 py-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="heading-page">Bienvenido de vuelta</h1>
-          <p className="text-sm text-gray-600">Restaurante de Prueba • Medellín, Antioquia</p>
+          <p className="text-sm text-[color:var(--sp-neutral-600)]">Restaurante de Prueba • Medellín, Antioquia</p>
         </div>
         
         <div className="flex items-center gap-4">
           {/* Notificaciones */}
-          <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+          <button className="relative p-2 text-[color:var(--sp-neutral-600)] hover:text-[color:var(--sp-neutral-900)] hover:bg-[color:var(--sp-neutral-100)] rounded-lg transition-colors">
             <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-[color:var(--sp-error-500)] rounded-full"></span>
           </button>
           
           {/* Avatar del usuario */}
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">Carlos Rodríguez</p>
-              <p className="text-xs text-gray-500">Propietario</p>
+              <p className="text-sm font-medium text-[color:var(--sp-neutral-900)]">Carlos Rodríguez</p>
+              <p className="text-xs text-[color:var(--sp-neutral-500)]">Propietario</p>
             </div>
-            <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-medium text-sm">CR</span>
+            <div className="w-10 h-10 bg-[color:var(--sp-primary-600)] rounded-full flex items-center justify-center">
+              <span className="text-[color:var(--sp-on-primary)] font-medium text-sm">CR</span>
             </div>
           </div>
         </div>
@@ -229,7 +229,7 @@ export default function DashboardLayout({
 
   return (
     <NotificationProvider>
-      <div className="h-screen flex overflow-hidden bg-gray-50">
+  <div className="h-screen flex overflow-hidden bg-[color:var(--sp-neutral-50)]">
         {/* Barra lateral */}
         <Sidebar 
           collapsed={sidebarCollapsed} 

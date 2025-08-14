@@ -13,7 +13,7 @@ export function CardDescription({
 }: CardDescriptionProps) {
   return (
     <p
-      className={cn("text-[13px] text-[#64748b]", className)}
+  className={cn("text-[13px] text-[color:var(--sp-neutral-600)]", className)}
       {...props}
     >
       {children}

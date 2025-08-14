@@ -125,23 +125,23 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
       <div
-        className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-[color:var(--sp-overlay)] backdrop-blur-sm transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
         onClick={closeIfAllowed}
       />
 
       {/* Slide-over panel (entra de derecha a izquierda) */}
       <div
-        className={`absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-xl transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`absolute right-0 top-0 h-full w-full max-w-xl bg-[color:var(--sp-surface-elevated)] shadow-xl transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+  <div className="flex items-center justify-between p-5 border-b border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-surface)]/80 backdrop-blur-sm sticky top-0 z-10">
           <div>
-            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+            <h2 className="text-base font-semibold text-[color:var(--sp-neutral-900)] flex items-center gap-2">
               <span className="text-xl">💸</span> Nuevo Gasto
             </h2>
-            <p className="text-xs text-gray-600 mt-0.5">Paso {step + 1} de {PASOS.length} · {PASOS[step].titulo}</p>
+            <p className="text-xs text-[color:var(--sp-neutral-600)] mt-0.5">Paso {step + 1} de {PASOS.length} · {PASOS[step].titulo}</p>
           </div>
           <div className="flex items-center gap-2">
             {step > 0 && (
@@ -156,7 +156,7 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
         </div>
 
         {/* Content */}
-        <div className="h-[calc(100%-120px)] overflow-y-auto p-5 space-y-6">
+  <div className="h-[calc(100%-120px)] overflow-y-auto p-5 space-y-6">
           {/* Paso: Categoría */}
           {PASOS[step].id === 'categoria' && (
             <div className="space-y-3">
@@ -171,17 +171,17 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
                       onClick={() => setCategoria(cat.value)}
                       className={`relative flex items-center gap-2 p-4 rounded-lg border text-left transition-colors ${
                         selected
-                          ? 'bg-green-50 border-green-300 shadow-sm'
-                          : 'bg-white border-gray-200 hover:bg-gray-50'
+                          ? 'bg-[color:var(--sp-success-50)] border-[color:var(--sp-success-300)] shadow-sm'
+                          : 'bg-[color:var(--sp-surface)] border-[color:var(--sp-neutral-200)] hover:bg-[color:var(--sp-neutral-50)]'
                       }`}
                     >
                       <span className="text-lg">{cat.icon}</span>
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{cat.label}</div>
-                        <div className="text-xs text-gray-500 capitalize">{cat.value}</div>
+                        <div className="text-sm font-medium text-[color:var(--sp-neutral-900)]">{cat.label}</div>
+                        <div className="text-xs text-[color:var(--sp-neutral-500)] capitalize">{cat.value}</div>
                       </div>
                       {selected && (
-                        <span className="absolute right-2 top-2 w-5 h-5 rounded-full bg-green-500 text-white grid place-items-center">
+                        <span className="absolute right-2 top-2 w-5 h-5 rounded-full bg-[color:var(--sp-success-500)] text-[color:var(--sp-on-success)] grid place-items-center">
                           <Check className="w-3 h-3" />
                         </span>
                       )}
@@ -208,17 +208,17 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
                 className="w-full p-3 border rounded-lg resize-none h-24 text-sm"
                 maxLength={VALIDACIONES_GASTOS.CONCEPTO_MAX_LENGTH}
               />
-              <p className="text-xs text-gray-500">{concepto.length}/{VALIDACIONES_GASTOS.CONCEPTO_MAX_LENGTH} caracteres</p>
+              <p className="text-xs text-[color:var(--sp-neutral-500)]">{concepto.length}/{VALIDACIONES_GASTOS.CONCEPTO_MAX_LENGTH} caracteres</p>
               {showConceptos && conceptosSugeridos.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  <p className="text-xs text-gray-600 mb-2">Conceptos frecuentes:</p>
+                <div className="bg-[color:var(--sp-neutral-50)] rounded-lg p-3 border border-[color:var(--sp-neutral-200)]">
+                  <p className="text-xs text-[color:var(--sp-neutral-600)] mb-2">Conceptos frecuentes:</p>
                   <div className="flex flex-wrap gap-2">
                     {conceptosSugeridos.map((s, i) => (
                       <button
                         key={i}
                         type="button"
                         onClick={() => setConcepto(s)}
-                        className="px-2 py-1 rounded-md border text-xs hover:bg-gray-100"
+                        className="px-2 py-1 rounded-md border border-[color:var(--sp-neutral-200)] text-xs hover:bg-[color:var(--sp-neutral-100)]"
                       >
                         {s}
                       </button>
@@ -242,9 +242,9 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
                 min={0}
                 step={0.01}
               />
-              <p className="text-xs text-gray-500">Equivale a: {formatCurrency(Math.round((monto || 0) * 100))}</p>
+              <p className="text-xs text-[color:var(--sp-neutral-500)]">Equivale a: {formatCurrency(Math.round((monto || 0) * 100))}</p>
               <div className="space-y-2">
-                <label className="text-xs text-gray-500">Montos rápidos</label>
+                <label className="text-xs text-[color:var(--sp-neutral-500)]">Montos rápidos</label>
                 <div className="grid grid-cols-4 gap-2">
                   {[5000, 10000, 20000, 50000].map((m) => (
                     <Button key={m} variant="outline" size="sm" onClick={() => setMonto(m)} className="text-xs">
@@ -267,24 +267,24 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
                 className="w-full p-3 border rounded-lg resize-none h-28 text-sm"
                 maxLength={VALIDACIONES_GASTOS.NOTAS_MAX_LENGTH}
               />
-              <p className="text-xs text-gray-500">{notas.length}/{VALIDACIONES_GASTOS.NOTAS_MAX_LENGTH} caracteres</p>
+              <p className="text-xs text-[color:var(--sp-neutral-500)]">{notas.length}/{VALIDACIONES_GASTOS.NOTAS_MAX_LENGTH} caracteres</p>
             </div>
           )}
 
           {/* Paso: Resumen */}
           {PASOS[step].id === 'resumen' && (
             <div className="space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-green-800 mb-2">Resumen</h3>
-                <div className="text-sm text-gray-700 space-y-1">
-                  <p><span className="text-gray-500">Categoría:</span> <span className="capitalize">{categoria}</span></p>
-                  <p><span className="text-gray-500">Concepto:</span> {concepto || '—'}</p>
-                  <p><span className="text-gray-500">Monto:</span> {formatCurrency(Math.round((monto || 0) * 100))}</p>
-                  {notas && <p><span className="text-gray-500">Notas:</span> {notas}</p>}
+              <div className="bg-[color:var(--sp-success-50)] border border-[color:var(--sp-success-200)] rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-[color:var(--sp-success-800)] mb-2">Resumen</h3>
+                <div className="text-sm text-[color:var(--sp-neutral-700)] space-y-1">
+                  <p><span className="text-[color:var(--sp-neutral-500)]">Categoría:</span> <span className="capitalize">{categoria}</span></p>
+                  <p><span className="text-[color:var(--sp-neutral-500)]">Concepto:</span> {concepto || '—'}</p>
+                  <p><span className="text-[color:var(--sp-neutral-500)]">Monto:</span> {formatCurrency(Math.round((monto || 0) * 100))}</p>
+                  {notas && <p><span className="text-[color:var(--sp-neutral-500)]">Notas:</span> {notas}</p>}
                 </div>
               </div>
               {errores.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                <div className="bg-[color:var(--sp-error-50)] border border-[color:var(--sp-error-200)] rounded-lg p-3 text-sm text-[color:var(--sp-error-700)]">
                   {errores.map((e, i) => (<div key={i}>• {e}</div>))}
                 </div>
               )}
@@ -293,7 +293,7 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t bg-white sticky bottom-0 z-10">
+  <div className="p-4 border-t bg-[color:var(--sp-surface)] sticky bottom-0 z-10">
           <div className="flex items-center justify-between">
             <Button variant="outline" onClick={closeIfAllowed} disabled={procesando}>
               Cancelar
@@ -303,7 +303,7 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
                 Siguiente <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             ) : (
-              <Button onClick={handleConfirmar} disabled={procesando || !validar()} className="bg-red-600 hover:bg-red-700">
+              <Button onClick={handleConfirmar} disabled={procesando || !validar()} className="bg-[color:var(--sp-info-600)] hover:bg-[color:var(--sp-info-700)] text-[color:var(--sp-on-info)]">
                 {procesando ? 'Registrando...' : 'Registrar Gasto'}
               </Button>
             )}

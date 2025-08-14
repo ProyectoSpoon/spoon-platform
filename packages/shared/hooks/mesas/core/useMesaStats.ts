@@ -6,7 +6,7 @@
 
 import { useMemo } from 'react';
 import { Mesa, EstadisticasMesas } from '../../../types/mesas';
-import { formatearMoneda, formatearTiempoOcupacion } from '../../../utils/mesas';
+import { formatearMoneda } from '../../../utils/mesas';
 
 export interface EstadisticasFormateadas extends EstadisticasMesas {
   // Versiones formateadas para UI
@@ -79,8 +79,10 @@ export const useMesaStats = (mesas: Mesa[]): MesaStatsHook => {
     const mesasMasOcupadas = mesas
       .filter(m => m.estado === 'ocupada' && m.ordenActiva)
       .sort((a, b) => {
-        const tiempoA = new Date().getTime() - new Date(a.ordenActiva!.fechaCreacion).getTime();
-        const tiempoB = new Date().getTime() - new Date(b.ordenActiva!.fechaCreacion).getTime();
+        const fechaA = a.ordenActiva?.fechaCreacion || a.ordenActiva?.created_at || a.created_at;
+        const fechaB = b.ordenActiva?.fechaCreacion || b.ordenActiva?.created_at || b.created_at;
+        const tiempoA = fechaA ? (new Date().getTime() - new Date(fechaA).getTime()) : 0;
+        const tiempoB = fechaB ? (new Date().getTime() - new Date(fechaB).getTime()) : 0;
         return tiempoB - tiempoA;
       })
       .slice(0, 5);
@@ -116,7 +118,7 @@ export const useMesaStats = (mesas: Mesa[]): MesaStatsHook => {
   }, [mesas]);
 
   // Obtener estadísticas por período (mock para futura implementación)
-  const obtenerEstadisticasPorPeriodo = async (fechaInicio: Date, fechaFin: Date) => {
+  const obtenerEstadisticasPorPeriodo = async (_fechaInicio: Date, _fechaFin: Date) => {
     
     return {
       ventasTotal: 0,

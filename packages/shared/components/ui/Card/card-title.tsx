@@ -15,7 +15,7 @@ export function CardTitle({
 }: CardTitleProps) {
   return (
     <Component
-      className={cn("text-xl font-bold text-gray-900", className)}
+      className={cn("text-xl font-bold text-[color:var(--sp-on-surface)]", className)}
       {...props}
     >
       {children}

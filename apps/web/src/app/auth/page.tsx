@@ -5,12 +5,13 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { getUserProfile, getUserRestaurant } from '@spoon/shared';
+import { getUserProfile, getUserRestaurant, EmailField, PasswordField, InputFieldV2 } from '@spoon/shared';
 import { useLogin } from './useLogin';
 import { useRegister } from './useRegister';
 import { usePasswordRecovery } from './usePasswordRecovery';
 
 const AuthPage = () => {
+  const useNewUI = process.env.NEXT_PUBLIC_USE_NEW_UI === '1';
   const router = useRouter();
   const [modoRegistro, setModoRegistro] = useState(false);
   const [cargando, setCargando] = useState(false);
@@ -86,7 +87,14 @@ const AuthPage = () => {
   const manejarRegistro = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const result = await register(datosRegistro);
+    const result = await register({
+      first_name: datosRegistro.first_name,
+      last_name: datosRegistro.last_name,
+      phone: datosRegistro.phone,
+      email: datosRegistro.email,
+      ord: datosRegistro.password,
+      confirmord: datosRegistro.confirmPassword,
+    });
     if (result && result.user) {
       setModoRegistro(false);
       router.push('/config-restaurante');
@@ -96,125 +104,206 @@ const AuthPage = () => {
   const toggleModo = () => setModoRegistro(!modoRegistro);
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-orange-100 via-orange-200 to-orange-300">
+    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-[color:var(--sp-primary-50)] via-[color:var(--sp-primary-100)] to-[color:var(--sp-primary-200)]">
       {/* Columna izquierda - Información/promoción */}
-      <div className="hidden md:flex w-1/2 flex-col justify-center items-center bg-gradient-to-br from-orange-300 via-orange-200 to-orange-100 p-12 relative">
+  <div className="hidden md:flex w-1/2 flex-col justify-center items-center bg-gradient-to-br from-[color:var(--sp-primary-200)] via-[color:var(--sp-primary-100)] to-[color:var(--sp-primary-50)] p-12 relative">
         <img src="/images/spoon-logo.jpg" alt="Spoon Logo" className="mx-auto h-[120px] w-auto mb-6" />
-        <h1 className="text-4xl font-bold text-white mb-6 text-center drop-shadow-lg">
+  <h1 className="text-4xl font-bold text-[color:var(--sp-on-primary)] mb-6 text-center drop-shadow-lg">
           {modoRegistro ? 'Únete a la revolución gastronómica' : 'Conecta con más clientes en tu zona'}
         </h1>
-        <p className="text-lg text-white/90 mb-8 text-center">
+  <p className="text-lg text-[color:var(--sp-on-primary)]/90 mb-8 text-center">
           {modoRegistro
             ? 'Crea tu cuenta y empieza a digitalizar tu restaurante hoy mismo'
             : 'Expande tu negocio con nuestra plataforma de gestión de restaurantes y domicilios'}
         </p>
         <div className="grid grid-cols-2 gap-6 w-full max-w-lg">
-          <div className="bg-white/20 backdrop-blur-sm p-6 rounded-xl">
-            <h3 className="text-orange-400 font-semibold mb-2">Geolocalización</h3>
-            <p className="text-white/90">Alcanza clientes en cualquier zona y optimiza tus entregas</p>
+          <div className="bg-[color:var(--sp-surface-elevated)]/20 backdrop-blur-sm p-6 rounded-xl">
+            <h3 className="text-[color:var(--sp-primary-500)] font-semibold mb-2">Geolocalización</h3>
+            <p className="text-[color:var(--sp-on-primary)]/90">Alcanza clientes en cualquier zona y optimiza tus entregas</p>
           </div>
-          <div className="bg-white/20 backdrop-blur-sm p-6 rounded-xl">
-            <h3 className="text-orange-400 font-semibold mb-2">Sistema de Reseñas</h3>
-            <p className="text-white/90">Mejora tu servicio con feedback real de los clientes</p>
+          <div className="bg-[color:var(--sp-surface-elevated)]/20 backdrop-blur-sm p-6 rounded-xl">
+            <h3 className="text-[color:var(--sp-primary-500)] font-semibold mb-2">Sistema de Reseñas</h3>
+            <p className="text-[color:var(--sp-on-primary)]/90">Mejora tu servicio con feedback real de los clientes</p>
           </div>
-          <div className="bg-white/20 backdrop-blur-sm p-6 rounded-xl">
-            <h3 className="text-orange-400 font-semibold mb-2">Notificaciones</h3>
-            <p className="text-white/90">Mantén informados a tus clientes sobre sus pedidos</p>
+          <div className="bg-[color:var(--sp-surface-elevated)]/20 backdrop-blur-sm p-6 rounded-xl">
+            <h3 className="text-[color:var(--sp-primary-500)] font-semibold mb-2">Notificaciones</h3>
+            <p className="text-[color:var(--sp-on-primary)]/90">Mantén informados a tus clientes sobre sus pedidos</p>
           </div>
-          <div className="bg-white/20 backdrop-blur-sm p-6 rounded-xl">
-            <h3 className="text-orange-400 font-semibold mb-2">Gestión de Domicilios</h3>
-            <p className="text-white/90">Control total sobre tus entregas y repartidores</p>
+          <div className="bg-[color:var(--sp-surface-elevated)]/20 backdrop-blur-sm p-6 rounded-xl">
+            <h3 className="text-[color:var(--sp-primary-500)] font-semibold mb-2">Gestión de Domicilios</h3>
+            <p className="text-[color:var(--sp-on-primary)]/90">Control total sobre tus entregas y repartidores</p>
           </div>
         </div>
       </div>
       {/* Columna derecha - Formulario */}
-      <div className="w-full md:w-1/2 bg-white flex items-center justify-center p-8 relative">
+  <div className="w-full md:w-1/2 bg-[color:var(--sp-surface)] flex items-center justify-center p-8 relative">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <img src="/images/spoon-logo.jpg" alt="Spoon Logo" className="mx-auto h-[120px] w-auto mb-6" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-[color:var(--sp-neutral-900)] mb-2">
               {modoRegistro ? 'Crear cuenta en SPOON' : 'Bienvenido de nuevo'}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-[color:var(--sp-neutral-600)]">
               {modoRegistro ? 'Únete y empieza a gestionar tu restaurante' : 'Ingresa a tu cuenta para gestionar tu restaurante'}
             </p>
           </div>
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-              <p className="text-red-700 text-sm">{error}</p>
+            <div className="bg-[color:var(--sp-error-50)] border-l-4 border-[color:var(--sp-error-500)] p-4 rounded">
+              <p className="text-[color:var(--sp-error-700)] text-sm">{error}</p>
             </div>
           )}
           {modoRegistro ? (
             <form onSubmit={manejarRegistro} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Nombre</label>
-                  <input type="text" name="first_name" value={datosRegistro.first_name} onChange={manejarCambioRegistro} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required maxLength={100} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Apellido</label>
-                  <input type="text" name="last_name" value={datosRegistro.last_name} onChange={manejarCambioRegistro} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required maxLength={100} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Correo electrónico</label>
-                <input type="email" name="email" value={datosRegistro.email} onChange={manejarCambioRegistro} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required maxLength={255} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Teléfono móvil</label>
-                <input type="tel" name="phone" value={datosRegistro.phone} onChange={manejarCambioRegistro} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="3001234567" maxLength={10} required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Contraseña</label>
-                <div className="relative mt-1">
-                  <input type={mostrarContrasena ? "text" : "password"} name="password" value={datosRegistro.password} onChange={manejarCambioRegistro} className="block w-full px-3 py-2 border border-gray-300 rounded-md" required minLength={6} />
-                  <button type="button" onClick={() => setMostrarContrasena(!mostrarContrasena)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500">
-                    {mostrarContrasena ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
-                <div className="relative mt-1">
-                  <input type={mostrarConfirmPassword ? "text" : "password"} name="confirmPassword" value={datosRegistro.confirmPassword} onChange={manejarCambioRegistro} className="block w-full px-3 py-2 border border-gray-300 rounded-md" required />
-                  <button type="button" onClick={() => setMostrarConfirmPassword(!mostrarConfirmPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500">
-                    {mostrarConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-              <button type="submit" disabled={cargando} className="w-full py-3 px-4 rounded-lg text-white bg-orange-500 hover:bg-orange-600">
+              {useNewUI ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <InputFieldV2
+                      id="reg-first_name"
+                      label="Nombre"
+                      name="first_name"
+                      value={datosRegistro.first_name}
+                      onChange={manejarCambioRegistro}
+                      required
+                    />
+                    <InputFieldV2
+                      id="reg-last_name"
+                      label="Apellido"
+                      name="last_name"
+                      value={datosRegistro.last_name}
+                      onChange={manejarCambioRegistro}
+                      required
+                    />
+                  </div>
+                  <EmailField
+                    id="reg-email"
+                    label="Correo electrónico"
+                    value={datosRegistro.email}
+                    onChange={manejarCambioRegistro}
+                    required
+                  />
+                  <InputFieldV2
+                    id="reg-phone"
+                    label="Teléfono móvil"
+                    type="tel"
+                    name="phone"
+                    value={datosRegistro.phone}
+                    onChange={manejarCambioRegistro}
+                    placeholder="3001234567"
+                    required
+                  />
+                  <PasswordField
+                    id="reg-password"
+                    label="Contraseña"
+                    name="password"
+                    value={datosRegistro.password}
+                    onChange={manejarCambioRegistro}
+                    required
+                  />
+                  <PasswordField
+                    id="reg-confirm"
+                    label="Confirmar Contraseña"
+                    name="confirmPassword"
+                    value={datosRegistro.confirmPassword}
+                    onChange={manejarCambioRegistro}
+                    required
+                  />
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="reg-first_name" className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Nombre</label>
+                      <input id="reg-first_name" type="text" name="first_name" value={datosRegistro.first_name} onChange={manejarCambioRegistro} className="mt-1 block w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-md" required maxLength={100} />
+                    </div>
+                    <div>
+                      <label htmlFor="reg-last_name" className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Apellido</label>
+                      <input id="reg-last_name" type="text" name="last_name" value={datosRegistro.last_name} onChange={manejarCambioRegistro} className="mt-1 block w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-md" required maxLength={100} />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="reg-email" className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Correo electrónico</label>
+                    <input id="reg-email" type="email" name="email" value={datosRegistro.email} onChange={manejarCambioRegistro} className="mt-1 block w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-md" required maxLength={255} />
+                  </div>
+                  <div>
+                    <label htmlFor="reg-phone" className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Teléfono móvil</label>
+                    <input id="reg-phone" type="tel" name="phone" value={datosRegistro.phone} onChange={manejarCambioRegistro} className="mt-1 block w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-md" placeholder="3001234567" maxLength={10} required />
+                  </div>
+                  <div>
+                    <label htmlFor="reg-password" className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Contraseña</label>
+                    <div className="relative mt-1">
+                      <input id="reg-password" type={mostrarContrasena ? "text" : "password"} name="password" value={datosRegistro.password} onChange={manejarCambioRegistro} className="block w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-md" required minLength={6} />
+                      <button type="button" onClick={() => setMostrarContrasena(!mostrarContrasena)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-[color:var(--sp-neutral-500)]">
+                        {mostrarContrasena ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="reg-confirm" className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Confirmar Contraseña</label>
+                    <div className="relative mt-1">
+                      <input id="reg-confirm" type={mostrarConfirmPassword ? "text" : "password"} name="confirmPassword" value={datosRegistro.confirmPassword} onChange={manejarCambioRegistro} className="block w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-md" required />
+                      <button type="button" onClick={() => setMostrarConfirmPassword(!mostrarConfirmPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-[color:var(--sp-neutral-500)]">
+                        {mostrarConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+              <button type="submit" disabled={cargando} className="w-full py-3 px-4 rounded-lg text-[color:var(--sp-on-primary)] bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)]">
                 {cargando ? (<span>Creando cuenta...</span>) : 'Crear cuenta'}
               </button>
             </form>
           ) : (
             <form onSubmit={manejarLogin} className="space-y-6">
-              <div>
-                <label htmlFor="correo" className="block text-sm font-medium text-gray-700">Email</label>
-                <input id="correo" name="correo" type="email" required value={datosLogin.correo} onChange={manejarCambioLogin} className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="Ingresa tu email" />
-              </div>
-              <div>
-                <label htmlFor="contrasena" className="block text-sm font-medium text-gray-700">Contraseña</label>
-                <div className="relative mt-1">
-                  <input id="contrasena" name="contrasena" type={mostrarContrasena ? 'text' : 'password'} required value={datosLogin.contrasena} onChange={manejarCambioLogin} className="block w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="••••••••" />
-                  <button type="button" onClick={() => setMostrarContrasena(!mostrarContrasena)} className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {mostrarContrasena ? (<EyeOff className="h-5 w-5 text-gray-400" />) : (<Eye className="h-5 w-5 text-gray-400" />)}
-                  </button>
-                </div>
-              </div>
-              <button type="submit" disabled={cargando} className="w-full py-3 px-4 rounded-lg text-white bg-orange-500 hover:bg-orange-600">
+              {useNewUI ? (
+                <>
+                  <EmailField
+                    id="correo"
+                    label="Email"
+                    name="correo"
+                    value={datosLogin.correo}
+                    onChange={manejarCambioLogin}
+                    required
+                  />
+                  <PasswordField
+                    id="contrasena"
+                    label="Contraseña"
+                    name="contrasena"
+                    value={datosLogin.contrasena}
+                    onChange={manejarCambioLogin}
+                    required
+                  />
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label htmlFor="correo" className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Email</label>
+                    <input id="correo" name="correo" type="email" required value={datosLogin.correo} onChange={manejarCambioLogin} className="mt-1 block w-full px-4 py-3 border border-[color:var(--sp-neutral-300)] rounded-lg" placeholder="Ingresa tu email" />
+                  </div>
+                  <div>
+                    <label htmlFor="contrasena" className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Contraseña</label>
+                    <div className="relative mt-1">
+                      <input id="contrasena" name="contrasena" type={mostrarContrasena ? 'text' : 'password'} required value={datosLogin.contrasena} onChange={manejarCambioLogin} className="block w-full px-4 py-3 border border-[color:var(--sp-neutral-300)] rounded-lg" placeholder="••••••••" />
+                      <button type="button" onClick={() => setMostrarContrasena(!mostrarContrasena)} className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {mostrarContrasena ? (<EyeOff className="h-5 w-5 text-[color:var(--sp-neutral-400)]" />) : (<Eye className="h-5 w-5 text-[color:var(--sp-neutral-400)]" />)}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+              <button type="submit" disabled={cargando} className="w-full py-3 px-4 rounded-lg text-[color:var(--sp-on-primary)] bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)]">
                 {cargando ? (<span>Iniciando sesión...</span>) : 'Iniciar sesión'}
               </button>
               <div className="text-right">
-                <button type="button" onClick={() => setMostrarRecuperar(true)} className="text-sm text-orange-500 hover:text-orange-600">
+                <button type="button" onClick={() => setMostrarRecuperar(true)} className="text-sm text-[color:var(--sp-primary-600)] hover:text-[color:var(--sp-primary-700)]">
                   ¿Olvidaste tu contraseña?
                 </button>
               </div>
             </form>
           )}
           <div className="text-center mt-6">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[color:var(--sp-neutral-600)]">
               {modoRegistro ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}{' '}
-              <button onClick={toggleModo} className="font-medium text-orange-500 hover:text-orange-600">
+              <button onClick={toggleModo} className="font-medium text-[color:var(--sp-primary-600)] hover:text-[color:var(--sp-primary-700)]">
                 {modoRegistro ? 'Iniciar sesión' : 'Crear cuenta'}
               </button>
             </p>
@@ -222,20 +311,20 @@ const AuthPage = () => {
         </div>
         {/* Modal recuperación, sobre la columna derecha */}
         {mostrarRecuperar && (
-          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-sm relative">
-              <button className="absolute top-2 right-2 text-gray-400 hover:text-orange-500" onClick={() => setMostrarRecuperar(false)}>
+          <div className="fixed inset-0 bg-[color:var(--sp-overlay)] flex items-center justify-center z-50">
+            <div className="bg-[color:var(--sp-surface-elevated)] rounded-lg shadow-lg p-8 w-full max-w-sm relative">
+              <button className="absolute top-2 right-2 text-[color:var(--sp-neutral-400)] hover:text-[color:var(--sp-primary-600)]" onClick={() => setMostrarRecuperar(false)}>
                 &times;
               </button>
-              <h3 className="text-xl font-bold mb-4 text-orange-500">Recuperar contraseña</h3>
+              <h3 className="text-xl font-bold mb-4 text-[color:var(--sp-primary-600)]">Recuperar contraseña</h3>
               {(recovery.error || recovery.success) && (
-                <div className={`p-4 rounded mb-4 ${recovery.error ? 'bg-red-50 border-l-4 border-red-500' : 'bg-green-50 border-l-4 border-green-500'}`}>
-                  <p className={recovery.error ? 'text-red-700 text-sm' : 'text-green-700 text-sm'}>{recovery.error || recovery.success}</p>
+                <div className={`p-4 rounded mb-4 ${recovery.error ? 'bg-[color:var(--sp-error-50)] border-l-4 border-[color:var(--sp-error-500)]' : 'bg-[color:var(--sp-success-50)] border-l-4 border-[color:var(--sp-success-500)]'}`}>
+                  <p className={recovery.error ? 'text-[color:var(--sp-error-700)] text-sm' : 'text-[color:var(--sp-success-700)] text-sm'}>{recovery.error || recovery.success}</p>
                 </div>
               )}
               <form onSubmit={recovery.handleSubmit} className="space-y-6">
                 <div>
-                  <label htmlFor="recuperar-email" className="block text-sm font-medium text-gray-700">Correo electrónico</label>
+                  <label htmlFor="recuperar-email" className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Correo electrónico</label>
                   <input
                     id="recuperar-email"
                     name="recuperar-email"
@@ -243,11 +332,11 @@ const AuthPage = () => {
                     required
                     value={recovery.email}
                     onChange={recovery.handleChange}
-                    className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    className="mt-1 block w-full px-4 py-3 border border-[color:var(--sp-neutral-300)] rounded-lg"
                     placeholder="Ingresa tu correo"
                   />
                 </div>
-                <button type="submit" disabled={recovery.loading} className="w-full py-3 px-4 rounded-lg text-white bg-orange-500 hover:bg-orange-600">
+                <button type="submit" disabled={recovery.loading} className="w-full py-3 px-4 rounded-lg text-[color:var(--sp-on-primary)] bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)]">
                   {recovery.loading ? (<span>Enviando...</span>) : 'Recuperar contraseña'}
                 </button>
               </form>

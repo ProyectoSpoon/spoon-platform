@@ -12,17 +12,17 @@ import {
   supabase,
   getRestaurantSpecialDishes,
   getSpecialCombinations,
-  getSpecialDishSelections,
+  getSpecialDishSelections as _getSpecialDishSelections,
   createSpecialDish,
   insertSpecialDishSelections,
   generateSpecialCombinations,
   toggleSpecialToday,
-  updateSpecialCombination,
-  deleteSpecialCombination,
+  updateSpecialCombination as _updateSpecialCombination,
+  deleteSpecialCombination as _deleteSpecialCombination,
   deleteSpecialDish,
-  getAvailableSpecialsToday,
+  getAvailableSpecialsToday as _getAvailableSpecialsToday,
   type SpecialDish,
-  type SpecialCombination
+  
 } from '@spoon/shared';
 
 import { Producto, LoadingStates } from '../../types/menu-dia/menuTypes';
@@ -213,7 +213,7 @@ export const useSpecialData = () => {
     try {
       setInitialLoading(true);
       
-      const [profile, restaurant] = await Promise.all([
+  const [_profile, restaurant] = await Promise.all([
         getUserProfile(),
         getUserRestaurant()
       ]);

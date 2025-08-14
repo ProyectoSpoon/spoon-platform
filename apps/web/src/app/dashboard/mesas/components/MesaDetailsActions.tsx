@@ -60,7 +60,7 @@ export const MesaDetailsActions: React.FC<MesaDetailsActionsProps> = ({
         <div className="p-4 space-y-3">
           <Button 
             onClick={onCrearOrden}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white justify-start"
+            className="w-full bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)] text-[--sp-on-primary] justify-start"
           >
             <Plus className="h-4 w-4 mr-3" />
             Crear Nueva Orden
@@ -78,7 +78,7 @@ export const MesaDetailsActions: React.FC<MesaDetailsActionsProps> = ({
           <Button 
             onClick={onPonerMantenimiento}
             variant="outline"
-            className="w-full justify-start text-orange-600 border-orange-300 hover:bg-orange-50"
+            className="w-full justify-start text-[color:var(--sp-warning-600)] border-[color:var(--sp-warning-300)] hover:bg-[color:var(--sp-warning-50)]"
           >
             <AlertCircle className="h-4 w-4 mr-3" />
             Poner en Mantenimiento
@@ -87,7 +87,7 @@ export const MesaDetailsActions: React.FC<MesaDetailsActionsProps> = ({
           <Button 
             onClick={onInactivarMesa}
             variant="outline"
-            className="w-full justify-start text-gray-600 border-gray-300 hover:bg-gray-50"
+            className="w-full justify-start text-[color:var(--sp-neutral-600)] border-[color:var(--sp-neutral-300)] hover:bg-[color:var(--sp-neutral-50)]"
           >
             <X className="h-4 w-4 mr-3" />
             Inactivar Mesa
@@ -103,7 +103,7 @@ export const MesaDetailsActions: React.FC<MesaDetailsActionsProps> = ({
               onClick={onEditarOrden}
               variant="outline" 
               size="sm"
-              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+              className="text-[color:var(--sp-primary-600)] border-[color:var(--sp-primary-300)] hover:bg-[color:var(--sp-primary-50)]"
             >
               <Edit3 className="h-3 w-3 mr-1" />
               Editar
@@ -112,7 +112,7 @@ export const MesaDetailsActions: React.FC<MesaDetailsActionsProps> = ({
               onClick={onEliminarOrden}
               variant="outline" 
               size="sm"
-              className="text-red-600 border-red-300 hover:bg-red-50"
+              className="text-[color:var(--sp-error-600)] border-[color:var(--sp-error-300)] hover:bg-[color:var(--sp-error-50)]"
             >
               <Trash2 className="h-3 w-3 mr-1" />
               Eliminar
@@ -126,7 +126,7 @@ export const MesaDetailsActions: React.FC<MesaDetailsActionsProps> = ({
         <div className="p-4 space-y-2">
           <Button 
             onClick={onCrearOrden}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            className="w-full bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)] text-[--sp-on-primary]"
           >
             <Plus className="h-4 w-4 mr-2" />
             Crear Orden (Liberar Reserva)
@@ -146,7 +146,7 @@ export const MesaDetailsActions: React.FC<MesaDetailsActionsProps> = ({
         <div className="p-4">
           <Button 
             onClick={onActivarMesa}
-            className="w-full bg-green-600 hover:bg-green-700 text-white"
+            className="w-full bg-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-700)] text-[--sp-on-success]"
           >
             <CheckCircle className="h-4 w-4 mr-2" />
             Activar Mesa
@@ -159,7 +159,7 @@ export const MesaDetailsActions: React.FC<MesaDetailsActionsProps> = ({
         <div className="p-4 space-y-2">
           <Button 
             onClick={onActivarMesa}
-            className="w-full bg-green-600 hover:bg-green-700 text-white"
+            className="w-full bg-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-700)] text-[--sp-on-success]"
           >
             Finalizar Mantenimiento
           </Button>

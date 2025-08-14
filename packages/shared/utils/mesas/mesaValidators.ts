@@ -3,7 +3,7 @@
  * Generado automáticamente por refactoring
  */
 
-import { CrearOrdenData } from '@spoon/shared/types/mesas/actionTypes';;
+import { CrearOrdenData } from '@spoon/shared/types/mesas/actionTypes';
 // Otros imports de actionTypes si los hay;
 import { CONFIG_MESAS } from '@spoon/shared/constants/mesas';
 

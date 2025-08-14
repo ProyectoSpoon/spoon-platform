@@ -100,10 +100,11 @@ export default function HorarioComercialPage() {
   // Cargar datos existentes con timeout de seguridad
   useEffect(() => {
     let timeout: NodeJS.Timeout;
+    let completed = false;
     const cargarDatos = async () => {
       try {
         timeout = setTimeout(() => {
-          if (cargando) {
+          if (!completed) {
             setCargando(false);
             setError('La carga está tardando demasiado. Verifica tu conexión o recarga la página.');
           }
@@ -122,6 +123,7 @@ export default function HorarioComercialPage() {
         setError('Error al cargar información. Intenta nuevamente.');
         console.error('❌ Error cargando datos:', err);
       } finally {
+        completed = true;
         setCargando(false);
         clearTimeout(timeout);
       }
@@ -260,10 +262,10 @@ export default function HorarioComercialPage() {
 
   if (cargando) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[--sp-surface] flex items-center justify-center">
         <div className="text-center animate-fade-in" role="status">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando horarios...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--sp-primary-600)] mx-auto mb-4"></div>
+          <p className="text-[color:var(--sp-neutral-600)]">Cargando horarios...</p>
         </div>
       </div>
     );
@@ -271,13 +273,13 @@ export default function HorarioComercialPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  <div className="min-h-screen bg-[--sp-surface] flex items-center justify-center">
         <div className="text-center animate-fade-in" role="alert">
-          <div className="text-red-500 text-2xl mb-2">⚠️</div>
-          <p className="text-red-700 font-semibold mb-2">{error}</p>
+          <div className="text-[color:var(--sp-error-500)] text-2xl mb-2">⚠️</div>
+          <p className="text-[color:var(--sp-error-700)] font-semibold mb-2">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+    className="px-4 py-2 bg-[--sp-surface] hover:bg-[color:var(--sp-neutral-50)] text-[color:var(--sp-neutral-700)] border border-[color:var(--sp-neutral-200)] rounded-lg transition-colors"
           >
             Recargar página
           </button>
@@ -290,32 +292,32 @@ export default function HorarioComercialPage() {
   const errores = validarHorarios(horarios);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+  <div className="min-h-screen bg-[--sp-surface] p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-white p-5 border border-gray-100 rounded-lg shadow-lg">
+    <div className="bg-[--sp-surface-elevated] p-5 border border-[color:var(--sp-neutral-200)] rounded-lg shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={handleVolver}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[--sp-surface] hover:bg-[color:var(--sp-neutral-50)] text-[color:var(--sp-neutral-700)] border border-[color:var(--sp-neutral-300)] rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Volver
             </button>
             <div className="text-center flex-1">
-              <span className="text-sm text-gray-500 font-medium">Paso 3 de 4</span>
+              <span className="text-sm text-[color:var(--sp-neutral-500)] font-medium">Paso 3 de 4</span>
             </div>
             <div className="w-20"></div>
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-[color:var(--sp-neutral-900)] mb-2">
               Horario Comercial
             </h1>
-            <p className="text-gray-600">
+            <p className="text-[color:var(--sp-neutral-600)]">
               Configura los horarios de atención de tu restaurante para cada día de la semana
             </p>
             {errores.length > 0 && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 animate-fade-in" role="alert">
+              <div className="mt-3 p-3 bg-[color:var(--sp-error-50)] border border-[color:var(--sp-error-200)] rounded-lg flex items-center gap-2 text-[color:var(--sp-error-700)] animate-fade-in" role="alert">
                 <AlertTriangle className="w-4 h-4" />
                 <span className="text-sm">Hay errores en los horarios configurados</span>
               </div>
@@ -324,7 +326,7 @@ export default function HorarioComercialPage() {
         </div>
 
         {/* Tabs de días */}
-        <div className="bg-white p-5 border border-gray-100 rounded-lg shadow-lg">
+  <div className="bg-[--sp-surface-elevated] p-5 border border-[color:var(--sp-neutral-200)] rounded-lg shadow-lg">
           <div className="flex gap-1 overflow-x-auto" role="tablist">
             {DIAS_SEMANA.map((dia) => (
               <button
@@ -335,13 +337,13 @@ export default function HorarioComercialPage() {
                 onClick={() => setDiaSeleccionado(dia)}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap relative focus:outline-none ${
                   diaSeleccionado === dia
-                    ? 'bg-gray-900 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-[color:var(--sp-neutral-900)] text-[--sp-on-neutral] shadow-md'
+                    : 'bg-[--sp-surface] text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-50)] border border-[color:var(--sp-neutral-300)]'
                 }`}
               >
                 {NOMBRES_DIAS[dia]}
                 {diaSeleccionado === dia && (
-                  <span className="absolute left-1/2 -translate-x-1/2 bottom-0 w-3/4 h-1 bg-orange-500 rounded-full animate-fade-in" />
+                  <span className="absolute left-1/2 -translate-x-1/2 bottom-0 w-3/4 h-1 bg-[color:var(--sp-primary-600)] rounded-full animate-fade-in" />
                 )}
               </button>
             ))}
@@ -351,8 +353,8 @@ export default function HorarioComercialPage() {
         {/* Contenido principal */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Vista general */}
-          <div className="bg-white p-5 border border-gray-100 rounded-lg shadow-lg">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Horarios de la semana</h3>
+          <div className="bg-[--sp-surface-elevated] p-5 border border-[color:var(--sp-neutral-200)] rounded-lg shadow-lg">
+            <h3 className="text-lg font-medium text-[color:var(--sp-neutral-900)] mb-4">Horarios de la semana</h3>
             <div className="space-y-3">
               {DIAS_SEMANA.map((dia) => {
                 const horarioDia = horarios[dia];
@@ -361,21 +363,21 @@ export default function HorarioComercialPage() {
                     key={dia}
                     className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
                       diaSeleccionado === dia 
-                        ? 'border-gray-300 bg-gray-50' 
-                        : 'border-gray-200'
+                        ? 'border-[color:var(--sp-neutral-300)] bg-[color:var(--sp-neutral-50)]' 
+                        : 'border-[color:var(--sp-neutral-200)]'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-3 h-3 rounded-full ${
-                          horarioDia.abierto ? 'bg-green-500' : 'bg-red-500'
+                          horarioDia.abierto ? 'bg-[color:var(--sp-success-500)]' : 'bg-[color:var(--sp-error-500)]'
                         }`}
                       />
-                      <span className="font-medium text-gray-900 w-20">
+                      <span className="font-medium text-[color:var(--sp-neutral-900)] w-20">
                         {NOMBRES_DIAS[dia]}
                       </span>
                     </div>
-                    <div className="flex-1 text-sm text-gray-600 mx-4">
+                    <div className="flex-1 text-sm text-[color:var(--sp-neutral-600)] mx-4">
                       {horarioDia.abierto ? (
                         horarioDia.turnos.map((turno, i) => (
                           <span key={i} className="mr-3">
@@ -383,12 +385,12 @@ export default function HorarioComercialPage() {
                           </span>
                         ))
                       ) : (
-                        <span className="text-red-600 flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Cerrado</span>
+                        <span className="text-[color:var(--sp-error-600)] flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Cerrado</span>
                       )}
                     </div>
                     <button
                       onClick={() => setDiaSeleccionado(dia)}
-                      className="text-xs px-3 py-1 rounded border text-blue-600 border-blue-200 hover:bg-blue-50 transition-colors"
+                      className="text-xs px-3 py-1 rounded border text-[color:var(--sp-info-600)] border-[color:var(--sp-info-200)] hover:bg-[color:var(--sp-info-50)] bg-[--sp-surface] transition-colors"
                     >
                       Editar
                     </button>
@@ -399,33 +401,33 @@ export default function HorarioComercialPage() {
           </div>
 
           {/* Editor */}
-          <div className={`bg-white p-5 border border-gray-100 rounded-lg shadow-lg transition-all duration-300 ${tabAnim ? 'scale-[1.03] bg-orange-50' : ''}`}>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <div className={`bg-[--sp-surface-elevated] p-5 border border-[color:var(--sp-neutral-200)] rounded-lg shadow-lg transition-all duration-300 ${tabAnim ? 'scale-[1.03] bg-[color:var(--sp-primary-50)]' : ''}`}>
+            <h3 className="text-lg font-medium text-[color:var(--sp-neutral-900)] mb-4">
               Configurar {NOMBRES_DIAS[diaSeleccionado]}
             </h3>
             <div className="space-y-4">
               {/* Estado del día */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                <label className="text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2 block">
                   Estado del día:
                 </label>
                 <div className="flex gap-2">
-                  <button
+      <button
                     onClick={() => toggleDiaAbierto(diaSeleccionado, true)}
                     className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
                       horarioDiaActual.abierto
-                        ? 'bg-gray-900 text-white border-gray-900'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+        ? 'bg-[color:var(--sp-neutral-900)] text-[--sp-on-neutral] border-[color:var(--sp-neutral-900)]'
+        : 'bg-[--sp-surface] text-[color:var(--sp-neutral-700)] border-[color:var(--sp-neutral-300)] hover:bg-[color:var(--sp-neutral-50)]'
                     }`}
                   >
                     Abierto
                   </button>
-                  <button
+      <button
                     onClick={() => toggleDiaAbierto(diaSeleccionado, false)}
                     className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
                       !horarioDiaActual.abierto
-                        ? 'bg-gray-900 text-white border-gray-900'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+        ? 'bg-[color:var(--sp-neutral-900)] text-[--sp-on-neutral] border-[color:var(--sp-neutral-900)]'
+        : 'bg-[--sp-surface] text-[color:var(--sp-neutral-700)] border-[color:var(--sp-neutral-300)] hover:bg-[color:var(--sp-neutral-50)]'
                     }`}
                   >
                     Cerrado
@@ -436,20 +438,20 @@ export default function HorarioComercialPage() {
               {/* Horarios */}
               {horarioDiaActual.abierto && (
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-3 block">
+                  <label className="text-sm font-medium text-[color:var(--sp-neutral-700)] mb-3 block">
                     Horarios:
                   </label>
                   <div className="space-y-4">
                     {horarioDiaActual.turnos.map((turno, indice) => (
-                      <div key={indice} className="border border-gray-200 rounded-lg p-4">
+                      <div key={indice} className="border border-[color:var(--sp-neutral-200)] rounded-lg p-4 bg-[--sp-surface]">
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-medium text-gray-700">
+                          <span className="text-sm font-medium text-[color:var(--sp-neutral-700)]">
                             Turno {indice + 1}
                           </span>
                           {horarioDiaActual.turnos.length > 1 && (
                             <button
                               onClick={() => eliminarTurno(diaSeleccionado, indice)}
-                              className="text-red-600 hover:text-red-800 text-sm flex items-center gap-1 transition-transform active:scale-95"
+                              className="text-[color:var(--sp-error-600)] hover:text-[color:var(--sp-error-700)] text-sm flex items-center gap-1 transition-transform active:scale-95"
                               aria-label={`Eliminar turno ${indice + 1}`}
                             >
                               <Trash2 className="w-3 h-3" />
@@ -459,11 +461,11 @@ export default function HorarioComercialPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-xs text-gray-600 mb-1 block">Apertura:</label>
+                            <label className="text-xs text-[color:var(--sp-neutral-600)] mb-1 block">Apertura:</label>
                             <select
                               value={turno.horaApertura}
                               onChange={(e) => actualizarTurno(diaSeleccionado, indice, { horaApertura: e.target.value })}
-                              className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                              className="w-full p-2 text-sm border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
                             >
                               {opcionesHora.map(opcion => (
                                 <option key={opcion.value} value={opcion.value}>
@@ -473,11 +475,11 @@ export default function HorarioComercialPage() {
                             </select>
                           </div>
                           <div>
-                            <label className="text-xs text-gray-600 mb-1 block">Cierre:</label>
+                            <label className="text-xs text-[color:var(--sp-neutral-600)] mb-1 block">Cierre:</label>
                             <select
                               value={turno.horaCierre}
                               onChange={(e) => actualizarTurno(diaSeleccionado, indice, { horaCierre: e.target.value })}
-                              className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                              className="w-full p-2 text-sm border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
                             >
                               {opcionesHora.map(opcion => (
                                 <option key={opcion.value} value={opcion.value}>
@@ -489,13 +491,13 @@ export default function HorarioComercialPage() {
                         </div>
                       </div>
                     ))}
-                    <button
+        <button
                       onClick={() => agregarTurno(diaSeleccionado)}
                       disabled={horarioDiaActual.turnos.length >= 3}
                       className={`w-full py-2 text-sm border rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${
                         horarioDiaActual.turnos.length >= 3
-                          ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'text-blue-600 border-blue-200 hover:bg-blue-50 active:scale-95'
+                          ? 'border-[color:var(--sp-neutral-200)] text-[color:var(--sp-neutral-400)] cursor-not-allowed'
+          : 'text-[color:var(--sp-info-600)] border-[color:var(--sp-info-200)] hover:bg-[color:var(--sp-info-50)] active:scale-95 bg-[--sp-surface]'
                       } animate-fade-in`}
                       aria-label="Agregar turno"
                     >
@@ -510,8 +512,8 @@ export default function HorarioComercialPage() {
               )}
 
               {/* Copiar horarios */}
-              <div className="pt-4 border-t border-gray-200">
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
+              <div className="pt-4 border-t border-[color:var(--sp-neutral-200)]">
+                <label className="text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2 block">
                   Acciones rápidas:
                 </label>
                 <select
@@ -521,7 +523,7 @@ export default function HorarioComercialPage() {
                       e.target.value = '';
                     }
                   }}
-                  className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="w-full p-2 text-sm border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
                   defaultValue=""
                 >
                   <option value="">Copiar desde otro día...</option>
@@ -537,11 +539,11 @@ export default function HorarioComercialPage() {
         </div>
 
         {/* Botones de navegación */}
-        <div className="bg-white p-5 border border-gray-100 rounded-lg shadow-lg">
+    <div className="bg-[--sp-surface-elevated] p-5 border border-[color:var(--sp-neutral-200)] rounded-lg shadow-lg">
           <div className="flex justify-between items-center">
             <button
               onClick={handleVolver}
-              className="flex items-center gap-2 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
+        className="flex items-center gap-2 px-6 py-2 bg-[--sp-surface] hover:bg-[color:var(--sp-neutral-50)] text-[color:var(--sp-neutral-700)] border border-[color:var(--sp-neutral-300)] rounded-lg transition-colors font-medium"
             >
               <ArrowLeft className="w-4 h-4" />
               Ubicación
@@ -551,13 +553,13 @@ export default function HorarioComercialPage() {
               disabled={guardando || !tieneHorariosConfigurados() || errores.length > 0}
               className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
                 tieneHorariosConfigurados() && !guardando && errores.length === 0
-                  ? 'bg-orange-500 hover:bg-orange-600 text-white' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          ? 'bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)] text-[--sp-on-primary]' 
+                  : 'bg-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-500)] cursor-not-allowed'
               }`}
             >
               {guardando ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[--sp-on-primary]"></div>
                   Guardando...
                 </>
               ) : (
@@ -576,12 +578,12 @@ export default function HorarioComercialPage() {
         </div>
 
         {/* Info de progreso */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-md">
+        <div className="bg-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded-lg p-4 shadow-md">
           <div className="flex items-center gap-3">
-            <Clock className="text-blue-600 w-5 h-5" />
+            <Clock className="text-[color:var(--sp-info-600)] w-5 h-5" />
             <div>
-              <h3 className="font-bold text-blue-800">Horarios de Atención</h3>
-              <p className="text-sm text-blue-700">
+              <h3 className="font-bold text-[color:var(--sp-info-800)]">Horarios de Atención</h3>
+              <p className="text-sm text-[color:var(--sp-info-700)]">
                 Define cuándo estará abierto tu restaurante. Horarios disponibles de 6:00 AM a 11:30 PM.
               </p>
             </div>

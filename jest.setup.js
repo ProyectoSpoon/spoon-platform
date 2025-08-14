@@ -1,16 +1,20 @@
 /**
- * SETUP DE JEST PARA REACT 18
- * Configuración actualizada para React 18
+ * SETUP DE JEST PARA REACT 18 (CommonJS)
  */
 
-import '@testing-library/jest-dom';
+require('@testing-library/jest-dom');
 
 // Configuración global
+// Silenciar logs ruidosos en tests, pero permite habilitarlos puntualmente en casos específicos
+const realConsoleError = console.error.bind(console);
 global.console = {
   ...console,
   log: jest.fn(),
   warn: jest.fn(),
-  error: console.error
+  error: jest.fn((...args) => {
+    // Para depuración se puede comentar la línea siguiente
+    // realConsoleError(...args);
+  })
 };
 
 // Mock de localStorage
@@ -41,6 +45,10 @@ Object.defineProperty(window, 'matchMedia', {
 
 // React 18 - Mock de createRoot si es necesario
 global.React = require('react');
+
+// Variables de entorno necesarias para supabase en tests
+process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key';
 
 // IntersectionObserver mock
 global.IntersectionObserver = class IntersectionObserver {

@@ -3,11 +3,11 @@
  * Testing de flujos completos
  */
 
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useMesas } from '@spoon/shared/hooks/mesas';
 
 // Mock completo de supabase
-jest.mock('../../lib/supabase', () => ({
+jest.mock('@spoon/shared/lib/supabase', () => ({
   getUserRestaurant: jest.fn().mockResolvedValue({ id: 'restaurant-1' }),
   getEstadoCompletoMesas: jest.fn().mockResolvedValue({ mesas: [] }),
   verificarMesasConfiguradas: jest.fn().mockResolvedValue({
@@ -26,10 +26,8 @@ describe('Integración: Flujos de Mesa', () => {
   });
 
   test('flujo completo: cargar mesas → crear orden → cobrar', async () => {
-    const { result, waitForNextUpdate } = renderHook(() => useMesas());
-
-    // Esperar inicialización
-    await waitForNextUpdate();
+  const { result } = renderHook(() => useMesas());
+  await waitFor(() => expect(result.current.restaurantId).toBe('restaurant-1'));
 
     // Verificar estado inicial
     expect(result.current.restaurantId).toBe('restaurant-1');
@@ -58,9 +56,8 @@ describe('Integración: Flujos de Mesa', () => {
   });
 
   test('flujo de configuración inicial', async () => {
-    const { result, waitForNextUpdate } = renderHook(() => useMesas());
-
-    await waitForNextUpdate();
+  const { result } = renderHook(() => useMesas());
+  await waitFor(() => expect(result.current.restaurantId).toBe('restaurant-1'));
 
     // Configurar mesas iniciales
     let configResult;
@@ -72,9 +69,8 @@ describe('Integración: Flujos de Mesa', () => {
   });
 
   test('compatibilidad con API anterior', async () => {
-    const { result, waitForNextUpdate } = renderHook(() => useMesas());
-
-    await waitForNextUpdate();
+  const { result } = renderHook(() => useMesas());
+  await waitFor(() => expect(result.current.restaurantId).toBe('restaurant-1'));
 
     // Verificar que mantiene estructura anterior
     expect(result.current.mesasOcupadas).toBeDefined();

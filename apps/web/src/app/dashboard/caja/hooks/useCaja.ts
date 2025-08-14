@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { OrdenPendiente, TransaccionCaja, MetodoPago } from '../../caja/types/cajaTypes';
 import { 
   supabase, 
@@ -43,106 +43,11 @@ export const useCaja = () => {
   const [error, setError] = useState<string | null>(null);
 
   // ===============================
-  // WEBSOCKETS EN TIEMPO REAL (REEMPLAZA AUTO-REFRESH)
-  // ===============================
-  useEffect(() => {
-    if (estadoCaja === 'abierta' && sesionActual) {
-      console.log('🔄 Configurando WebSockets para caja abierta');
-      
-      // Obtener datos iniciales UNA VEZ
-      obtenerDatosCaja();
-
-      // WEBSOCKET 1: Escuchar nuevas transacciones
-      const subscriptionTransacciones = supabase
-        .channel(`transacciones-${sesionActual.id}`)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'transacciones_caja',
-          filter: `caja_sesion_id=eq.${sesionActual.id}`
-        }, (payload) => {
-          console.log('💰 Nueva transacción detectada:', payload.new);
-          
-          const nuevaTransaccion = payload.new as TransaccionCaja;
-          
-          // Update incremental - NO refresh completo
-          setMetricas(prev => ({
-            ...prev, // Mantener todas las propiedades existentes
-            ventasTotales: prev.ventasTotales + nuevaTransaccion.monto_total,
-            totalEfectivo: nuevaTransaccion.metodo_pago === 'efectivo' 
-              ? prev.totalEfectivo + nuevaTransaccion.monto_total 
-              : prev.totalEfectivo,
-            totalTarjeta: nuevaTransaccion.metodo_pago === 'tarjeta'
-              ? prev.totalTarjeta + nuevaTransaccion.monto_total
-              : prev.totalTarjeta,
-            totalDigital: nuevaTransaccion.metodo_pago === 'digital'
-              ? prev.totalDigital + nuevaTransaccion.monto_total
-              : prev.totalDigital,
-            transaccionesDelDia: [nuevaTransaccion, ...prev.transaccionesDelDia],
-            balance: prev.balance + nuevaTransaccion.monto_total // Actualizar balance también
-          }));
-        })
-        .subscribe();
-
-      // WEBSOCKET 2: Escuchar nuevos gastos
-      const subscriptionGastos = supabase
-        .channel(`gastos-${sesionActual.id}`)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'gastos_caja',
-          filter: `caja_sesion_id=eq.${sesionActual.id}`
-        }, (payload) => {
-          console.log('💸 Nuevo gasto detectado:', payload.new);
-          
-          const nuevoGasto = payload.new as any;
-          
-          // Update incremental
-          setMetricas(prev => ({
-            ...prev, // Mantener todas las propiedades
-            gastosTotales: prev.gastosTotales + nuevoGasto.monto,
-            balance: prev.balance - nuevoGasto.monto // Restar del balance
-          }));
-        })
-        .subscribe();
-
-      // WEBSOCKET 3: Escuchar cambios en órdenes (cuando se pagan)
-      const subscriptionOrdenes = supabase
-        .channel(`ordenes-caja-${sesionActual.restaurant_id || 'global'}`)
-        .on('postgres_changes', {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'ordenes_mesa',
-          filter: sesionActual.restaurant_id ? `restaurant_id=eq.${sesionActual.restaurant_id}` : undefined
-        }, (payload) => {
-          if (payload.new.estado === 'pagada' && payload.old.estado === 'activa') {
-            console.log('🍽️ Orden de mesa pagada:', payload.new);
-            
-            // Remover de órdenes pendientes
-            setOrdenesMesas(prev => prev.filter(orden => orden.id !== payload.new.id));
-            
-            // Actualizar monto por cobrar
-            setMetricas(prev => ({
-              ...prev,
-              porCobrar: prev.porCobrar - payload.new.monto_total
-            }));
-          }
-  })
-        .subscribe();
-
-      // Cleanup function
-      return () => {
-        console.log('🔌 Desconectando WebSockets');
-        subscriptionTransacciones.unsubscribe();
-        subscriptionGastos.unsubscribe();
-        subscriptionOrdenes.unsubscribe();
-      };
-    }
-  }, [estadoCaja, sesionActual]);
-
-  // ===============================
   // FUNCIÓN ROBUSTA PARA OBTENER DATOS
   // ===============================
+  const sesionId = sesionActual?.id;
+  const sesionMontoInicial = sesionActual?.monto_inicial ?? 0;
+
   const obtenerDatosCaja = useCallback(async () => {
     try {
       setLoading(true);
@@ -224,7 +129,7 @@ export const useCaja = () => {
       ]);
 
       // TRANSFORMAR Y COMBINAR DATOS
-  const mesasTransformadas: OrdenPendiente[] = mesasData.map((mesa: any) => ({
+      const mesasTransformadas: OrdenPendiente[] = mesasData.map((mesa: any) => ({
         id: mesa.id,
         tipo: 'mesa',
         identificador: `Mesa ${mesa.numero_mesa}`,
@@ -233,7 +138,7 @@ export const useCaja = () => {
         detalles: mesa.nombre_mesero ? `Mesero: ${mesa.nombre_mesero}` : undefined
       }));
 
-  const deliveryTransformadas: OrdenPendiente[] = deliveryData.map((orden: any) => ({
+      const deliveryTransformadas: OrdenPendiente[] = deliveryData.map((orden: any) => ({
         id: orden.id,
         tipo: 'delivery',
         identificador: orden.customer_name,
@@ -246,8 +151,8 @@ export const useCaja = () => {
       const porCobrarTotal = [...mesasTransformadas, ...deliveryTransformadas]
         .reduce((sum, orden) => sum + orden.monto_total, 0);
 
-      const balance = sesionActual 
-        ? sesionActual.monto_inicial + transaccionesData.totalVentas - gastosData.totalGastos
+      const balance = sesionId 
+        ? sesionMontoInicial + transaccionesData.totalVentas - gastosData.totalGastos
         : 0;
 
       // ACTUALIZAR ESTADO
@@ -277,7 +182,119 @@ export const useCaja = () => {
     } finally {
       setLoading(false);
     }
-  }, [sesionActual]);
+  }, [sesionId, sesionMontoInicial]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  // Mantener una referencia estable a la función para evitar re-suscripciones
+  const obtenerDatosCajaRef = useRef(obtenerDatosCaja);
+  useEffect(() => {
+    obtenerDatosCajaRef.current = obtenerDatosCaja;
+  }, [obtenerDatosCaja]);
+
+  
+
+  // ===============================
+  // WEBSOCKETS EN TIEMPO REAL (REEMPLAZA AUTO-REFRESH)
+  // ===============================
+  const restaurantId = (sesionActual as any)?.restaurant_id as string | undefined;
+
+  useEffect(() => {
+    if (estadoCaja === 'abierta' && sesionId) {
+      console.log('🔄 Configurando WebSockets para caja abierta');
+      
+      // Obtener datos iniciales UNA VEZ
+      obtenerDatosCajaRef.current();
+
+      // WEBSOCKET 1: Escuchar nuevas transacciones
+      const subscriptionTransacciones = supabase
+        .channel(`transacciones-${sesionId}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'transacciones_caja',
+          filter: `caja_sesion_id=eq.${sesionId}`
+        }, (payload) => {
+          console.log('💰 Nueva transacción detectada:', payload.new);
+          
+          const nuevaTransaccion = payload.new as TransaccionCaja;
+          
+          // Update incremental - NO refresh completo
+          setMetricas(prev => ({
+            ...prev, // Mantener todas las propiedades existentes
+            ventasTotales: prev.ventasTotales + nuevaTransaccion.monto_total,
+            totalEfectivo: nuevaTransaccion.metodo_pago === 'efectivo' 
+              ? prev.totalEfectivo + nuevaTransaccion.monto_total 
+              : prev.totalEfectivo,
+            totalTarjeta: nuevaTransaccion.metodo_pago === 'tarjeta'
+              ? prev.totalTarjeta + nuevaTransaccion.monto_total
+              : prev.totalTarjeta,
+            totalDigital: nuevaTransaccion.metodo_pago === 'digital'
+              ? prev.totalDigital + nuevaTransaccion.monto_total
+              : prev.totalDigital,
+            transaccionesDelDia: [nuevaTransaccion, ...prev.transaccionesDelDia],
+            balance: prev.balance + nuevaTransaccion.monto_total // Actualizar balance también
+          }));
+        })
+        .subscribe();
+
+      // WEBSOCKET 2: Escuchar nuevos gastos
+      const subscriptionGastos = supabase
+        .channel(`gastos-${sesionId}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'gastos_caja',
+          filter: `caja_sesion_id=eq.${sesionId}`
+        }, (payload) => {
+          console.log('💸 Nuevo gasto detectado:', payload.new);
+          
+          const nuevoGasto = payload.new as any;
+          
+          // Update incremental
+          setMetricas(prev => ({
+            ...prev, // Mantener todas las propiedades
+            gastosTotales: prev.gastosTotales + nuevoGasto.monto,
+            balance: prev.balance - nuevoGasto.monto // Restar del balance
+          }));
+        })
+        .subscribe();
+
+      // WEBSOCKET 3: Escuchar cambios en órdenes (cuando se pagan)
+      const subscriptionOrdenes = supabase
+        .channel(`ordenes-caja-${restaurantId || 'global'}`)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'ordenes_mesa',
+          filter: restaurantId ? `restaurant_id=eq.${restaurantId}` : undefined
+        }, (payload) => {
+          if (payload.new.estado === 'pagada' && payload.old.estado === 'activa') {
+            console.log('🍽️ Orden de mesa pagada:', payload.new);
+            
+            // Remover de órdenes pendientes
+            setOrdenesMesas(prev => prev.filter(orden => orden.id !== payload.new.id));
+            
+            // Actualizar monto por cobrar
+            setMetricas(prev => ({
+              ...prev,
+              porCobrar: prev.porCobrar - payload.new.monto_total
+            }));
+          }
+  })
+        .subscribe();
+
+      // Cleanup function
+    return () => {
+        console.log('🔌 Desconectando WebSockets');
+        subscriptionTransacciones.unsubscribe();
+        subscriptionGastos.unsubscribe();
+        subscriptionOrdenes.unsubscribe();
+      };
+    }
+  }, [estadoCaja, sesionId, restaurantId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  
 
   // ===============================
   // FUNCIÓN CRÍTICA: PROCESAR PAGOS CON MÁXIMO RETRY

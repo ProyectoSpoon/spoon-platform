@@ -3,11 +3,11 @@
  * Testing para gestión de estado y sincronización
  */
 
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react';
 import { useMesaState } from '@spoon/shared/hooks/mesas/core/useMesaState';
 
 // Mock de supabase
-jest.mock('../../lib/supabase', () => ({
+jest.mock('@spoon/shared/lib/supabase', () => ({
   getEstadoCompletoMesas: jest.fn(),
   verificarMesasConfiguradas: jest.fn()
 }));
@@ -37,7 +37,7 @@ describe('useMesaState', () => {
   });
 
   test('limpiar error funciona correctamente', () => {
-    const { result } = renderHook(() => useMesaState('restaurant-1'));
+  const { result } = renderHook(() => useMesaState('restaurant-1'));
 
     act(() => {
       result.current.limpiarError();
@@ -47,7 +47,7 @@ describe('useMesaState', () => {
   });
 
   test('calcula estadísticas correctamente', async () => {
-    const mockMesas = [
+  const _mockMesas = [
       { estado: 'libre', ordenActiva: null },
       { estado: 'ocupada', ordenActiva: { total: 50000 } },
       { estado: 'reservada', ordenActiva: null },
@@ -57,7 +57,7 @@ describe('useMesaState', () => {
     // Mock implementación más completa cuando sea necesario
     const { result } = renderHook(() => useMesaState('restaurant-1'));
 
-    expect(result.current.estadisticas).toBeDefined();
+  expect(result.current.estadisticas).toBeDefined();
   });
 });
 

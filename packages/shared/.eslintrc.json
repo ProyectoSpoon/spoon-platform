@@ -1,0 +1,68 @@
+{
+  "extends": ["eslint:recommended"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module",
+    "ecmaFeatures": { "jsx": true },
+    "project": null
+  },
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "plugins": ["react-hooks", "@typescript-eslint"],
+  "rules": {
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "JSXAttribute[name.name=\"className\"] > Literal[value=/\\b(?:bg|text|border|ring|from|via|to)-(?:red|blue|green|yellow|orange|emerald|teal|cyan|sky|indigo|violet|purple|fuchsia|pink|rose|lime|amber|stone|neutral|slate|zinc|gray)-[0-9]{2,3}\\b/]",
+        "message": "Usa tokens CSS (bg-[color:var(--sp-...)], text-[color:var(--sp-...)], etc.) en lugar de colores Tailwind directos."
+      },
+      {
+        "selector": "JSXAttribute[name.name=\"className\"] > Literal[value=/\\b(?:bg|text|border|ring)-(?:white|black)\\b/]",
+        "message": "No uses white/black directos; usa tokens (on-*, surface)"
+      },
+      {
+        "selector": "JSXAttribute[name.name=\"className\"] > Literal[value=/(^|[^a-zA-Z0-9])#(?:000000|fff|ffffff)(?=$|[^a-zA-Z0-9])/]",
+        "message": "Evita hex #000/#fff en className; usa tokens CSS."
+      }
+    ],
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
+    ],
+    "no-empty": "warn",
+    "no-constant-condition": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "no-undef": "off"
+      }
+    },
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**/*.{ts,tsx}", "**/*.stories.tsx"],
+      "env": {
+        "jest": true,
+        "browser": true,
+        "node": true
+      }
+    },
+    {
+      "files": ["**/*.stories.tsx"],
+      "rules": {
+        "react-hooks/rules-of-hooks": "off",
+        "no-unused-vars": ["warn", { "varsIgnorePattern": "^React$" }]
+      }
+    }
+  ]
+}

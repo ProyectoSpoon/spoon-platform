@@ -19,14 +19,14 @@ export const ESTADOS_MESA: Record<MesaEstado, string> = {
 } as const;
 
 export const COLORES_ESTADO: Record<MesaEstado, string> = {
-  libre: '#10b981',        // green-500
-  ocupada: '#3b82f6',      // blue-500 (ocupada en servicio)
-  en_cocina: '#3b82f6',    // blue-500
-  servida: '#7c3aed',      // purple-600
-  por_cobrar: '#ef4444',   // red-500
-  reservada: '#f59e0b',    // amber-500
-  inactiva: '#6b7280',     // gray-500
-  mantenimiento: '#ea580c' // orange-600
+  libre: 'var(--sp-success-500)',
+  ocupada: 'var(--sp-primary-500)',
+  en_cocina: 'var(--sp-primary-500)',
+  servida: 'var(--sp-info-600)',
+  por_cobrar: 'var(--sp-error-500)',
+  reservada: 'var(--sp-warning-500)',
+  inactiva: 'var(--sp-neutral-500)',
+  mantenimiento: 'var(--sp-warning-600)'
 } as const;
 
 // CONFIGURACIÓN BÁSICA
@@ -81,8 +81,8 @@ export const ESTADOS_MESA_LEGACY = {
 };
 
 export const COLORES_ESTADO_LEGACY = {
-  vacia: '#10b981',   // green-500
-  ocupada: '#ef4444'  // red-500
+  vacia: 'var(--sp-success-500)',
+  ocupada: 'var(--sp-error-500)'
 };
 
 // Configuración de tiempo real

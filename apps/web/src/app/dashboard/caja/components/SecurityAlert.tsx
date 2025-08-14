@@ -24,17 +24,17 @@ export const SecurityAlert: React.FC<SecurityAlertProps> = ({
 }) => {
   const getIcon = () => {
     switch (type) {
-      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
-      case 'error': return <Shield className="w-5 h-5 text-red-500" />;
-      default: return <DollarSign className="w-5 h-5 text-blue-500" />;
+      case 'warning': return <AlertTriangle className="w-5 h-5 text-[color:var(--sp-warning-500)]" />;
+      case 'error': return <Shield className="w-5 h-5 text-[color:var(--sp-error-500)]" />;
+      default: return <DollarSign className="w-5 h-5 text-[color:var(--sp-info-500)]" />;
     }
   };
 
   const getBgColor = () => {
     switch (type) {
-      case 'warning': return 'bg-yellow-50 border-yellow-200';
-      case 'error': return 'bg-red-50 border-red-200';
-      default: return 'bg-blue-50 border-blue-200';
+      case 'warning': return 'bg-[color:var(--sp-warning-50)] border-[color:var(--sp-warning-200)]';
+      case 'error': return 'bg-[color:var(--sp-error-50)] border-[color:var(--sp-error-200)]';
+      default: return 'bg-[color:var(--sp-info-50)] border-[color:var(--sp-info-200)]';
     }
   };
 
@@ -45,24 +45,24 @@ export const SecurityAlert: React.FC<SecurityAlertProps> = ({
       <div className="flex items-start space-x-3">
         {getIcon()}
         <div className="flex-1">
-          <h3 className="font-medium text-gray-900 mb-2">{title}</h3>
+          <h3 className="font-medium text-[color:var(--sp-neutral-900)] mb-2">{title}</h3>
           
           {messages.map((message, index) => (
-            <p key={index} className="text-sm text-gray-700 mb-1">
+            <p key={index} className="text-sm text-[color:var(--sp-neutral-700)] mb-1">
               • {message}
             </p>
           ))}
           
           {limits && (
-            <div className="mt-3 p-3 bg-white rounded border">
-              <div className="text-xs text-gray-500 mb-1">{limits.label}</div>
+            <div className="mt-3 p-3 bg-[color:var(--sp-surface-elevated)] rounded border">
+              <div className="text-xs text-[color:var(--sp-neutral-500)] mb-1">{limits.label}</div>
               <div className="flex justify-between text-sm">
                 <span>Actual: <strong>{formatearMonto(limits.current)}</strong></span>
                 <span>Límite: <strong>{formatearMonto(limits.limit)}</strong></span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+              <div className="w-full bg-[color:var(--sp-neutral-200)] rounded-full h-2 mt-2">
                 <div 
-                  className="bg-blue-600 h-2 rounded-full" 
+                  className="bg-[color:var(--sp-info-600)] h-2 rounded-full" 
                   style={{ width: `${Math.min(100, (limits.current / limits.limit) * 100)}%` }}
                 ></div>
               </div>
@@ -73,7 +73,7 @@ export const SecurityAlert: React.FC<SecurityAlertProps> = ({
         {onDismiss && (
           <button
             onClick={onDismiss}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-[color:var(--sp-neutral-400)] hover:text-[color:var(--sp-neutral-600)]"
           >
             ×
           </button>

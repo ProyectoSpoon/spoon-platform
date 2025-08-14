@@ -117,19 +117,19 @@ const MesasPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
-        <div className="bg-white p-6 border border-gray-100 rounded-lg shadow-sm">
-          <RefreshCw className="h-8 w-8 animate-spin text-gray-500 mx-auto mb-2" />
-          <p className="text-gray-600">Cargando mesas...</p>
+      <div className="min-h-screen bg-[color:var(--sp-neutral-50)] flex justify-center items-center">
+  <div className="bg-[color:var(--sp-surface-elevated)] p-6 border border-[color:var(--sp-border)] rounded-lg shadow-sm">
+          <RefreshCw className="h-8 w-8 animate-spin text-[color:var(--sp-neutral-500)] mx-auto mb-2" />
+          <p className="text-[color:var(--sp-neutral-600)]">Cargando mesas...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[color:var(--sp-neutral-50)]">
       {/* Header superior fijo de la vista */}
-      <div className="bg-white border-b border-slate-200">
+  <div className="bg-[color:var(--sp-surface)] border-b border-[color:var(--sp-border)]">
         <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <div>
             <h1 className="heading-page">Gestión de Mesas</h1>
@@ -146,7 +146,7 @@ const MesasPage: React.FC = () => {
               <Button
                 onClick={cargarMesas}
                 variant="outline"
-                className="bg-white"
+                className="bg-[color:var(--sp-surface-elevated)] border-[color:var(--sp-border)]"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Actualizar
@@ -155,7 +155,7 @@ const MesasPage: React.FC = () => {
             <Button
               onClick={() => setModalConfiguracion(true)}
               variant="outline"
-              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              className="bg-[color:var(--sp-primary-50)] border-[color:var(--sp-primary-200)] text-[color:var(--sp-primary-700)] hover:bg-[color:var(--sp-primary-100)]"
               disabled={loadingConfiguracion}
             >
               <Settings className="h-4 w-4 mr-2" />
@@ -171,24 +171,24 @@ const MesasPage: React.FC = () => {
         <div className="space-y-6 order-1 md:order-2 lg:order-1">
           {/* KPIs compactos */}
           <div className="flex w-full gap-3 overflow-x-auto lg:overflow-visible">
-            <div className="flex-[1_1_140px] bg-white border-l-4 border-emerald-500 rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
+            <div className="flex-[1_1_140px] bg-[color:var(--sp-surface-elevated)] border-l-4 border-[color:var(--sp-success-500)] rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
               <div className="label-tertiary text-xs">Mesas activas</div>
               <div className="mt-1 value-number">{mesasActivas}</div>
             </div>
-            <div className="flex-[2_1_200px] bg-white border-l-4 border-indigo-500 rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
+            <div className="flex-[2_1_200px] bg-[color:var(--sp-surface-elevated)] border-l-4 border-[color:var(--sp-primary-500)] rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
               <div className="label-tertiary text-xs">Total pendiente</div>
-              <div className="mt-1 value-number text-indigo-700">{formatCurrency(totalPendiente)}</div>
+              <div className="mt-1 value-number text-[color:var(--sp-primary-700)]">{formatCurrency(totalPendiente)}</div>
             </div>
             {configuracion.configuradas && (
-              <div className="flex-[1_1_160px] bg-white border-l-4 border-sky-500 rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
+              <div className="flex-[1_1_160px] bg-[color:var(--sp-surface-elevated)] border-l-4 border-[color:var(--sp-primary-500)] rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
                 <div className="label-tertiary text-xs">Órdenes en cocina</div>
-                <div className="mt-1 value-number text-sky-700">{ordenesEnCocina}</div>
+                <div className="mt-1 value-number text-[color:var(--sp-primary-700)]">{ordenesEnCocina}</div>
               </div>
             )}
             {configuracion.configuradas && (
-              <div className="flex-[2_1_200px] bg-white border-l-4 border-amber-500 rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
+              <div className="flex-[2_1_200px] bg-[color:var(--sp-surface-elevated)] border-l-4 border-[color:var(--sp-warning-500)] rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
                 <div className="label-tertiary text-xs">Total por cobrar</div>
-                <div className="mt-1 value-number text-amber-700">{formatCurrency(totalPorCobrar)}</div>
+                <div className="mt-1 value-number text-[color:var(--sp-warning-700)]">{formatCurrency(totalPorCobrar)}</div>
               </div>
             )}
             {configuracion.configuradas && configuracion.zonas.length > 1 && configuracion.zonas
@@ -200,7 +200,7 @@ const MesasPage: React.FC = () => {
               const mesasZona = mesasCompletas.filter(m => m.zona === zona);
               const ocupadasZona = mesasZona.filter(m => m.ocupada).length;
               return (
-                <div key={zona} className="flex-[1_1_150px] bg-white border-l-4 border-sky-500 rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
+                <div key={zona} className="flex-[1_1_150px] bg-[color:var(--sp-surface-elevated)] border-l-4 border-[color:var(--sp-primary-500)] rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
                   <div className="label-tertiary text-xs">{zona}</div>
                   <div className="mt-1 value-number text-[20px]">{ocupadasZona}/{mesasZona.length}</div>
                 </div>
@@ -238,16 +238,16 @@ const MesasPage: React.FC = () => {
 
               {/* Resumen */}
               {mesasActivas > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-[color:var(--sp-primary-50)] border border-[color:var(--sp-primary-200)] rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="heading-section text-blue-800">Resumen del día</h3>
-                      <p className="text-blue-700 text-sm">
+                      <h3 className="heading-section text-[color:var(--sp-primary-800)]">Resumen del día</h3>
+                      <p className="text-[color:var(--sp-primary-700)] text-sm">
                         {mesasActivas} mesa{mesasActivas > 1 ? 's' : ''} pendiente{mesasActivas > 1 ? 's' : ''} de cobro
                         {configuracion.zonas.length > 1 && ` • ${configuracion.zonas.length} zonas activas`}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 text-blue-800">
+                    <div className="flex items-center gap-2 text-[color:var(--sp-primary-800)]">
                       <DollarSign className="h-5 w-5" />
                       <span className="value-number">{formatCurrency(totalPendiente)}</span>
                     </div>
@@ -256,28 +256,28 @@ const MesasPage: React.FC = () => {
               )}
             </>
           ) : (
-            <div className="bg-white border border-yellow-200 rounded-lg p-8 text-center">
-              <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-              <h3 className="heading-section text-gray-900 mb-2">
+            <div className="bg-[color:var(--sp-surface-elevated)] border border-[color:var(--sp-warning-200)] rounded-lg p-8 text-center">
+              <AlertCircle className="h-12 w-12 text-[color:var(--sp-warning-500)] mx-auto mb-4" />
+              <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-2">
                 ¡Configura tus mesas para empezar!
               </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              <p className="text-[color:var(--sp-neutral-600)] mb-6 max-w-md mx-auto">
                 El sistema maestro de mesas te permite personalizar tu restaurante con nombres, zonas,
                 capacidades y mucho más. Es rápido y fácil de configurar.
               </p>
               <div className="flex gap-4 justify-center">
                 <Button
                   onClick={() => setModalConfiguracion(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)] text-[color:var(--sp-on-primary)]"
                   disabled={loadingConfiguracion}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   {loadingConfiguracion ? 'Configurando...' : 'Configurar Mesas'}
                 </Button>
               </div>
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <p className="text-sm text-gray-500">
-                  💡 <strong>Tip:</strong> Puedes configurar zonas como "Comedor", "Terraza", "VIP"
+              <div className="mt-8 pt-6 border-t border-[color:var(--sp-neutral-200)]">
+                <p className="text-sm text-[color:var(--sp-neutral-500)]">
+                  💡 <strong>Tip:</strong> Puedes configurar zonas como &quot;Comedor&quot;, &quot;Terraza&quot;, &quot;VIP&quot;
                   y personalizar cada mesa con nombres y capacidades específicas.
                 </p>
               </div>
@@ -286,7 +286,7 @@ const MesasPage: React.FC = () => {
         </div>
 
         {/* Panel derecho fijo 350px */}
-  <div className="bg-white border border-slate-200 rounded-lg lg:rounded-none lg:border-0 lg:border-l lg:border-slate-200 lg:bg-white min-h-[400px] order-2 md:order-1 lg:order-2">
+        <div className="bg-[color:var(--sp-surface-elevated)] border border-[color:var(--sp-border)] rounded-lg lg:rounded-none lg:border-0 lg:border-l lg:border-[color:var(--sp-border)] lg:bg-[color:var(--sp-surface-elevated)] min-h-[400px] order-2 md:order-1 lg:order-2">
           <MesaDetallesPanel
             mesa={mesasCompletas.find(m => m.numero === mesaSeleccionada) || null}
             onClose={handleCerrarPanel}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { CajaSesion } from '../../caja/types/cajaTypes';
 import { supabase, getUserProfile } from '@spoon/shared/lib/supabase';
 import { CAJA_MESSAGES } from '../../caja/constants/cajaConstants';
@@ -10,13 +10,80 @@ export const useCajaSesion = () => {
   const [error, setError] = useState<string | null>(null);
   const [requiereSaneamiento, setRequiereSaneamiento] = useState(false);
   const saneadorEjecutado = useRef(false);
+  const sesionIdRef = useRef<string | null>(null);
 
-  // Verificar si hay sesión abierta al cargar
   useEffect(() => {
-    verificarSesionAbierta();
+    sesionIdRef.current = sesionActual?.id ?? null;
+  }, [sesionActual?.id]);
+
+  const cerrarCaja = useCallback(async (notas?: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const currentSesionId = sesionIdRef.current;
+      if (!currentSesionId) {
+        throw new Error('No hay sesión activa para cerrar');
+      }
+
+      // Validación previa: no cerrar si hay órdenes pendientes por cobrar
+      const profile = await getUserProfile();
+      if (!profile?.restaurant_id) {
+        throw new Error('Usuario sin restaurante asignado');
+      }
+
+      // Intentar validar con RPC si existe; de lo contrario, fallback a consulta simple
+    try {
+        const { data: validacion } = await supabase.rpc('validar_cierre_caja', {
+          p_restaurant_id: profile.restaurant_id,
+      p_sesion_id: currentSesionId
+        });
+        if (validacion && validacion.bloqueado) {
+          throw new Error(validacion.mensaje || 'No se puede cerrar la caja. Hay pendientes.');
+        }
+      } catch {
+        // Fallback: verificar órdenes activas
+        const { data: ordenesPend, error: errPend } = await supabase
+          .from('ordenes_mesa')
+          .select('id')
+          .eq('restaurant_id', profile.restaurant_id)
+          .eq('estado', 'activa')
+          .limit(1);
+        if (errPend) {
+          console.warn('Advertencia al validar cierre (fallback):', errPend);
+        }
+        if (ordenesPend && ordenesPend.length > 0) {
+          throw new Error('No se puede cerrar la caja: hay órdenes de mesa activas.');
+        }
+      }
+
+  const { data, error } = await supabase
+        .from('caja_sesiones')
+        .update({
+          estado: 'cerrada',
+          cerrada_at: new Date().toISOString(),
+          notas_cierre: notas
+        })
+        .eq('id', currentSesionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSesionActual(null);
+      setEstadoCaja('cerrada');
+      return { success: true, data };
+
+    } catch (err: any) {
+      console.error('Error cerrando caja:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const verificarSesionAbierta = async () => {
+  const verificarSesionAbierta = useCallback(async () => {
     try {
       setLoading(true);
       const profile = await getUserProfile();
@@ -69,7 +136,19 @@ export const useCajaSesion = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [cerrarCaja]);
+
+  // Mantener ref estable para ejecutar solo en mount
+  const verificarSesionAbiertaRef = useRef(verificarSesionAbierta);
+  useEffect(() => {
+    verificarSesionAbiertaRef.current = verificarSesionAbierta;
+  }, [verificarSesionAbierta]);
+
+  // Verificar si hay sesión abierta al cargar (solo once)
+  useEffect(() => {
+    verificarSesionAbiertaRef.current();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 const abrirCaja = async (montoInicial: number, notas?: string) => {
   try {
@@ -123,72 +202,6 @@ const abrirCaja = async (montoInicial: number, notas?: string) => {
     setLoading(false);
   }
 };
-
-  const cerrarCaja = async (notas?: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      if (!sesionActual) {
-        throw new Error('No hay sesión activa para cerrar');
-      }
-
-      // Validación previa: no cerrar si hay órdenes pendientes por cobrar
-      const profile = await getUserProfile();
-      if (!profile?.restaurant_id) {
-        throw new Error('Usuario sin restaurante asignado');
-      }
-
-      // Intentar validar con RPC si existe; de lo contrario, fallback a consulta simple
-      try {
-        const { data: validacion } = await supabase.rpc('validar_cierre_caja', {
-          p_restaurant_id: profile.restaurant_id,
-          p_sesion_id: sesionActual.id
-        });
-        if (validacion && validacion.bloqueado) {
-          throw new Error(validacion.mensaje || 'No se puede cerrar la caja. Hay pendientes.');
-        }
-      } catch {
-        // Fallback: verificar órdenes activas
-        const { data: ordenesPend, error: errPend } = await supabase
-          .from('ordenes_mesa')
-          .select('id')
-          .eq('restaurant_id', profile.restaurant_id)
-          .eq('estado', 'activa')
-          .limit(1);
-        if (errPend) {
-          console.warn('Advertencia al validar cierre (fallback):', errPend);
-        }
-        if (ordenesPend && ordenesPend.length > 0) {
-          throw new Error('No se puede cerrar la caja: hay órdenes de mesa activas.');
-        }
-      }
-
-  const { data, error } = await supabase
-        .from('caja_sesiones')
-        .update({
-          estado: 'cerrada',
-          cerrada_at: new Date().toISOString(),
-          notas_cierre: notas
-        })
-        .eq('id', sesionActual.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setSesionActual(null);
-      setEstadoCaja('cerrada');
-      return { success: true, data };
-
-    } catch (err: any) {
-      console.error('Error cerrando caja:', err);
-      setError(err.message);
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return {
     sesionActual,

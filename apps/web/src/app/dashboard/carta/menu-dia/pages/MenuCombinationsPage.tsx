@@ -46,6 +46,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
   } = menuData;
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const hasActiveMenu = Boolean(currentMenu && currentMenu.id);
 
   // ✅ COMBINACIONES FILTRADAS
   const filteredCombinations = useMemo(() => {
@@ -281,17 +282,17 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
     <div className="space-y-6">
       
       {/* ✅ CONTROLES Y FILTROS */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
+  <div className="bg-[--sp-surface] rounded-lg shadow-sm p-6">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[color:var(--sp-neutral-400)] w-5 h-5" />
               <input
                 type="text"
                 placeholder="Buscar combinaciones..."
                 value={searchTermCombo}
                 onChange={(e) => setSearchTermCombo(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-transparent"
               />
             </div>
           </div>
@@ -300,7 +301,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
             <select
               value={filtersCombo.sortBy}
               onChange={(e) => setFiltersCombo((prev: ComboFilters) => ({ ...prev, sortBy: e.target.value as any }))}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)]"
             >
               <option value="name">Ordenar por nombre</option>
               <option value="price">Ordenar por precio</option>
@@ -309,10 +310,10 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
             
             <button
               onClick={() => setFiltersCombo((prev: ComboFilters) => ({ ...prev, favorites: !prev.favorites }))}
-              className={`flex items-center px-3 py-2 rounded-lg border transition-colors ${
+        className={`flex items-center px-3 py-2 rounded-lg border transition-colors ${
                 filtersCombo.favorites
-                  ? 'bg-red-50 border-red-200 text-red-700'
-                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  ? 'bg-[color:var(--sp-error-50)] border-[color:var(--sp-error-200)] text-[color:var(--sp-error-700)]'
+          : 'bg-[--sp-surface] border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-50)]'
               }`}
             >
               <Heart className={`w-4 h-4 mr-2 ${filtersCombo.favorites ? 'fill-current' : ''}`} />
@@ -321,10 +322,10 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
             
             <button
               onClick={() => setFiltersCombo((prev: ComboFilters) => ({ ...prev, specials: !prev.specials }))}
-              className={`flex items-center px-3 py-2 rounded-lg border transition-colors ${
+        className={`flex items-center px-3 py-2 rounded-lg border transition-colors ${
                 filtersCombo.specials
-                  ? 'bg-yellow-50 border-yellow-200 text-yellow-700'
-                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  ? 'bg-[color:var(--sp-warning-50)] border-[color:var(--sp-warning-200)] text-[color:var(--sp-warning-700)]'
+          : 'bg-[--sp-surface] border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-50)]'
               }`}
             >
               <Star className={`w-4 h-4 mr-2 ${filtersCombo.specials ? 'fill-current' : ''}`} />
@@ -334,7 +335,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
             <select
               value={filtersCombo.availability}
               onChange={(e) => setFiltersCombo((prev: ComboFilters) => ({ ...prev, availability: e.target.value as any }))}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)]"
             >
               <option value="all">Todas</option>
               <option value="available">Disponibles</option>
@@ -344,24 +345,18 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
             {menuCombinations.length > 0 && (
               <div className="flex gap-2">
                 <button
-                  onClick={handleEditExistingMenu}
+                  onClick={hasActiveMenu ? handleEditExistingMenu : onCreateNewMenu}
                   disabled={loadingStates.loading}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  className="flex items-center px-4 py-2 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] rounded-lg hover:bg-[color:var(--sp-primary-700)] disabled:opacity-50 transition-colors"
                 >
                   {loadingStates.loading ? (
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
+                  ) : hasActiveMenu ? (
                     <Edit3 className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Plus className="w-4 h-4 mr-2" />
                   )}
-                  {loadingStates.loading ? 'Cargando...' : 'Editar Menú'}
-                </button>
-                
-                <button
-                  onClick={onCreateNewMenu}
-                  className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuevo Menú
+                  {loadingStates.loading ? 'Cargando...' : (hasActiveMenu ? 'Editar Menú' : 'Nuevo Menú')}
                 </button>
               </div>
             )}
@@ -369,7 +364,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
         </div>
         
         {filteredCombinations.length !== menuCombinations.length && (
-          <div className="mt-4 text-sm text-gray-600">
+          <div className="mt-4 text-sm text-[color:var(--sp-neutral-600)]">
             Mostrando {filteredCombinations.length} de {menuCombinations.length} combinaciones
           </div>
         )}
@@ -377,20 +372,20 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
 
       {/* ✅ GRID DE COMBINACIONES O ESTADO VACÍO */}
       {filteredCombinations.length > 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-6">
+  <div className="bg-[--sp-surface] rounded-lg shadow-sm p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredCombinations.map((combo: MenuCombinacion) => (
               <div 
                 key={combo.id} 
                 className={`border rounded-xl p-4 transition-all duration-200 hover:shadow-lg ${
-                  combo.disponible ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-300'
-                } ${combo.isEditing ? 'ring-2 ring-orange-500' : ''}`}
+                  combo.disponible ? 'bg-[--sp-surface-elevated] border-[--sp-border]' : 'bg-[color:var(--sp-neutral-50)] border-[color:var(--sp-neutral-300)]'
+                } ${combo.isEditing ? 'ring-2 ring-[color:var(--sp-primary-500)]' : ''}`}
               >
                 <div className="space-y-3">
                   
                   {/* Header */}
                   <div className="flex justify-between items-start">
-                    <h3 className="font-semibold text-gray-900 text-sm leading-5">
+                    <h3 className="font-semibold text-[color:var(--sp-neutral-900)] text-sm leading-5">
                       {combo.isEditing ? (
                         <input
                           type="text"
@@ -400,7 +395,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                               menuCombinations.map((c: MenuCombinacion) => c.id === combo.id ? { ...c, nombre: e.target.value } : c)
                             );
                           }}
-                          className="w-full text-sm font-semibold border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-orange-500"
+                          className="w-full text-sm font-semibold border border-[color:var(--sp-neutral-300)] rounded px-2 py-1 focus:ring-2 focus:ring-[color:var(--sp-primary-500)]"
                         />
                       ) : (
                         combo.nombre || `Combinación #${menuCombinations.indexOf(combo) + 1}`
@@ -410,16 +405,16 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                     <div className="flex gap-1">
                       <button 
                         onClick={() => handleToggleFavorite(combo.id)}
-                        className={`p-1 hover:bg-red-100 rounded transition-colors ${
-                          combo.favorito ? 'text-red-600' : 'text-gray-400'
+                        className={`p-1 hover:bg-[color:var(--sp-error-100)] rounded transition-colors ${
+                          combo.favorito ? 'text-[color:var(--sp-error-600)]' : 'text-[color:var(--sp-neutral-400)]'
                         }`}
                       >
                         <Heart className={`h-4 w-4 ${combo.favorito ? 'fill-current' : ''}`} />
                       </button>
                       <button 
                         onClick={() => handleToggleSpecial(combo.id)}
-                        className={`p-1 hover:bg-yellow-100 rounded transition-colors ${
-                          combo.especial ? 'text-yellow-600' : 'text-gray-400'
+                        className={`p-1 hover:bg-[color:var(--sp-warning-100)] rounded transition-colors ${
+                          combo.especial ? 'text-[color:var(--sp-warning-600)]' : 'text-[color:var(--sp-neutral-400)]'
                         }`}
                       >
                         <Star className={`h-4 w-4 ${combo.especial ? 'fill-current' : ''}`} />
@@ -428,7 +423,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                   </div>
 
                   {/* Descripción */}
-                  <div className="text-xs text-gray-600">
+      <div className="text-xs text-[color:var(--sp-neutral-600)]">
                     {combo.isEditing ? (
                       <textarea
                         value={combo.descripcion || ''}
@@ -437,7 +432,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                             menuCombinations.map((c: MenuCombinacion) => c.id === combo.id ? { ...c, descripcion: e.target.value } : c)
                           );
                         }}
-                        className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-orange-500 resize-none"
+        className="w-full text-xs border border-[color:var(--sp-neutral-300)] rounded px-2 py-1 focus:ring-2 focus:ring-[color:var(--sp-primary-500)] resize-none"
                         rows={2}
                       />
                     ) : (
@@ -446,9 +441,9 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                   </div>
 
                   {/* Precio */}
-                  <div className="space-y-2 pt-2 border-t border-gray-200">
+                  <div className="space-y-2 pt-2 border-t border-[color:var(--sp-neutral-200)]">
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-bold text-gray-900">
+                      <span className="text-lg font-bold text-[color:var(--sp-neutral-900)]">
                         {combo.isEditing ? (
                           <div className="flex items-center">
                             <span className="text-sm mr-1">$</span>
@@ -460,7 +455,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                                   menuCombinations.map((c: MenuCombinacion) => c.id === combo.id ? { ...c, precio: parseInt(e.target.value) || 0 } : c)
                                 );
                               }}
-                              className="w-20 text-lg font-bold border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-orange-500"
+                              className="w-20 text-lg font-bold border border-[color:var(--sp-neutral-300)] rounded px-2 py-1 focus:ring-2 focus:ring-[color:var(--sp-primary-500)]"
                             />
                           </div>
                         ) : (
@@ -470,25 +465,25 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                     </div>
                     
                     {combo.cantidad && (
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs text-[color:var(--sp-neutral-600)]">
                         Cantidad disponible: {combo.cantidad}
                       </div>
                     )}
                   </div>
 
                   {/* Estado y acciones */}
-                  <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                  <div className="flex justify-between items-center pt-2 border-t border-[color:var(--sp-neutral-200)]">
                     <div className="flex items-center gap-2">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                         combo.disponible
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)]'
+                          : 'bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)]'
                       }`}>
                         {combo.disponible ? 'Disponible' : 'No disponible'}
                       </span>
                       
                       {combo.especial && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-800)]">
                           Especial
                         </span>
                       )}
@@ -500,7 +495,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                           <button
                             onClick={() => handleSaveCombination(combo.id, combo)}
                             disabled={loadingStates.updating === combo.id}
-                            className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors disabled:opacity-50"
+                            className="p-1 text-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-100)] rounded transition-colors disabled:opacity-50"
                           >
                             {loadingStates.updating === combo.id ? (
                               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -514,7 +509,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                                 menuCombinations.map((c: MenuCombinacion) => c.id === combo.id ? { ...c, isEditing: false } : c)
                               );
                             }}
-                            className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                            className="p-1 text-[color:var(--sp-neutral-600)] hover:bg-[color:var(--sp-neutral-100)] rounded transition-colors"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -523,13 +518,13 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                         <>
                           <button
                             onClick={() => handleEditCombination(combo.id)}
-                            className="p-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                            className="p-1 text-[color:var(--sp-info-600)] hover:bg-[color:var(--sp-info-100)] rounded transition-colors"
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setShowDeleteConfirm(combo.id)}
-                            className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                            className="p-1 text-[color:var(--sp-error-600)] hover:bg-[color:var(--sp-error-100)] rounded transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -545,26 +540,32 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
       ) : (
         <div className="text-center py-16">
           <div className="max-w-md mx-auto">
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Grid className="w-12 h-12 text-gray-400" />
+            <div className="w-24 h-24 bg-[color:var(--sp-neutral-100)] rounded-full flex items-center justify-center mx-auto mb-6">
+              <Grid className="w-12 h-12 text-[color:var(--sp-neutral-400)]" />
             </div>
-            <h3 className="heading-section text-gray-900 mb-4">
+            <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-4">
               {menuCombinations.length === 0 
                 ? 'No hay combinaciones disponibles'
                 : 'No se encontraron combinaciones'
               }
             </h3>
-            <p className="text-gray-600 mb-8">
+            <p className="text-[color:var(--sp-neutral-600)] mb-8">
               {menuCombinations.length === 0 
-                ? 'Crea un menú del día para generar combinaciones automáticamente.'
+                ? (hasActiveMenu
+                  ? 'Tienes un menú activo, pero aún no hay combinaciones. Abre el asistente para generarlas a partir de tu configuración.'
+                  : 'Crea un menú del día para generar combinaciones automáticamente.')
                 : 'Prueba ajustando los filtros de búsqueda.'
               }
             </p>
             <button
-              onClick={menuCombinations.length === 0 ? onCreateNewMenu : () => setSearchTermCombo('')}
-              className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+              onClick={menuCombinations.length === 0 
+                ? (hasActiveMenu ? handleEditExistingMenu : onCreateNewMenu)
+                : () => setSearchTermCombo('')}
+              className="px-6 py-3 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] rounded-lg hover:bg-[color:var(--sp-primary-700)] transition-colors"
             >
-              {menuCombinations.length === 0 ? 'Crear Primer Menú' : 'Limpiar Filtros'}
+              {menuCombinations.length === 0 
+                ? (hasActiveMenu ? 'Generar combinaciones' : 'Crear Primer Menú')
+                : 'Limpiar Filtros'}
             </button>
           </div>
         </div>
@@ -573,18 +574,18 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
       {/* ✅ MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-60 overflow-hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowDeleteConfirm(null)} />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+          <div className="absolute inset-0 bg-[--sp-overlay]" onClick={() => setShowDeleteConfirm(null)} />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[--sp-surface-elevated] rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
             <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-8 h-8 text-red-600" />
+              <div className="w-16 h-16 bg-[color:var(--sp-error-100)] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-8 h-8 text-[color:var(--sp-error-600)]" />
               </div>
               
-              <h3 className="heading-section text-gray-900 mb-2">
+              <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-2">
                 ¿Eliminar combinación?
               </h3>
               
-              <p className="text-gray-600 mb-6">
+              <p className="text-[color:var(--sp-neutral-600)] mb-6">
                 Esta acción no se puede deshacer. La combinación será eliminada permanentemente del menú.
               </p>
               
@@ -592,7 +593,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                 <button
                   onClick={() => setShowDeleteConfirm(null)}
                   disabled={loadingStates.deleting === showDeleteConfirm}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 border border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] rounded-lg hover:bg-[color:var(--sp-neutral-50)] disabled:opacity-50 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -600,7 +601,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                 <button
                   onClick={() => handleDeleteCombination(showDeleteConfirm)}
                   disabled={loadingStates.deleting === showDeleteConfirm}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center"
+                  className="px-4 py-2 bg-[color:var(--sp-error-600)] text-[--sp-on-error] rounded-lg hover:bg-[color:var(--sp-error-700)] disabled:opacity-50 transition-colors flex items-center"
                 >
                   {loadingStates.deleting === showDeleteConfirm ? (
                     <>

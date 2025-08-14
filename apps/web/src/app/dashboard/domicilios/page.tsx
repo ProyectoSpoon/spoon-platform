@@ -3,15 +3,9 @@
 // File: domicilios/page.tsx
 // ========================================
 
-import dynamic from 'next/dynamic';
-
-const DomiciliosPage = dynamic(() => import('./pages/DomiciliosPage'), {
-  loading: () => (
-    <div className="min-h-[300px] flex items-center justify-center text-sm text-gray-500">
-      Cargando Domicilios…
-    </div>
-  ),
-});
+// Importación estática del componente cliente para evitar divisiones
+// de chunks innecesarias en desarrollo que pueden causar 404/HMR.
+import DomiciliosPage from './pages/DomiciliosPage';
 
 export default function DomiciliosRoute() {
   return <DomiciliosPage />;

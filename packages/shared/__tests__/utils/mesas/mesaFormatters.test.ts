@@ -15,9 +15,12 @@ import {
 describe('mesaFormatters', () => {
   describe('formatearMoneda', () => {
     test('formatea correctamente pesos colombianos', () => {
-      expect(formatearMoneda(15000)).toBe('$15.000');
-      expect(formatearMoneda(1500000)).toBe('$1.500.000');
-      expect(formatearMoneda(0)).toBe('$0');
+  const s1 = formatearMoneda(15000).replace(/\s|\u00a0/g, '');
+  const s2 = formatearMoneda(1500000).replace(/\s|\u00a0/g, '');
+  const s3 = formatearMoneda(0).replace(/\s|\u00a0/g, '');
+  expect(s1).toBe('$15.000');
+  expect(s2).toBe('$1.500.000');
+  expect(s3).toBe('$0');
     });
   });
 

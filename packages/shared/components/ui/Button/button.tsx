@@ -4,19 +4,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../../lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-[14px] font-medium transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3b82f6] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none",
+  "inline-flex items-center justify-center rounded-md text-[14px] font-medium transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none",
   {
     variants: {
       variant: {
-        default: "bg-[#3B82F6] text-white hover:bg-[#60a5fa]",
-        destructive: "bg-red-500 text-white hover:bg-red-600",
-        outline: "border border-[#e2e8f0] bg-white hover:bg-[#f8fafc] text-[#1e293b]",
-        secondary: "bg-[#10b981] text-white hover:bg-[#34d399]",
-        ghost: "bg-transparent hover:bg-[#f8fafc] text-[#1e293b]",
-        link: "text-[#3b82f6] underline-offset-4 hover:underline bg-transparent",
-        purple: "bg-purple-600 text-white hover:bg-purple-700",
-        blue: "bg-[#3B82F6] text-white hover:bg-[#60a5fa]",
-        green: "bg-[#10b981] text-white hover:bg-[#34d399]",
+        default: "bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] hover:bg-[color:var(--sp-primary-700)]",
+        destructive: "bg-[color:var(--sp-error-600)] text-[color:var(--sp-on-error)] hover:bg-[color:var(--sp-error-700)]",
+        outline: "border border-[color:var(--sp-border)] bg-[color:var(--sp-surface)] hover:bg-[color:var(--sp-neutral-50)] text-[color:var(--sp-on-surface)]",
+        secondary: "bg-[color:var(--sp-success-600)] text-[color:var(--sp-on-success)] hover:bg-[color:var(--sp-success-700)]",
+        ghost: "bg-transparent hover:bg-[color:var(--sp-neutral-50)] text-[color:var(--sp-on-surface)]",
+        link: "text-[color:var(--sp-primary-600)] underline-offset-4 hover:underline bg-transparent",
+        purple: "bg-[color:var(--sp-info-600)] text-[color:var(--sp-on-info)] hover:bg-[color:var(--sp-info-700)]",
+        blue: "bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] hover:bg-[color:var(--sp-primary-700)]",
+        green: "bg-[color:var(--sp-success-600)] text-[color:var(--sp-on-success)] hover:bg-[color:var(--sp-success-700)]",
       },
       size: {
         default: "h-10 py-2 px-4",

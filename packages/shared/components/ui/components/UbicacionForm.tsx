@@ -2,7 +2,6 @@ import React from 'react';
 import { Input, Button } from '@spoon/shared';
 import { FormCard } from '@spoon/shared';
 import { InlineEditButton } from '@spoon/shared';
-import { Pencil } from 'lucide-react';
 
 interface Country {
   id: string;
@@ -81,12 +80,12 @@ export const UbicacionForm: React.FC<UbicacionFormProps> = ({
       variant={readOnly ? 'readOnly' : 'default'}
     />
         <div className="mb-4">
-  <label className="block text-sm font-medium text-gray-700 mb-2">País *</label>
+  <label className="block text-sm font-medium text-[color:var(--sp-neutral-800)] mb-2">País *</label>
           <select
         name="country_id"
         value={formData.country_id}
         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange('country_id', e.target.value)}
-        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 border-gray-300 disabled:bg-gray-50 disabled:text-gray-700 disabled:border-gray-200 disabled:cursor-default disabled:focus:ring-0"
+  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary)] focus:border-[color:var(--sp-primary)] border-[color:var(--sp-neutral-300)] disabled:bg-[color:var(--sp-neutral-50)] disabled:text-[color:var(--sp-neutral-700)] disabled:border-[color:var(--sp-neutral-200)] disabled:cursor-default disabled:focus:ring-0"
         required
         disabled={readOnly}
       >
@@ -99,12 +98,12 @@ export const UbicacionForm: React.FC<UbicacionFormProps> = ({
           </select>
         </div>
         <div className="mb-4">
-      <label className="block text-sm font-medium text-gray-700 mb-2">Departamento *</label>
+  <label className="block text-sm font-medium text-[color:var(--sp-neutral-800)] mb-2">Departamento *</label>
           <select
         name="department_id"
         value={formData.department_id}
         onChange={e => onChange('department_id', e.target.value)}
-        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 border-gray-300 disabled:bg-gray-50 disabled:text-gray-700 disabled:border-gray-200 disabled:cursor-default disabled:focus:ring-0"
+  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary)] focus:border-[color:var(--sp-primary)] border-[color:var(--sp-neutral-300)] disabled:bg-[color:var(--sp-neutral-50)] disabled:text-[color:var(--sp-neutral-700)] disabled:border-[color:var(--sp-neutral-200)] disabled:cursor-default disabled:focus:ring-0"
         required
         disabled={readOnly}
       >
@@ -116,16 +115,16 @@ export const UbicacionForm: React.FC<UbicacionFormProps> = ({
         ))}
           </select>
           {loadingGeoData && departments.length === 0 && (
-            <span className="ml-2 text-xs text-blue-600">(Cargando...)</span>
+            <span className="ml-2 text-xs text-[color:var(--sp-info)]">(Cargando...)</span>
           )}
         </div>
         <div className="mb-4">
-      <label className="block text-sm font-medium text-gray-700 mb-2">Ciudad *</label>
+  <label className="block text-sm font-medium text-[color:var(--sp-neutral-800)] mb-2">Ciudad *</label>
           <select
         name="city_id"
         value={formData.city_id}
         onChange={e => onChange('city_id', e.target.value)}
-        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 border-gray-300 disabled:bg-gray-50 disabled:text-gray-700 disabled:border-gray-200 disabled:cursor-default disabled:focus:ring-0"
+  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary)] focus:border-[color:var(--sp-primary)] border-[color:var(--sp-neutral-300)] disabled:bg-[color:var(--sp-neutral-50)] disabled:text-[color:var(--sp-neutral-700)] disabled:border-[color:var(--sp-neutral-200)] disabled:cursor-default disabled:focus:ring-0"
         required
         disabled={readOnly}
       >
@@ -137,7 +136,7 @@ export const UbicacionForm: React.FC<UbicacionFormProps> = ({
         ))}
           </select>
           {loadingGeoData && cities.length === 0 && (
-            <span className="ml-2 text-xs text-blue-600">(Cargando...)</span>
+            <span className="ml-2 text-xs text-[color:var(--sp-info)]">(Cargando...)</span>
           )}
         </div>
     {showSave && (

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getUserProfile, getUserRestaurant, supabase } from '@spoon/shared';
 
 import { MenuApiService } from '../../services/menu-dia/menuApiService';
-import { Producto, MenuCombinacion, LoadingStates, MenuState } from '../../types/menu-dia/menuTypes';
+import { Producto, MenuCombinacion, LoadingStates } from '../../types/menu-dia/menuTypes';
 import { DEFAULT_MENU_PRICE, DEFAULT_FILTERS, DEFAULT_COMBO_FILTERS, CATEGORIAS_MENU_CONFIG } from '../../constants/menu-dia/menuConstants';
 
 export const useMenuData = () => {
@@ -79,7 +79,7 @@ export const useMenuData = () => {
     try {
       setInitialLoading(true);
       
-      const [profile, restaurant] = await Promise.all([
+  const [_profile, restaurant] = await Promise.all([
         getUserProfile(),
         getUserRestaurant()
       ]);
@@ -89,98 +89,77 @@ export const useMenuData = () => {
         
         // Verificar si hay menú activo del día
         const todayMenu = await MenuApiService.getTodayMenu(restaurant.id);
-        if (todayMenu) {
+  if (todayMenu) {
           
           setCurrentMenu(todayMenu);
           setMenuPrice(todayMenu.menu_price);
           
           // Cargar combinaciones existentes
-            
           const combinations = await MenuApiService.getMenuCombinations(todayMenu.id);
-            
-            
-            // ✅ VERIFICACIÓN DIRECTA EN SUPABASE
-            const { data: directCheck, error: directError } = await supabase
-              .from('generated_combinations')
-              .select('*')
-              .eq('daily_menu_id', todayMenu.id);
 
-            
-            
-            
-            
-          if (combinations.length > 0) {
-            // Menú completo con combinaciones
-            const transformedCombinations = combinations.map(combo => ({
-              id: combo.id,
-              nombre: combo.combination_name,
-              descripcion: combo.combination_description,
-              precio: combo.combination_price,
-              disponible: combo.is_available,
-              favorito: combo.is_favorite,
-              especial: combo.is_special,
-              fechaCreacion: combo.generated_at
-            }));
-            
-            setMenuCombinations(transformedCombinations);
-            
+          const transformedCombinations = (combinations || []).map(combo => ({
+            id: combo.id,
+            nombre: combo.combination_name,
+            descripcion: combo.combination_description,
+            precio: combo.combination_price,
+            disponible: combo.is_available,
+            favorito: combo.is_favorite,
+            especial: combo.is_special,
+            fechaCreacion: combo.generated_at
+          }));
 
-            // ✅ CARGAR PRODUCTOS SELECCIONADOS
-            const { data: menuSelections } = await supabase
-              .from('daily_menu_selections')
-              .select('*')
-              .eq('daily_menu_id', todayMenu.id)
-              .order('category_name')
-              .order('selection_order');
+          setMenuCombinations(transformedCombinations);
 
-            if (menuSelections && menuSelections.length > 0) {
-              const reconstructedProducts: {[categoryId: string]: Producto[]} = {};
-              
-              for (const selection of menuSelections) {
-                const categoryConfig = CATEGORIAS_MENU_CONFIG.find(cat => cat.uuid === selection.category_id);
-                const categoryId = categoryConfig?.id || selection.category_name.toLowerCase();
-                
-                if (!reconstructedProducts[categoryId]) {
-                  reconstructedProducts[categoryId] = [];
-                }
-                
-                reconstructedProducts[categoryId].push({
-                  id: selection.universal_product_id,
-                  name: selection.product_name,
-                  category_id: selection.category_id,
-                  price: 0
-                } as Producto);
+          // ✅ CARGAR PRODUCTOS SELECCIONADOS (siempre que exista menú)
+          const { data: menuSelections } = await supabase
+            .from('daily_menu_selections')
+            .select('*')
+            .eq('daily_menu_id', todayMenu.id)
+            .order('category_name')
+            .order('selection_order');
+
+          if (menuSelections && menuSelections.length > 0) {
+            const reconstructedProducts: {[categoryId: string]: Producto[]} = {};
+            for (const selection of menuSelections) {
+              const categoryConfig = CATEGORIAS_MENU_CONFIG.find(cat => cat.uuid === selection.category_id);
+              const categoryId = categoryConfig?.id || selection.category_name.toLowerCase();
+              if (!reconstructedProducts[categoryId]) {
+                reconstructedProducts[categoryId] = [];
               }
-              
-              setSelectedProducts(reconstructedProducts);
+              reconstructedProducts[categoryId].push({
+                id: selection.universal_product_id,
+                name: selection.product_name,
+                category_id: selection.category_id,
+                price: 0
+              } as Producto);
             }
-
-            // ✅ CARGAR CANTIDADES DE PROTEÍNAS
-            const { data: proteinQtyData } = await supabase
-              .from('protein_quantities')
-              .select('*')
-              .eq('daily_menu_id', todayMenu.id);
-
-            if (proteinQtyData && proteinQtyData.length > 0) {
-              const quantities: {[productId: string]: number} = {};
-              proteinQtyData.forEach(item => {
-                quantities[item.protein_product_id] = item.planned_quantity;
-              });
-              setProteinQuantities(quantities);
-              
-            }
-            
-            // Cambiar a vista de combinaciones si hay datos completos
-            setCurrentView('combinations');
-            
+            setSelectedProducts(reconstructedProducts);
           } else {
-            // Menú existe pero sin combinaciones - está incompleto
-            
+            setSelectedProducts({});
+          }
+
+          // ✅ CARGAR CANTIDADES DE PROTEÍNAS
+          const { data: proteinQtyData } = await supabase
+            .from('protein_quantities')
+            .select('*')
+            .eq('daily_menu_id', todayMenu.id);
+
+          if (proteinQtyData && proteinQtyData.length > 0) {
+            const quantities: {[productId: string]: number} = {};
+            proteinQtyData.forEach(item => {
+              quantities[item.protein_product_id] = item.planned_quantity;
+            });
+            setProteinQuantities(quantities);
+          } else {
+            setProteinQuantities({});
+          }
+
+          // Vista según datos
+          if (transformedCombinations.length > 0) {
+            setCurrentView('combinations');
+          } else {
             setCurrentView('creation');
-            
-            setTimeout(() => {
-              showNotification('Se encontró un menú incompleto. Puedes completarlo o crear uno nuevo.', 'error');
-            }, 1000);
+            console.info('[Menú del Día] Menú activo sin combinaciones. Completa la configuración para generarlas.');
           }
         } else {
           

@@ -177,21 +177,21 @@ export const useMenuDelDia = () => {
 
   // ✅ SUSCRIPCIÓN EN TIEMPO REAL PARA CAMBIOS EN EL MENÚ
   useEffect(() => {
-    if (!restaurantId || !estado.menu) return;
+    if (!restaurantId || !estado.menu?.id) return;
 
     const channel = supabase
       .channel('menu_combinations_changes')
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'generated_combinations',
-          filter: 'daily_menu_id=eq.123', // <- filtro corregido
+          filter: `daily_menu_id=eq.${estado.menu.id}`,
         },
         (payload) => {
           console.log('Cambio en combinaciones:', payload);
-          cargarMenuDelDia(); // Recargar cuando hay cambios
+          cargarMenuDelDia();
         }
       )
       .subscribe();
@@ -199,7 +199,7 @@ export const useMenuDelDia = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [restaurantId, estado.menu, cargarMenuDelDia]);
+  }, [restaurantId, estado.menu?.id, cargarMenuDelDia]);
 
   return {
     // Estado

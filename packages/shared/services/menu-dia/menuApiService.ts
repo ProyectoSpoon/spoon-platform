@@ -1,7 +1,7 @@
 // ✅ REMOVEMOS LA IMPORTACIÓN PROBLEMÁTICA DE TOAST
 import { supabase } from '@spoon/shared';
 
-import { Producto, MenuCombinacion } from '../../types/menu-dia/menuTypes';
+import { Producto, MenuCombinacion as _MenuCombinacion } from '../../types/menu-dia/menuTypes';
 import { CATEGORIAS_MENU_CONFIG } from '../../constants/menu-dia/menuConstants';
 
 export const MenuApiService = {
@@ -136,25 +136,33 @@ export const MenuApiService = {
     return data || [];
   },
 
-  async createDailyMenu(restaurantId: string, menuPrice: number, selectedProducts: any, proteinQuantities: any) {
-    const { data: newMenu, error: menuError } = await supabase
+  async createDailyMenu(restaurantId: string, menuPrice: number, _selectedProducts: any, _proteinQuantities: any) {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Upsert para evitar conflicto único (restaurant_id, menu_date)
+    const { data: upserted, error: menuError } = await supabase
       .from('daily_menus')
-      .insert({
-        restaurant_id: restaurantId,
-        menu_price: menuPrice,
-        menu_date: new Date().toISOString().split('T')[0],
-        status: 'active'
-      })
+      .upsert(
+        {
+          restaurant_id: restaurantId,
+          menu_date: today,
+          status: 'active',
+          menu_price: menuPrice,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'restaurant_id,menu_date' }
+      )
       .select()
       .single();
 
     if (menuError) throw menuError;
-  // invalidaciones
-  const today = new Date().toISOString().split('T')[0];
-  this._invalidate('getTodayMenu', `${restaurantId}:${today}`);
-  this._invalidate('getMenuCombinations');
-  this._invalidate('getMenuSelections');
-    return newMenu;
+
+    // invalidaciones selectivas
+    this._invalidate('getTodayMenu', `${restaurantId}:${today}`);
+    this._invalidate('getMenuCombinations');
+    this._invalidate('getMenuSelections');
+
+    return upserted;
   },
 
   async updateDailyMenu(menuId: string, menuPrice: number) {
@@ -188,11 +196,11 @@ export const MenuApiService = {
       });
     });
 
-  if (selections.length > 0) {
-      const { error } = await supabase
-        .from('daily_menu_selections')
-        .insert(selections);
+    // Reemplazo idempotente: borrar existentes y volver a insertar
+    await supabase.from('daily_menu_selections').delete().eq('daily_menu_id', dailyMenuId);
 
+    if (selections.length > 0) {
+      const { error } = await supabase.from('daily_menu_selections').insert(selections);
       if (error) throw error;
     }
   this._invalidate('getMenuSelections', dailyMenuId);
@@ -207,20 +215,24 @@ export const MenuApiService = {
       unit_type: 'units'
     }));
 
-  if (proteinEntries.length > 0) {
-      const { error } = await supabase
-        .from('protein_quantities')
-        .insert(proteinEntries);
+    // Reemplazo idempotente
+    await supabase.from('protein_quantities').delete().eq('daily_menu_id', dailyMenuId);
 
+    if (proteinEntries.length > 0) {
+      const { error } = await supabase.from('protein_quantities').insert(proteinEntries);
       if (error) throw error;
     }
   this._invalidate('getTodayMenu');
   },
 
   async insertCombinations(dailyMenuId: string, combinations: any[]) {
+    // Reemplazo idempotente
+    await supabase.from('generated_combinations').delete().eq('daily_menu_id', dailyMenuId);
+    // Asegurar que cada fila tenga el daily_menu_id correcto
+    const rows = (combinations || []).map((c) => ({ ...c, daily_menu_id: dailyMenuId }));
     const { data, error } = await supabase
       .from('generated_combinations')
-      .insert(combinations)
+      .insert(rows)
       .select();
 
     if (error) throw error;
@@ -271,5 +283,39 @@ export const MenuApiService = {
 
     if (error) throw error;
   this._invalidate('getMenuCombinations', dailyMenuId);
+  },
+
+  // ================================
+  // Orquestador: guardar todo en una sola llamada
+  // ================================
+  async saveDailyMenuWithItems(params: {
+    restaurantId: string;
+    menuPrice: number;
+    selectedProducts: any;
+    proteinQuantities: any;
+    combinations: any[]; // combinaciones ya en formato DB
+  }) {
+    const { restaurantId, menuPrice, selectedProducts, proteinQuantities, combinations } = params;
+
+    // 1) Upsert del menú del día
+    const menu = await this.createDailyMenu(restaurantId, menuPrice, selectedProducts, proteinQuantities);
+
+    // 2) Reemplazo idempotente de selecciones
+    await this.insertMenuSelections(menu.id, selectedProducts);
+
+    // 3) Reemplazo idempotente de cantidades de proteína
+    await this.insertProteinQuantities(menu.id, proteinQuantities);
+
+    // 4) Reemplazo idempotente de combinaciones
+    await this.insertCombinations(menu.id, combinations);
+
+    return {
+      menu,
+      counts: {
+        selections: Object.values(selectedProducts || {}).reduce((acc: number, arr: any) => acc + (Array.isArray(arr) ? arr.length : 0), 0),
+        proteins: Object.keys(proteinQuantities || {}).length,
+        combinations: combinations?.length || 0,
+      }
+    };
   }
 };

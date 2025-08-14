@@ -170,22 +170,22 @@ const handleConfirmarPago = async (
 
   const getCategoriaClasses = (categoria: string) => {
     const colores: Record<string, string> = {
-      proveedor: 'border-l-blue-500 bg-blue-50',
-      servicios: 'border-l-green-500 bg-green-50',
-      suministros: 'border-l-orange-500 bg-orange-50',
-      otro: 'border-l-gray-500 bg-gray-50'
+      proveedor: 'border-l-[color:var(--sp-info-500)] bg-[color:var(--sp-info-50)]',
+      servicios: 'border-l-[color:var(--sp-success-500)] bg-[color:var(--sp-success-50)]',
+      suministros: 'border-l-[color:var(--sp-warning-500)] bg-[color:var(--sp-warning-50)]',
+      otro: 'border-l-[color:var(--sp-neutral-500)] bg-[color:var(--sp-neutral-50)]'
     };
-    return colores[categoria] || 'border-l-gray-500 bg-gray-50';
+    return colores[categoria] || 'border-l-[color:var(--sp-neutral-500)] bg-[color:var(--sp-neutral-50)]';
   };
 
   const getCategoriaTagClasses = (categoria: string) => {
     const colores: Record<string, string> = {
-      proveedor: 'bg-blue-100 text-blue-800',
-      servicios: 'bg-green-100 text-green-800',
-      suministros: 'bg-orange-100 text-orange-800',
-      otro: 'bg-gray-100 text-gray-800'
+      proveedor: 'bg-[color:var(--sp-info-100)] text-[color:var(--sp-info-800)]',
+      servicios: 'bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)]',
+      suministros: 'bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-800)]',
+      otro: 'bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-800)]'
     };
-    return colores[categoria] || 'bg-gray-100 text-gray-800';
+    return colores[categoria] || 'bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-800)]';
   };
 
   // NUEVO: Componente de Dashboard de Seguridad
@@ -195,15 +195,15 @@ const handleConfirmarPago = async (
     const porcentajeUsado = (metricas.ventasTotales / limits.limite_diario_cajero) * 100;
     
     return (
-      <Card className="border-l-4 border-l-purple-500">
+  <Card className="border-l-4 border-l-[color:var(--sp-primary-500)]">
         <CardContent className="p-4">
           <div className="flex items-center space-x-3 mb-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Shield className="w-5 h-5 text-purple-600" />
+    <div className="p-2 bg-[color:var(--sp-primary-100)] rounded-lg">
+      <Shield className="w-5 h-5 text-[color:var(--sp-primary-600)]" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">Límites de Seguridad</h3>
-              <p className="text-xs text-gray-500">Controles automáticos</p>
+      <h3 className="font-medium text-[color:var(--sp-neutral-900)]">Límites de Seguridad</h3>
+      <p className="text-xs text-[color:var(--sp-neutral-500)]">Controles automáticos</p>
 
           {/* Barra de acciones fija para acciones frecuentes */}
           <ActionBar
@@ -228,28 +228,28 @@ const handleConfirmarPago = async (
               <div className="flex justify-between text-sm mb-1">
                 <span>Ventas del día</span>
                 <span className={`font-medium ${
-                  porcentajeUsado > 80 ? 'text-red-600' : 
-                  porcentajeUsado > 60 ? 'text-yellow-600' : 'text-green-600'
+      porcentajeUsado > 80 ? 'text-[color:var(--sp-error-600)]' : 
+      porcentajeUsado > 60 ? 'text-[color:var(--sp-warning-600)]' : 'text-[color:var(--sp-success-600)]'
                 }`}>
                   {Math.round(porcentajeUsado)}%
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+      <div className="w-full bg-[color:var(--sp-neutral-200)] rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full ${
-                    porcentajeUsado > 80 ? 'bg-red-500' : 
-                    porcentajeUsado > 60 ? 'bg-yellow-500' : 'bg-green-500'
+        porcentajeUsado > 80 ? 'bg-[color:var(--sp-error-500)]' : 
+        porcentajeUsado > 60 ? 'bg-[color:var(--sp-warning-500)]' : 'bg-[color:var(--sp-success-500)]'
                   }`}
                   style={{ width: `${Math.min(100, porcentajeUsado)}%` }}
                 />
               </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+      <div className="flex justify-between text-xs text-[color:var(--sp-neutral-500)] mt-1">
                 <span>{formatearMonto ? formatearMonto(metricas.ventasTotales) : formatCurrency(metricas.ventasTotales)}</span>
                 <span>{formatearMonto ? formatearMonto(limits.limite_diario_cajero) : formatCurrency(limits.limite_diario_cajero)}</span>
               </div>
             </div>
             
-            <div className="text-xs text-gray-600 space-y-1">
+    <div className="text-xs text-[color:var(--sp-neutral-600)] space-y-1">
               <div className="flex justify-between">
                 <span>Límite por transacción:</span>
                 <span>{formatearMonto ? formatearMonto(limits.limite_transaccion_normal) : formatCurrency(limits.limite_transaccion_normal)}</span>
@@ -270,14 +270,14 @@ const handleConfirmarPago = async (
       {/* HEADER PRINCIPAL */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">💰 Terminal de Caja</h1>
-          <p className="text-gray-600">Sistema de punto de venta</p>
+          <h1 className="text-3xl font-bold text-[color:var(--sp-neutral-900)]">💰 Terminal de Caja</h1>
+          <p className="text-[color:var(--sp-neutral-600)]">Sistema de punto de venta</p>
         </div>
         
         <div className="flex items-center space-x-3">
           <Button
             variant="outline"
-            className="bg-gray-100 hover:bg-gray-200"
+            className="bg-[color:var(--sp-neutral-100)] hover:bg-[color:var(--sp-neutral-200)]"
             disabled
           >
             <span className="mr-2">🏪</span>
@@ -285,7 +285,7 @@ const handleConfirmarPago = async (
           </Button>
           <Button
             variant="outline" 
-            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+            className="bg-[color:var(--sp-success-50)] text-[color:var(--sp-success-700)] border-[color:var(--sp-success-200)] hover:bg-[color:var(--sp-success-100)]"
             disabled
           >
             <span className="mr-2">💵</span>
@@ -293,7 +293,7 @@ const handleConfirmarPago = async (
           </Button>
           <Button
             variant="outline"
-            className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+            className="bg-[color:var(--sp-error-50)] text-[color:var(--sp-error-700)] border-[color:var(--sp-error-200)] hover:bg-[color:var(--sp-error-100)]"
             onClick={handleNuevoGasto}
             disabled={estadoCaja !== 'abierta'}
           >
@@ -304,7 +304,7 @@ const handleConfirmarPago = async (
       </div>
 
       {/* CONTROLES DE CAJA INTEGRADOS */}
-      <Card className="border-l-4 border-l-blue-500">
+  <Card className="border-l-4 border-l-[color:var(--sp-info-500)]">
         <CardContent className="py-4">
           <ControlesCaja />
         </CardContent>
@@ -325,10 +325,10 @@ const handleConfirmarPago = async (
           <CardContent className="py-16">
             <div className="text-center">
               <div className="text-6xl mb-4 opacity-50">🏪</div>
-              <h3 className="text-xl font-medium text-gray-900 mb-2">
+              <h3 className="text-xl font-medium text-[color:var(--sp-neutral-900)] mb-2">
                 Caja Cerrada
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-[color:var(--sp-neutral-600)] mb-6">
                 Abre la caja para comenzar a procesar pagos
               </p>
             </div>
@@ -339,11 +339,11 @@ const handleConfirmarPago = async (
       {estadoCaja === 'abierta' && (
         <>
           {/* PESTAÑAS PRINCIPALES */}
-          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 w-fit">
+          <div className="flex space-x-1 bg-[color:var(--sp-neutral-100)] rounded-lg p-1 w-fit">
             <Button
               variant={tabActiva === 'movimientos' ? 'default' : 'ghost'}
               onClick={() => setTabActiva('movimientos')}
-              className={tabActiva === 'movimientos' ? 'bg-white shadow-sm' : ''}
+              className={tabActiva === 'movimientos' ? 'bg-[color:var(--sp-surface)] shadow-sm' : ''}
             >
               <span className="mr-2">💰</span>
               Movimientos
@@ -351,7 +351,7 @@ const handleConfirmarPago = async (
             <Button
               variant={tabActiva === 'arqueo' ? 'default' : 'ghost'}
               onClick={() => setTabActiva('arqueo')}
-              className={tabActiva === 'arqueo' ? 'bg-white shadow-sm' : ''}
+              className={tabActiva === 'arqueo' ? 'bg-[color:var(--sp-surface)] shadow-sm' : ''}
             >
               <span className="mr-2">🧮</span>
               Arqueo
@@ -359,7 +359,7 @@ const handleConfirmarPago = async (
             <Button
               variant={tabActiva === 'reportes' ? 'default' : 'ghost'}
               onClick={() => setTabActiva('reportes')}
-              className={tabActiva === 'reportes' ? 'bg-white shadow-sm' : ''}
+              className={tabActiva === 'reportes' ? 'bg-[color:var(--sp-surface)] shadow-sm' : ''}
             >
               <span className="mr-2">📊</span>
               Reportes
@@ -413,12 +413,12 @@ const handleConfirmarPago = async (
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
+                  <div className="p-2 bg-[color:var(--sp-info-100)] rounded-lg">
                     <span className="text-2xl">📈</span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Balance</p>
-                    <p className="value-number text-gray-900">
+                    <p className="text-sm text-[color:var(--sp-neutral-600)]">Balance</p>
+                    <p className="value-number text-[color:var(--sp-neutral-900)]">
                       {formatCurrency(metricas.balance)}
                     </p>
                   </div>
@@ -429,24 +429,24 @@ const handleConfirmarPago = async (
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
+                  <div className="p-2 bg-[color:var(--sp-success-100)] rounded-lg">
                     <span className="text-2xl">💰</span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Ventas del día</p>
-                    <p className="value-number text-green-600">
+                    <p className="text-sm text-[color:var(--sp-neutral-600)]">Ventas del día</p>
+                    <p className="value-number text-[color:var(--sp-success-600)]">
                       {formatCurrency(metricas.ventasTotales)}
                     </p>
                     {metricas.transaccionesDelDia.length > 0 && (
                       <div className="flex space-x-1 mt-1">
-                        <span className="text-xs bg-green-100 text-green-800 px-1 rounded">
+                        <span className="text-xs bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)] px-1 rounded">
                           💵 {formatCurrency(metricas.totalEfectivo)}
                         </span>
-                        <span className="text-xs bg-blue-100 text-blue-800 px-1 rounded">
+                        <span className="text-xs bg-[color:var(--sp-info-100)] text-[color:var(--sp-info-800)] px-1 rounded">
                           💳 {formatCurrency(metricas.totalTarjeta)}
                         </span>
                         {metricas.totalDigital > 0 && (
-                          <span className="text-xs bg-purple-100 text-purple-800 px-1 rounded">
+                          <span className="text-xs bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-800)] px-1 rounded">
                             📱 {formatCurrency(metricas.totalDigital)}
                           </span>
                         )}
@@ -460,16 +460,16 @@ const handleConfirmarPago = async (
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-orange-100 rounded-lg">
+                  <div className="p-2 bg-[color:var(--sp-warning-100)] rounded-lg">
                     <span className="text-2xl">🟡</span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Por cobrar</p>
-                    <p className="value-number text-orange-600">
+                    <p className="text-sm text-[color:var(--sp-neutral-600)]">Por cobrar</p>
+                    <p className="value-number text-[color:var(--sp-warning-600)]">
                       {formatCurrency(metricas.porCobrar)}
                     </p>
                     {totalOrdenesPendientes > 0 && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-[color:var(--sp-neutral-500)] mt-1">
                         {totalOrdenesPendientes} órdenes pendientes
                       </p>
                     )}
@@ -481,16 +481,16 @@ const handleConfirmarPago = async (
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-red-100 rounded-lg">
+                  <div className="p-2 bg-[color:var(--sp-error-100)] rounded-lg">
                     <span className="text-2xl">📊</span>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Gastos del día</p>
-                    <p className="value-number text-red-600">
+                    <p className="text-sm text-[color:var(--sp-neutral-600)]">Gastos del día</p>
+                    <p className="value-number text-[color:var(--sp-error-600)]">
                       {formatCurrency(metricas.gastosTotales)}
                     </p>
                     {gastos.length > 0 && (
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-[color:var(--sp-neutral-500)] mt-1">
                         {gastos.length} gastos registrados
                       </p>
                     )}
@@ -509,16 +509,16 @@ const handleConfirmarPago = async (
               {tabActiva === 'movimientos' && (
                 <div className="space-y-4">
                   {/* Sub-pestañas de movimientos */}
-                  <div className="flex space-x-1 bg-gray-50 rounded-lg p-1 w-fit">
+      <div className="flex space-x-1 bg-[color:var(--sp-neutral-50)] rounded-lg p-1 w-fit">
                     <Button
                       variant={subTabMovimientos === 'por_cobrar' ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setSubTabMovimientos('por_cobrar')}
-                      className={subTabMovimientos === 'por_cobrar' ? 'bg-white shadow-sm' : ''}
+                      className={subTabMovimientos === 'por_cobrar' ? 'bg-[color:var(--sp-surface)] shadow-sm' : ''}
                     >
                       Por cobrar
                       {totalOrdenesPendientes > 0 && (
-                        <span className="ml-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+  <span className="ml-2 bg-[color:var(--sp-warning-500)] text-[color:var(--sp-on-warning)] text-xs px-2 py-1 rounded-full">
                           {totalOrdenesPendientes}
                         </span>
                       )}
@@ -527,7 +527,7 @@ const handleConfirmarPago = async (
                       variant={subTabMovimientos === 'ingresos' ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setSubTabMovimientos('ingresos')}
-                      className={subTabMovimientos === 'ingresos' ? 'bg-white shadow-sm' : ''}
+                      className={subTabMovimientos === 'ingresos' ? 'bg-[color:var(--sp-surface)] shadow-sm' : ''}
                     >
                       Ingresos
                     </Button>
@@ -535,11 +535,11 @@ const handleConfirmarPago = async (
                       variant={subTabMovimientos === 'egresos' ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setSubTabMovimientos('egresos')}
-                      className={subTabMovimientos === 'egresos' ? 'bg-white shadow-sm' : ''}
+                      className={subTabMovimientos === 'egresos' ? 'bg-[color:var(--sp-surface)] shadow-sm' : ''}
                     >
                       Egresos
                       {gastos.length > 0 && (
-                        <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                        <span className="ml-2 bg-[color:var(--sp-error-500)] text-[color:var(--sp-on-error)] text-xs px-2 py-1 rounded-full">
                           {gastos.length}
                         </span>
                       )}
@@ -552,8 +552,8 @@ const handleConfirmarPago = async (
                       <>
                         {loading && todasLasOrdenes.length === 0 ? (
                           <div className="flex items-center justify-center py-8">
-                            <div className="flex items-center space-x-2 text-gray-500">
-                              <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                            <div className="flex items-center space-x-2 text-[color:var(--sp-neutral-500)]">
+                              <div className="w-4 h-4 border-2 border-[color:var(--sp-neutral-300)] border-t-[color:var(--sp-info-500)] rounded-full animate-spin"></div>
                               <span>Cargando órdenes...</span>
                             </div>
                           </div>
@@ -571,9 +571,9 @@ const handleConfirmarPago = async (
                                 key={orden.id}
                                 className={`
                                   border rounded-lg p-4 hover:shadow-sm transition-shadow
-                                  ${isBlocked ? 'border-red-300 bg-red-50' : ''}
-                                  ${isHighValue && !isBlocked ? 'border-yellow-300 bg-yellow-50' : ''}
-                                  ${!isBlocked && !isHighValue ? 'border-gray-200 bg-white' : ''}
+                  ${isBlocked ? 'border-[color:var(--sp-error-300)] bg-[color:var(--sp-error-50)]' : ''}
+                  ${isHighValue && !isBlocked ? 'border-[color:var(--sp-warning-300)] bg-[color:var(--sp-warning-50)]' : ''}
+                  ${!isBlocked && !isHighValue ? 'border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-surface-elevated)]' : ''}
                                 `}
                               >
                                 <div className="flex justify-between items-center">
@@ -582,26 +582,26 @@ const handleConfirmarPago = async (
                                       <span className="text-lg">
                                         {orden.tipo === 'mesa' ? '🍽️' : '🚚'}
                                       </span>
-                                      <h5 className="font-medium text-gray-900">{orden.identificador}</h5>
+                    <h5 className="font-medium text-[color:var(--sp-neutral-900)]">{orden.identificador}</h5>
                                       
                                       {/* NUEVOS: Iconos de seguridad */}
                                       {isBlocked && (
-                                        <span className="text-red-500 text-xs bg-red-100 px-2 py-1 rounded-full">
+                    <span className="text-[color:var(--sp-error-500)] text-xs bg-[color:var(--sp-error-100)] px-2 py-1 rounded-full">
                                           🚫 BLOQUEADO
                                         </span>
                                       )}
                                       {isHighValue && !isBlocked && (
-                                        <span className="text-yellow-600 text-xs bg-yellow-100 px-2 py-1 rounded-full">
+                    <span className="text-[color:var(--sp-warning-600)] text-xs bg-[color:var(--sp-warning-100)] px-2 py-1 rounded-full">
                                           ⚠️ REQ. AUTH
                                         </span>
                                       )}
                                     </div>
                                     
-                                    <div className="value-number text-gray-900 mb-1">
+                  <div className="value-number text-[color:var(--sp-neutral-900)] mb-1">
                                       {formatCurrency(orden.monto_total)}
                                     </div>
                                     
-                                    <div className="text-xs text-gray-500">
+                  <div className="text-xs text-[color:var(--sp-neutral-500)]">
                                       ⏰ {new Date(orden.fecha_creacion).toLocaleTimeString('es-CO', { 
                                         hour: '2-digit', 
                                         minute: '2-digit' 
@@ -617,10 +617,10 @@ const handleConfirmarPago = async (
                                     disabled={isBlocked || procesandoPago}
                                     className={`
                                       ${isBlocked 
-                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    ? 'bg-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-500)] cursor-not-allowed' 
                                         : isHighValue
-                                        ? 'bg-yellow-600 text-white hover:bg-yellow-700'
-                                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    ? 'bg-[color:var(--sp-warning-600)] text-[color:var(--sp-on-warning)] hover:bg-[color:var(--sp-warning-700)]'
+                    : 'bg-[color:var(--sp-info-600)] text-[color:var(--sp-on-info)] hover:bg-[color:var(--sp-info-700)]'
                                       }
                                     `}
                                     size="sm"
@@ -641,14 +641,14 @@ const handleConfirmarPago = async (
                           <div className="flex items-center space-x-2">
                             <span className="text-lg">✅</span>
                             <h4 className="font-medium">Ingresos procesados hoy</h4>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-[color:var(--sp-neutral-500)]">
                               ({metricas.transaccionesDelDia.length} transacciones)
                             </span>
                           </div>
                         </div>
 
                         {metricas.transaccionesDelDia.length === 0 ? (
-                          <div className="text-center py-8 text-gray-500">
+                          <div className="text-center py-8 text-[color:var(--sp-neutral-500)]">
                             <span className="text-4xl mb-4 block">✅</span>
                             <h4 className="font-medium mb-2">No hay ingresos hoy</h4>
                             <p className="text-sm">
@@ -660,7 +660,7 @@ const handleConfirmarPago = async (
                             {metricas.transaccionesDelDia.map((transaccion) => (
                               <div
                                 key={transaccion.id}
-                                className="bg-white border rounded-lg p-3 hover:shadow-sm transition-shadow border-l-4 border-l-green-500"
+                                className="bg-[color:var(--sp-surface-elevated)] border rounded-lg p-3 hover:shadow-sm transition-shadow border-l-4 border-l-[color:var(--sp-success-500)]"
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
@@ -668,15 +668,15 @@ const handleConfirmarPago = async (
                                       <span className="text-lg">
                                         {transaccion.tipo_orden === 'mesa' ? '🍽️' : '🚚'}
                                       </span>
-                                      <h5 className="font-medium text-gray-900">
+                                      <h5 className="font-medium text-[color:var(--sp-neutral-900)]">
                                         {transaccion.tipo_orden === 'mesa' ? 'Mesa' : 'Delivery'} - {transaccion.orden_id.slice(-8)}
                                       </h5>
-                                      <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                                      <span className="text-xs px-2 py-1 rounded-full bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)]">
                                         {transaccion.metodo_pago}
                                       </span>
                                     </div>
                                     
-                                    <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                    <div className="flex items-center space-x-4 text-xs text-[color:var(--sp-neutral-500)]">
                                       <span>
                                         ⏰ {new Date(transaccion.procesada_at).toLocaleTimeString('es-CO', { 
                                           hour: '2-digit', 
@@ -690,7 +690,7 @@ const handleConfirmarPago = async (
                                   </div>
 
                                   <div className="text-right">
-                                    <div className="value-number text-green-600">
+                                    <div className="value-number text-[color:var(--sp-success-600)]">
                                       +{formatCurrency(transaccion.monto_total)}
                                     </div>
                                   </div>
@@ -709,7 +709,7 @@ const handleConfirmarPago = async (
                           <div className="flex items-center space-x-2">
                             <span className="text-lg">💸</span>
                             <h4 className="font-medium">Gastos registrados hoy</h4>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-[color:var(--sp-neutral-500)]">
                               ({gastos.length} {gastos.length === 1 ? 'gasto' : 'gastos'})
                             </span>
                           </div>
@@ -718,7 +718,7 @@ const handleConfirmarPago = async (
                             size="sm"
                             onClick={handleNuevoGasto}
                             disabled={estadoCaja !== 'abierta'}
-                            className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                            className="bg-[color:var(--sp-error-50)] text-[color:var(--sp-error-700)] border-[color:var(--sp-error-200)] hover:bg-[color:var(--sp-error-100)]"
                           >
                             <span className="mr-1">+</span>
                             Nuevo Gasto
@@ -727,12 +727,12 @@ const handleConfirmarPago = async (
 
                         {/* Resumen por categorías */}
                         {metricas.gastosTotales > 0 && (
-                          <div className="bg-red-50 rounded-lg p-3 mb-4">
+                          <div className="bg-[color:var(--sp-error-50)] rounded-lg p-3 mb-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-red-800">
+                              <span className="text-sm font-medium text-[color:var(--sp-error-800)]">
                                 Total gastado hoy
                               </span>
-                              <span className="font-bold text-red-900">
+                              <span className="font-bold text-[color:var(--sp-error-900)]">
                                 {formatCurrency(metricas.gastosTotales)}
                               </span>
                             </div>
@@ -761,13 +761,13 @@ const handleConfirmarPago = async (
                         <div className="space-y-2 max-h-64 overflow-y-auto">
                           {loadingGastos && gastos.length === 0 ? (
                             <div className="flex items-center justify-center py-8">
-                              <div className="flex items-center space-x-2 text-gray-500">
-                                <div className="w-4 h-4 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+                              <div className="flex items-center space-x-2 text-[color:var(--sp-neutral-500)]">
+                                <div className="w-4 h-4 border-2 border-[color:var(--sp-neutral-300)] border-t-[color:var(--sp-error-500)] rounded-full animate-spin"></div>
                                 <span>Cargando gastos...</span>
                               </div>
                             </div>
                           ) : gastos.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">
+                            <div className="text-center py-8 text-[color:var(--sp-neutral-500)]">
                               <span className="text-4xl mb-4 block">💸</span>
                               <h4 className="font-medium mb-2">No hay gastos registrados</h4>
                               <p className="text-sm mb-4">
@@ -777,7 +777,7 @@ const handleConfirmarPago = async (
                                 variant="outline"
                                 onClick={handleNuevoGasto}
                                 disabled={estadoCaja !== 'abierta'}
-                                className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                                className="bg-[color:var(--sp-error-50)] text-[color:var(--sp-error-700)] border-[color:var(--sp-error-200)] hover:bg-[color:var(--sp-error-100)]"
                               >
                                 <span className="mr-2">💸</span>
                                 Registrar primer gasto
@@ -787,23 +787,23 @@ const handleConfirmarPago = async (
                             gastos.map((gasto) => (
                               <div
                                 key={gasto.id}
-                                className={`bg-white border rounded-lg p-3 hover:shadow-sm transition-shadow border-l-4 ${getCategoriaClasses(gasto.categoria)}`}
+                                className={`bg-[color:var(--sp-surface-elevated)] border rounded-lg p-3 hover:shadow-sm transition-shadow border-l-4 ${getCategoriaClasses(gasto.categoria)}`}
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
                                     <div className="flex items-center space-x-2 mb-1">
                                       <span className="text-lg">{getIconoCategoria(gasto.categoria)}</span>
-                                      <h5 className="font-medium text-gray-900">{gasto.concepto}</h5>
+                                      <h5 className="font-medium text-[color:var(--sp-neutral-900)]">{gasto.concepto}</h5>
                                       <span className={`text-xs px-2 py-1 rounded-full capitalize ${getCategoriaTagClasses(gasto.categoria)}`}>
                                         {gasto.categoria}
                                       </span>
                                     </div>
                                     
                                     {gasto.notas && (
-                                      <p className="text-sm text-gray-600 mb-2">{gasto.notas}</p>
+                                      <p className="text-sm text-[color:var(--sp-neutral-600)] mb-2">{gasto.notas}</p>
                                     )}
                                     
-                                    <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                    <div className="flex items-center space-x-4 text-xs text-[color:var(--sp-neutral-500)]">
                                       <span>
                                         ⏰ {new Date(gasto.registrado_at).toLocaleTimeString('es-CO', { 
                                           hour: '2-digit', 
@@ -815,7 +815,7 @@ const handleConfirmarPago = async (
                                   </div>
 
                                   <div className="text-right">
-                                    <div className="value-number text-red-600">
+                                    <div className="value-number text-[color:var(--sp-error-600)]">
                                       -{formatCurrency(gasto.monto)}
                                     </div>
                                   </div>
@@ -831,7 +831,7 @@ const handleConfirmarPago = async (
               )}
 
               {tabActiva === 'arqueo' && (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-[color:var(--sp-neutral-500)]">
                   <span className="text-6xl mb-4 block">🧮</span>
                   <h3 className="heading-section mb-2">Arqueo de Caja</h3>
                   <p>Resumen y cierre del día</p>
@@ -840,7 +840,7 @@ const handleConfirmarPago = async (
               )}
 
               {tabActiva === 'reportes' && (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-[color:var(--sp-neutral-500)]">
                   <span className="text-6xl mb-4 block">📊</span>
                   <h3 className="heading-section mb-2">Reportes y Estadísticas</h3>
                   <p>Análisis de ventas y rendimiento</p>
@@ -854,10 +854,10 @@ const handleConfirmarPago = async (
 
       {/* Error general */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-[color:var(--sp-error-50)] border border-[color:var(--sp-error-200)] rounded-lg p-4">
           <div className="flex items-center space-x-2">
-            <span className="text-red-500">⚠️</span>
-            <span className="text-red-700 text-sm">{error}</span>
+            <span className="text-[color:var(--sp-error-500)]">⚠️</span>
+            <span className="text-[color:var(--sp-error-700)] text-sm">{error}</span>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 "use client";
 
 // packages/shared/caja/components/ReportesAvanzados.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, TrendingUp, DollarSign, Clock, AlertCircle } from 'lucide-react';
 
 // Importar funciones de supabase
@@ -48,7 +48,7 @@ export function ReportesAvanzados() {
     obtenerRestaurantId();
   }, []);
   
-  const cargarReportes = async () => {
+  const cargarReportes = useCallback(async () => {
     if (!restaurantId) {
       setError('ID de restaurante no disponible');
       return;
@@ -80,14 +80,14 @@ export function ReportesAvanzados() {
     } finally {
       setCargando(false);
     }
-  };
+  }, [restaurantId, periodo]);
   
   // Cargar reportes cuando cambie el período o se obtenga el restaurant ID
   useEffect(() => {
     if (restaurantId) {
       cargarReportes();
     }
-  }, [periodo, restaurantId]);
+  }, [restaurantId, cargarReportes]);
   
   const handleFechaChange = (campo: 'fechaInicio' | 'fechaFin', valor: string) => {
     setPeriodo(prev => ({ 
@@ -98,10 +98,10 @@ export function ReportesAvanzados() {
   
   if (!restaurantId && !error) {
     return (
-      <div className="flex items-center justify-center h-64">
+    <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p className="text-gray-600">Cargando información del restaurante...</p>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[color:var(--sp-info-600)] mx-auto mb-2"></div>
+      <p className="text-[color:var(--sp-neutral-600)]">Cargando información del restaurante...</p>
         </div>
       </div>
     );
@@ -110,13 +110,13 @@ export function ReportesAvanzados() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-center bg-red-50 p-6 rounded-lg border border-red-200">
-          <AlertCircle className="w-8 h-8 text-red-600 mx-auto mb-2" />
-          <p className="text-red-800 font-medium mb-2">Error cargando reportes</p>
-          <p className="text-red-600 text-sm">{error}</p>
+        <div className="text-center bg-[color:var(--sp-error-50)] p-6 rounded-lg border border-[color:var(--sp-error-200)]">
+          <AlertCircle className="w-8 h-8 text-[color:var(--sp-error-600)] mx-auto mb-2" />
+          <p className="text-[color:var(--sp-error-800)] font-medium mb-2">Error cargando reportes</p>
+          <p className="text-[color:var(--sp-error-600)] text-sm">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+            className="mt-3 px-4 py-2 bg-[color:var(--sp-error-600)] text-[color:var(--sp-on-error)] rounded-lg hover:bg-[color:var(--sp-error-700)] text-sm"
           >
             Recargar página
           </button>
@@ -127,10 +127,10 @@ export function ReportesAvanzados() {
   
   if (cargando) {
     return (
-      <div className="flex items-center justify-center h-64">
+    <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p className="text-gray-600">Generando reportes...</p>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[color:var(--sp-info-600)] mx-auto mb-2"></div>
+      <p className="text-[color:var(--sp-neutral-600)]">Generando reportes...</p>
         </div>
       </div>
     );
@@ -139,7 +139,7 @@ export function ReportesAvanzados() {
   return (
     <div className="space-y-6">
       {/* Filtros de período */}
-      <div className="bg-white p-4 rounded-lg border">
+  <div className="bg-[color:var(--sp-surface-elevated)] p-4 rounded-lg border">
         <h3 className="font-semibold mb-3 flex items-center gap-2">
           <Calendar className="w-4 h-4" />
           Período de Análisis
@@ -151,7 +151,7 @@ export function ReportesAvanzados() {
               type="date"
               value={periodo.fechaInicio}
               onChange={(e) => handleFechaChange('fechaInicio', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      className="w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-info-500)] focus:border-[color:var(--sp-info-500)]"
             />
           </div>
           <div>
@@ -160,7 +160,7 @@ export function ReportesAvanzados() {
               type="date"
               value={periodo.fechaFin}
               onChange={(e) => handleFechaChange('fechaFin', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      className="w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-info-500)] focus:border-[color:var(--sp-info-500)]"
             />
           </div>
         </div>
@@ -170,49 +170,49 @@ export function ReportesAvanzados() {
         <>
           {/* Métricas principales */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-lg border">
+            <div className="bg-[color:var(--sp-surface-elevated)] p-4 rounded-lg border">
               <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="w-5 h-5 text-green-600" />
+                <DollarSign className="w-5 h-5 text-[color:var(--sp-success-600)]" />
                 <h4 className="font-semibold">Ventas Totales</h4>
               </div>
-              <p className="value-number text-green-600">
+              <p className="value-number text-[color:var(--sp-success-600)]">
                 {formatearMonto(estadisticas.totalVentas)}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[color:var(--sp-neutral-500)]">
                 {estadisticas.totalTransacciones} transacciones
               </p>
             </div>
             
-            <div className="bg-white p-4 rounded-lg border">
+            <div className="bg-[color:var(--sp-surface-elevated)] p-4 rounded-lg border">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-5 h-5 text-blue-600" />
+                <TrendingUp className="w-5 h-5 text-[color:var(--sp-info-600)]" />
                 <h4 className="font-semibold">Promedio por Venta</h4>
               </div>
-              <p className="value-number text-blue-600">
+              <p className="value-number text-[color:var(--sp-info-600)]">
                 {estadisticas.totalTransacciones > 0 
                   ? formatearMonto(Math.round(estadisticas.totalVentas / estadisticas.totalTransacciones))
                   : formatearMonto(0)
                 }
               </p>
-              <p className="text-sm text-gray-500">Por transacción</p>
+              <p className="text-sm text-[color:var(--sp-neutral-500)]">Por transacción</p>
             </div>
             
-            <div className="bg-white p-4 rounded-lg border">
+            <div className="bg-[color:var(--sp-surface-elevated)] p-4 rounded-lg border">
               <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-5 h-5 text-purple-600" />
+                <Clock className="w-5 h-5 text-[color:var(--sp-primary-600)]" />
                 <h4 className="font-semibold">Hora Pico</h4>
               </div>
-              <p className="value-number text-purple-600">
+              <p className="value-number text-[color:var(--sp-primary-600)]">
                 {Object.entries(estadisticas.ventasPorHora || {})
                   .sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'N/A'}
                 {Object.keys(estadisticas.ventasPorHora || {}).length > 0 ? ':00' : ''}
               </p>
-              <p className="text-sm text-gray-500">Mayor volumen de ventas</p>
+              <p className="text-sm text-[color:var(--sp-neutral-500)]">Mayor volumen de ventas</p>
             </div>
           </div>
           
           {/* Gráficos de ventas por método */}
-          <div className="bg-white p-4 rounded-lg border">
+  <div className="bg-[color:var(--sp-surface-elevated)] p-4 rounded-lg border">
             <h4 className="font-semibold mb-4">Ventas por Método de Pago</h4>
             {Object.keys(estadisticas.ventasPorMetodo || {}).length > 0 ? (
               <div className="space-y-3">
@@ -225,16 +225,16 @@ export function ReportesAvanzados() {
                     <div key={metodo} className="flex justify-between items-center">
                       <span className="capitalize font-medium">{metodo}</span>
                       <div className="flex items-center gap-2">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
+            <div className="w-32 bg-[color:var(--sp-neutral-200)] rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-[color:var(--sp-info-600)] h-2 rounded-full transition-all duration-300"
                             style={{ width: `${porcentaje}%` }}
                           />
                         </div>
                         <span className="font-medium text-sm w-20 text-right">
                           {formatearMonto(monto as number)}
                         </span>
-                        <span className="text-xs text-gray-500 w-10 text-right">
+            <span className="text-xs text-[color:var(--sp-neutral-500)] w-10 text-right">
                           {porcentaje.toFixed(1)}%
                         </span>
                       </div>
@@ -243,7 +243,7 @@ export function ReportesAvanzados() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-[color:var(--sp-neutral-500)]">
                 <p>No hay datos de métodos de pago para este período</p>
               </div>
             )}
@@ -251,7 +251,7 @@ export function ReportesAvanzados() {
 
           {/* Ventas por día */}
           {Object.keys(estadisticas.ventasPorDia || {}).length > 0 && (
-            <div className="bg-white p-4 rounded-lg border">
+            <div className="bg-[color:var(--sp-surface-elevated)] p-4 rounded-lg border">
               <h4 className="font-semibold mb-4">Ventas por Día</h4>
               <div className="space-y-2">
                 {Object.entries(estadisticas.ventasPorDia)
@@ -275,10 +275,10 @@ export function ReportesAvanzados() {
           )}
         </>
       ) : (
-        <div className="text-center py-12 bg-white rounded-lg border">
-          <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-600 mb-2">No hay datos para el período seleccionado</p>
-          <p className="text-sm text-gray-500">
+  <div className="text-center py-12 bg-[color:var(--sp-surface-elevated)] rounded-lg border">
+          <Calendar className="w-12 h-12 text-[color:var(--sp-neutral-400)] mx-auto mb-3" />
+          <p className="text-[color:var(--sp-neutral-600)] mb-2">No hay datos para el período seleccionado</p>
+          <p className="text-sm text-[color:var(--sp-neutral-500)]">
             Selecciona un rango de fechas con transacciones registradas
           </p>
         </div>

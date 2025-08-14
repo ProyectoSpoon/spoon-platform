@@ -1,0 +1,36 @@
+:root {
+  /* Brand */
+  --sp-primary-50: #fff7ed;
+  --sp-primary-100: #ffedd5;
+  --sp-primary-200: #fed7aa;
+  --sp-primary-300: #fdba74;
+  --sp-primary-400: #fb923c;
+  --sp-primary-500: #f97316;
+  --sp-primary-600: #ea580c;
+  --sp-primary-700: #c2410c;
+  --sp-primary-800: #9a3412;
+  --sp-primary-900: #7c2d12;
+
+  /* Neutral */
+  --sp-neutral-0: #ffffff;
+  --sp-neutral-50: #f8fafc;
+  --sp-neutral-100: #f1f5f9;
+  --sp-neutral-200: #e2e8f0;
+  --sp-neutral-300: #cbd5e1;
+  --sp-neutral-400: #94a3b8;
+  --sp-neutral-500: #64748b;
+  --sp-neutral-600: #475569;
+  --sp-neutral-700: #334155;
+  --sp-neutral-800: #1e293b;
+  --sp-neutral-900: #0f172a;
+
+  /* Semantic */
+  --sp-success: #10b981;
+  --sp-warning: #f59e0b;
+  --sp-error: #ef4444;
+  --sp-info: #3b82f6;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

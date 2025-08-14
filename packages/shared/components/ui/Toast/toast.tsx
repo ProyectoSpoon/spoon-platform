@@ -8,30 +8,32 @@ export interface ToastComponentProps {
   onClose: (id: string) => void;
 }
 
+// Usa variables semánticas del tema para alinear con tokens globales
+// Fondo y borde aplican la misma variable con opacidad
 const typeStyles = {
   success: {
-    bg: 'bg-green-50 border-green-200',
-    icon: 'text-green-600',
-    title: 'text-green-900',
-    description: 'text-green-700',
+    bg: 'bg-[color:var(--sp-success)]/10 border-[color:var(--sp-success)]/30',
+    icon: 'text-[color:var(--sp-success)]',
+    title: 'text-[color:var(--sp-success)]',
+    description: 'text-[color:var(--sp-success)]',
   },
   error: {
-    bg: 'bg-red-50 border-red-200',
-    icon: 'text-red-600',
-    title: 'text-red-900',
-    description: 'text-red-700',
+    bg: 'bg-[color:var(--sp-error)]/10 border-[color:var(--sp-error)]/30',
+    icon: 'text-[color:var(--sp-error)]',
+    title: 'text-[color:var(--sp-error)]',
+    description: 'text-[color:var(--sp-error)]',
   },
   warning: {
-    bg: 'bg-yellow-50 border-yellow-200',
-    icon: 'text-yellow-600',
-    title: 'text-yellow-900',
-    description: 'text-yellow-700',
+    bg: 'bg-[color:var(--sp-warning)]/10 border-[color:var(--sp-warning)]/30',
+    icon: 'text-[color:var(--sp-warning)]',
+    title: 'text-[color:var(--sp-warning)]',
+    description: 'text-[color:var(--sp-warning)]',
   },
   info: {
-    bg: 'bg-blue-50 border-blue-200',
-    icon: 'text-blue-600',
-    title: 'text-blue-900',
-    description: 'text-blue-700',
+    bg: 'bg-[color:var(--sp-info)]/10 border-[color:var(--sp-info)]/30',
+    icon: 'text-[color:var(--sp-info)]',
+    title: 'text-[color:var(--sp-info)]',
+    description: 'text-[color:var(--sp-info)]',
   },
 };
 
@@ -88,7 +90,7 @@ export function Toast({ toast, onClose }: ToastComponentProps) {
           <div className="ml-4 flex flex-shrink-0">
             <button
               type="button"
-              className="inline-flex rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+              className="inline-flex rounded-md text-[color:var(--sp-neutral-500)] hover:text-[color:var(--sp-neutral-600)] focus:outline-none focus:ring-2 focus:ring-[color:var(--sp-focus)] focus:ring-offset-2"
               onClick={() => onClose(toast.id)}
             >
               <span className="sr-only">Cerrar</span>

@@ -35,10 +35,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     const variantClasses: Record<NonNullable<InputProps['variant']>, string> = {
-      default: 'border border-[#e2e8f0] bg-white',
-      outline: 'border-2 border-[#e2e8f0] bg-transparent',
-      filled: 'border border-[#e2e8f0] bg-[#f8fafc]',
-      readOnly: 'border border-[#e2e8f0] bg-gray-50 text-gray-700'
+      default: 'border border-[color:var(--sp-border)] bg-[color:var(--sp-surface)]',
+      outline: 'border-2 border-[color:var(--sp-border)] bg-transparent',
+      filled: 'border border-[color:var(--sp-border)] bg-[color:var(--sp-neutral-50)]',
+      readOnly: 'border border-[color:var(--sp-border)] bg-[color:var(--sp-neutral-50)] text-[color:var(--sp-on-surface)]'
     };
 
     return (
@@ -46,7 +46,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label 
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="block text-sm font-medium text-[color:var(--sp-on-surface-variant)] mb-2"
           >
             {label}
           </label>
@@ -54,7 +54,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         
         <div className="relative">
           {leftIcon && (
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[color:var(--sp-neutral-400)]">
               {leftIcon}
             </div>
           )}
@@ -64,12 +64,12 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             className={cn(
               "w-full rounded-md transition-colors",
-              "focus:outline-none focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent",
-              "placeholder:text-[#94a3b8] text-[#1e293b]",
+              "focus:outline-none focus:ring-2 focus:ring-[color:var(--sp-focus)] focus:border-transparent",
+              "placeholder:text-[color:var(--sp-on-surface-variant)] text-[color:var(--sp-on-surface)]",
               sizeClasses[size],
               variantClasses[variant],
               {
-                'border-red-500 focus:ring-red-500': error,
+                'border-[color:var(--sp-error)] focus:ring-[color:var(--sp-error)]': error,
                 'pl-10': leftIcon,
                 'pr-10': rightIcon,
                 // Non-editable visual state (disabled or readOnly variant)
@@ -85,7 +85,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           />
           
           {rightIcon && (
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[color:var(--sp-neutral-400)]">
               {rightIcon}
             </div>
           )}
@@ -94,7 +94,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {helperText && (
           <p className={cn(
             "mt-2 text-[12px]",
-            error ? "text-red-600" : "text-[#94a3b8]"
+            error ? 'text-[color:var(--sp-error)]' : 'text-[color:var(--sp-on-surface-variant)]'
           )}>
             {helperText}
           </p>

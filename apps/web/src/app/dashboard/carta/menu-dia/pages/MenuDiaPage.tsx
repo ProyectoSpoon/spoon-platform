@@ -51,28 +51,10 @@ export default function MenuDiaPage() {
       try {
         // Mostrar loading
         menuData.setLoadingStates((prev: any) => ({ ...prev, saving: true }));
-        
-        // 1. Crear el menú del día
-        console.log('📝 Creando menú del día...');
-        const newMenu = await MenuApiService.createDailyMenu(
-          menuData.restaurantId, 
-          menuData.menuPrice, 
-          menuData.selectedProducts, 
-          menuData.proteinQuantities
-        );
-        console.log('✅ Menú creado:', newMenu.id);
-        
-        // 2. Guardar selecciones de productos
-        console.log('📦 Guardando selecciones de productos...');
-        await MenuApiService.insertMenuSelections(newMenu.id, menuData.selectedProducts);
-        
-        // 3. Guardar cantidades de proteínas
-        console.log('🍖 Guardando cantidades de proteínas...');
-        await MenuApiService.insertProteinQuantities(newMenu.id, menuData.proteinQuantities);
-        
-        // 4. Preparar y guardar combinaciones para Supabase
+
+        // Preparar combinaciones para Supabase
         const combinationsForDB = combinations.map(combo => ({
-          daily_menu_id: newMenu.id,
+          // daily_menu_id se asigna en el servicio
           combination_name: combo.nombre,
           combination_description: combo.descripcion,
           combination_price: combo.precio,
@@ -85,12 +67,19 @@ export default function MenuDiaPage() {
           is_favorite: false,
           is_special: false
         }));
-        // 5. Insertar combinaciones en Supabase
-        console.log('💾 Guardando combinaciones en Supabase...');
-        await MenuApiService.insertCombinations(newMenu.id, combinationsForDB);
-        
-        // 6. Actualizar estado local
-        menuData.setCurrentMenu(newMenu);
+
+        // Guardar todo en una sola llamada (crea o actualiza)
+        console.log('💾 Guardando Menú del Día (upsert + reemplazo de items) ...');
+        const result = await MenuApiService.saveDailyMenuWithItems({
+          restaurantId: menuData.restaurantId,
+          menuPrice: menuData.menuPrice,
+          selectedProducts: menuData.selectedProducts,
+          proteinQuantities: menuData.proteinQuantities,
+          combinations: combinationsForDB
+        });
+
+        // Actualizar estado local
+        menuData.setCurrentMenu(result.menu);
         menuData.setMenuCombinations(combinations);
         menuData.setHasUnsavedChanges(false);
         setCurrentView('combinations');
@@ -102,10 +91,36 @@ export default function MenuDiaPage() {
         menuData.showNotification(`✅ Menú guardado exitosamente con ${combinations.length} combinaciones`, 'success');
         console.log('🎉 ¡Menú guardado exitosamente!');
         
-      } catch (error) {
-        console.error('❌ Error guardando menú:', error);
+      } catch (error: any) {
+        console.error('❌ Error al guardar menú:', error);
         menuData.setLoadingStates((prev: any) => ({ ...prev, saving: false }));
-        menuData.showNotification('Error guardando el menú. Inténtalo de nuevo.', 'error');
+
+        // 409: conflicto por menú existente
+        const isConflict =
+          error?.code === '23505' ||
+          error?.status === 409 ||
+          /duplicate key|unique constraint/i.test(error?.message || '');
+
+        if (isConflict) {
+          menuData.showNotification(
+            'Ya existe un Menú del Día creado para hoy. Abre el existente desde "Combinaciones" o elimina el actual antes de crear uno nuevo.',
+            'error'
+          );
+          return;
+        }
+
+        // 403/42501: falla de RLS/permiso en Supabase
+        const isRls = error?.status === 403 || error?.code === '42501' || /row-level security/i.test(error?.message || '');
+        if (isRls) {
+          menuData.showNotification(
+            'No tienes permisos para guardar este menú. Verifica que la sesión esté activa y que el restaurante actual coincida con el daily_menu_id.',
+            'error'
+          );
+          return;
+        }
+
+        // Mensaje genérico
+        menuData.showNotification('Error al guardar el menú. Inténtalo de nuevo.', 'error');
       }
     } else {
       menuData.showNotification('Error: No se pudieron generar combinaciones.', 'error');
@@ -115,13 +130,13 @@ export default function MenuDiaPage() {
   // ✅ LOADING INICIAL
   if (initialLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+    <div className="min-h-screen bg-[color:var(--sp-neutral-50)] flex items-center justify-center">
+        <div className="bg-[--sp-surface-elevated] rounded-xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--sp-primary-600)] mx-auto mb-4"></div>
+      <h3 className="text-lg font-semibold text-[color:var(--sp-neutral-900)] mb-2">
             Cargando información del menú...
           </h3>
-          <p className="text-gray-600 text-sm">
+      <p className="text-[color:var(--sp-neutral-600)] text-sm">
             Estamos preparando todo para ti.
           </p>
         </div>
@@ -130,7 +145,7 @@ export default function MenuDiaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+  <div className="min-h-screen bg-[color:var(--sp-neutral-50)]">
       <div className="container mx-auto px-4 py-8">
         
         {/* ✅ HEADER */}
@@ -138,15 +153,15 @@ export default function MenuDiaPage() {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
               <h1 className="heading-page">Menú del Día</h1>
-              <p className="text-gray-600 mt-1">
+        <p className="text-[color:var(--sp-neutral-600)] mt-1">
                 Configura y gestiona el menú diario de tu restaurante
               </p>
               {currentMenu && (
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+          <div className="px-3 py-1 bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)] rounded-full text-sm font-medium">
                     ✅ Menú activo desde {new Date(currentMenu.created_at).toLocaleDateString()}
                   </div>
-                  <div className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+          <div className="px-2 py-1 bg-[color:var(--sp-info-100)] text-[color:var(--sp-info-800)] rounded-full text-xs">
                     ${currentMenu.menu_price?.toLocaleString()} COP
                   </div>
                 </div>
@@ -157,13 +172,13 @@ export default function MenuDiaPage() {
 
         {/* ✅ NAVEGACIÓN POR PESTAÑAS */}
         <div className="mb-8">
-          <div className="flex bg-gray-100 rounded-lg p-1 max-w-sm">
+      <div className="flex bg-[color:var(--sp-neutral-100)] rounded-lg p-1 max-w-sm">
             <button
               onClick={() => setCurrentView('creation')}
               className={`flex-1 px-4 py-2 rounded-md transition-colors text-sm font-medium flex items-center justify-center gap-2 ${
                 currentView === 'creation' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+          ? 'bg-[--sp-surface] text-[color:var(--sp-neutral-900)] shadow-sm' 
+          : 'text-[color:var(--sp-neutral-600)] hover:text-[color:var(--sp-neutral-900)]'
               }`}
             >
               <Settings className="h-4 w-4" />
@@ -173,8 +188,8 @@ export default function MenuDiaPage() {
               onClick={() => setCurrentView('combinations')}
               className={`flex-1 px-4 py-2 rounded-md transition-colors text-sm font-medium flex items-center justify-center gap-2 ${
                 currentView === 'combinations' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+          ? 'bg-[--sp-surface] text-[color:var(--sp-neutral-900)] shadow-sm' 
+          : 'text-[color:var(--sp-neutral-600)] hover:text-[color:var(--sp-neutral-900)]'
               }`}
             >
               <Grid className="h-4 w-4" />
@@ -210,13 +225,13 @@ export default function MenuDiaPage() {
 
         {/* ✅ LOADING OVERLAY DURANTE GUARDADO */}
         {menuData.loadingStates?.saving && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-white rounded-xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <div className="fixed inset-0 bg-[--sp-overlay] backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-[--sp-surface-elevated] rounded-xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--sp-primary-600)] mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-[color:var(--sp-neutral-900)] mb-2">
                 Guardando menú...
               </h3>
-              <p className="text-gray-600 text-sm">
+              <p className="text-[color:var(--sp-neutral-600)] text-sm">
                 Estamos guardando tu configuración en la base de datos.
               </p>
             </div>

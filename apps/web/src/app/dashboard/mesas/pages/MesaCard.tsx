@@ -74,72 +74,72 @@ const MesaCard: React.FC<MesaCardProps> = ({
   const getEstadoConfig = () => {
     if (estadoMesa === 'reservada') {
       return {
-        bg: 'bg-gradient-to-br from-yellow-50 via-amber-50 to-yellow-100',
-        border: 'border-yellow-300 hover:border-yellow-400',
-        shadow: 'shadow-yellow-100 hover:shadow-yellow-200',
-        indicator: 'bg-yellow-500',
-        textColor: 'text-yellow-700',
-        badge: 'bg-yellow-500',
+  bg: 'bg-gradient-to-br from-[color:var(--sp-warning-50)] via-[color:var(--sp-warning-50)] to-[color:var(--sp-warning-100)]',
+  border: 'border-[color:var(--sp-warning-300)] hover:border-[color:var(--sp-warning-400)]',
+  shadow: 'hover:shadow-xl',
+  indicator: 'bg-[color:var(--sp-warning-500)]',
+  textColor: 'text-[color:var(--sp-warning-700)]',
+  badge: 'bg-[color:var(--sp-warning-500)]',
         statusText: 'Reservada'
       };
     }
     
     if (estadoMesa === 'inactiva') {
       return {
-        bg: 'bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100',
-        border: 'border-gray-300',
-        shadow: 'shadow-gray-100',
-        indicator: 'bg-gray-400',
-        textColor: 'text-gray-500',
-        badge: 'bg-gray-400',
+  bg: 'bg-gradient-to-br from-[color:var(--sp-neutral-50)] via-[color:var(--sp-neutral-50)] to-[color:var(--sp-neutral-100)]',
+  border: 'border-[color:var(--sp-neutral-300)]',
+  shadow: '',
+  indicator: 'bg-[color:var(--sp-neutral-400)]',
+  textColor: 'text-[color:var(--sp-neutral-500)]',
+  badge: 'bg-[color:var(--sp-neutral-400)]',
         statusText: 'Inactiva'
       };
     }
 
     if (estadoMesa === 'mantenimiento') {
       return {
-        bg: 'bg-gradient-to-br from-orange-50 via-orange-50 to-orange-100',
-        border: 'border-orange-300',
-        shadow: 'shadow-orange-100',
-        indicator: 'bg-orange-500',
-        textColor: 'text-orange-700',
-        badge: 'bg-orange-500',
+  bg: 'bg-gradient-to-br from-[color:var(--sp-warning-50)] via-[color:var(--sp-warning-50)] to-[color:var(--sp-warning-100)]',
+  border: 'border-[color:var(--sp-warning-300)]',
+  shadow: '',
+  indicator: 'bg-[color:var(--sp-warning-500)]',
+  textColor: 'text-[color:var(--sp-warning-700)]',
+  badge: 'bg-[color:var(--sp-warning-500)]',
         statusText: 'Mantenimiento'
       };
     }
     
     if (estadoMesa === 'en_cocina') {
       return {
-        bg: 'bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100',
-        border: 'border-blue-300 hover:border-blue-400',
-        shadow: 'shadow-blue-100 hover:shadow-blue-200',
-        indicator: 'bg-blue-500',
-        textColor: 'text-blue-700',
-        badge: 'bg-blue-500',
+  bg: 'bg-gradient-to-br from-[color:var(--sp-primary-50)] via-[color:var(--sp-primary-50)] to-[color:var(--sp-primary-100)]',
+  border: 'border-[color:var(--sp-primary-300)] hover:border-[color:var(--sp-primary-400)]',
+  shadow: 'hover:shadow-xl',
+  indicator: 'bg-[color:var(--sp-primary-500)]',
+  textColor: 'text-[color:var(--sp-primary-700)]',
+  badge: 'bg-[color:var(--sp-primary-500)]',
         statusText: 'En Cocina'
       };
     }
 
     if (estadoMesa === 'servida') {
       return {
-        bg: 'bg-gradient-to-br from-purple-50 via-violet-50 to-purple-100',
-        border: 'border-purple-300 hover:border-purple-400',
-        shadow: 'shadow-purple-100 hover:shadow-purple-200',
-        indicator: 'bg-purple-600',
-        textColor: 'text-purple-700',
-        badge: 'bg-purple-600',
+  bg: 'bg-gradient-to-br from-[color:var(--sp-info-50)] via-[color:var(--sp-info-50)] to-[color:var(--sp-info-100)]',
+  border: 'border-[color:var(--sp-info-300)] hover:border-[color:var(--sp-info-400)]',
+  shadow: 'hover:shadow-xl',
+  indicator: 'bg-[color:var(--sp-info-600)]',
+  textColor: 'text-[color:var(--sp-info-700)]',
+  badge: 'bg-[color:var(--sp-info-600)]',
         statusText: 'Servida'
       };
     }
 
     if (estadoMesa === 'por_cobrar') {
       return {
-        bg: 'bg-gradient-to-br from-rose-50 via-red-50 to-rose-100',
-        border: 'border-red-300 hover:border-red-400',
-        shadow: 'shadow-red-100 hover:shadow-red-200',
-        indicator: 'bg-red-500',
-        textColor: 'text-red-700',
-        badge: 'bg-red-500',
+  bg: 'bg-gradient-to-br from-[color:var(--sp-error-50)] via-[color:var(--sp-error-50)] to-[color:var(--sp-error-100)]',
+  border: 'border-[color:var(--sp-error-300)] hover:border-[color:var(--sp-error-400)]',
+  shadow: 'hover:shadow-xl',
+  indicator: 'bg-[color:var(--sp-error-500)]',
+  textColor: 'text-[color:var(--sp-error-700)]',
+  badge: 'bg-[color:var(--sp-error-500)]',
         statusText: 'Por Cobrar'
       };
     }
@@ -147,22 +147,22 @@ const MesaCard: React.FC<MesaCardProps> = ({
     // Estados por defecto con gradientes
     if (estado === 'ocupada') {
       return {
-        bg: 'bg-gradient-to-br from-red-50 via-pink-50 to-red-100',
-        border: 'border-red-300 hover:border-red-400',
-        shadow: 'shadow-red-100 hover:shadow-red-200',
-        indicator: 'bg-red-500',
-        textColor: 'text-red-700',
-        badge: 'bg-red-500',
+  bg: 'bg-gradient-to-br from-[color:var(--sp-error-50)] via-[color:var(--sp-error-50)] to-[color:var(--sp-error-100)]',
+  border: 'border-[color:var(--sp-error-300)] hover:border-[color:var(--sp-error-400)]',
+  shadow: 'hover:shadow-xl',
+  indicator: 'bg-[color:var(--sp-error-500)]',
+  textColor: 'text-[color:var(--sp-error-700)]',
+  badge: 'bg-[color:var(--sp-error-500)]',
         statusText: 'Ocupada'
       };
     } else {
       return {
-        bg: 'bg-gradient-to-br from-green-50 via-emerald-50 to-green-100',
-        border: 'border-green-300 hover:border-green-400',
-        shadow: 'shadow-green-100 hover:shadow-green-200',
-        indicator: 'bg-green-500',
-        textColor: 'text-green-700',
-        badge: 'bg-green-500',
+  bg: 'bg-gradient-to-br from-[color:var(--sp-success-50)] via-[color:var(--sp-success-50)] to-[color:var(--sp-success-100)]',
+  border: 'border-[color:var(--sp-success-300)] hover:border-[color:var(--sp-success-400)]',
+  shadow: 'hover:shadow-xl',
+  indicator: 'bg-[color:var(--sp-success-500)]',
+  textColor: 'text-[color:var(--sp-success-700)]',
+  badge: 'bg-[color:var(--sp-success-500)]',
         statusText: 'Libre'
       };
     }
@@ -214,12 +214,12 @@ const MesaCard: React.FC<MesaCardProps> = ({
         group relative p-4 rounded-xl border-2 text-left transition-all duration-200 min-h-[140px]
         flex flex-col justify-between
         ${config.bg} ${config.border} shadow-lg ${config.shadow}
-        ${seleccionada ? 'ring-2 ring-sky-400 border-sky-400 bg-white/70' : ''}
+  ${seleccionada ? 'ring-2 ring-[color:var(--sp-primary-400)] border-[color:var(--sp-primary-400)] bg-[color:var(--sp-surface-elevated)]/70' : ''}
         ${isDisabled 
           ? 'cursor-not-allowed opacity-75' 
           : 'cursor-pointer hover:shadow-xl hover:-translate-y-[1px] active:translate-y-0'
         }
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400
+  focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sp-primary-400)]
       `}
       aria-pressed={!!seleccionada}
       aria-label={`${nombre || `Mesa ${numero}`}, ${getTextoEstado()}${isOcupada && total ? `, total ${formatCurrency(total)}` : ''}`}
@@ -231,7 +231,7 @@ const MesaCard: React.FC<MesaCardProps> = ({
       
       {/* Badge especial para estados importantes */}
       {(estadoMesa === 'reservada' || estadoMesa === 'inactiva' || estadoMesa === 'mantenimiento') && (
-        <div className={`absolute -top-2 -right-2 ${config.badge} text-white text-xs px-2 py-1 rounded-full shadow-md`}>
+  <div className={`absolute -top-2 -right-2 ${config.badge} text-[color:var(--sp-on-surface-inverted)] text-xs px-2 py-1 rounded-full shadow-md`}>
           {estadoMesa === 'reservada' ? 'R' : estadoMesa === 'mantenimiento' ? 'M' : 'X'}
         </div>
       )}
@@ -239,18 +239,18 @@ const MesaCard: React.FC<MesaCardProps> = ({
       {/* Header */}
       <div className="mb-2">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="font-bold text-gray-900 text-sm truncate">
+          <h3 className="font-bold text-[color:var(--sp-neutral-900)] text-sm truncate">
             {nombre || `Mesa ${numero}`}
           </h3>
   {(estadoMesa && estadoMesa !== 'libre') && (elapsedMinutes !== null || tiempoOcupada) && (
-            <div className="flex items-center gap-1 text-xs text-gray-600 bg-white/70 px-2 py-0.5 rounded-full border border-white/60">
+            <div className="flex items-center gap-1 text-xs text-[color:var(--sp-neutral-600)] bg-[color:var(--sp-surface-elevated)]/70 px-2 py-0.5 rounded-full border border-[color:var(--sp-border)]/60">
               <Clock className="h-3 w-3" />
         {elapsedMinutes !== null ? `${elapsedMinutes} min` : `${tiempoOcupada}m`}
             </div>
           )}
         </div>
         {nombre && (
-          <div className="text-xs text-gray-500">#{numero}</div>
+          <div className="text-xs text-[color:var(--sp-neutral-500)]">#{numero}</div>
         )}
       </div>
       
@@ -258,7 +258,7 @@ const MesaCard: React.FC<MesaCardProps> = ({
       <div className="space-y-2 mb-2">
         {/* Zona */}
         {zona && zona !== 'Principal' && (
-          <div className="flex items-center justify-center gap-1 text-xs text-gray-600">
+          <div className="flex items-center justify-center gap-1 text-xs text-[color:var(--sp-neutral-600)]">
             <MapPin className="h-3 w-3 flex-shrink-0" />
             <span className="truncate">{zona}</span>
           </div>
@@ -266,20 +266,20 @@ const MesaCard: React.FC<MesaCardProps> = ({
         
          {/* Ocupación actual y capacidad */}
          {(typeof comensales === 'number') && (
-           <div className="flex items-center justify-center gap-1 text-xs text-gray-700">
+           <div className="flex items-center justify-center gap-1 text-xs text-[color:var(--sp-neutral-700)]">
              <Users className="h-3 w-3 flex-shrink-0" />
              <span>👥 {comensales} persona{comensales === 1 ? '' : 's'}</span>
            </div>
          )}
          {capacidad && (
-           <div className="text-[11px] text-gray-500">
+           <div className="text-[11px] text-[color:var(--sp-neutral-500)]">
              Capacidad: {capacidad} persona{capacidad === 1 ? '' : 's'}
            </div>
          )}
 
         {/* Mesero (si está ocupada) */}
         {isOcupada && mesero && (
-          <div className="text-xs text-gray-600 bg-white/60 px-2 py-1 rounded">
+          <div className="text-xs text-[color:var(--sp-neutral-600)] bg-[color:var(--sp-surface-elevated)]/60 px-2 py-1 rounded">
             👤 {mesero}
           </div>
         )}
@@ -288,8 +288,8 @@ const MesaCard: React.FC<MesaCardProps> = ({
       {/* Footer */}
       <div className="mt-2">
         <div className="flex items-center justify-between">
-          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium bg-white/70`}
-               style={{ color: baseColor, border: `1px solid ${baseColor}` }}
+    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium bg-[color:var(--sp-surface-elevated)]/70`}
+      style={{ color: baseColor, border: `1px solid ${baseColor}` }}
           >
             {estadoMesa === 'inactiva' && <AlertCircle className="h-3 w-3" />}
             {estadoMesa === 'mantenimiento' && <AlertCircle className="h-3 w-3" />}
@@ -298,21 +298,21 @@ const MesaCard: React.FC<MesaCardProps> = ({
           </div>
 
           {isOcupada && total ? (
-            <div className="flex items-center gap-1 text-sm font-semibold text-green-700">
-              <DollarSign className="h-4 w-4 text-green-600" />
+            <div className="flex items-center gap-1 text-sm font-semibold text-[color:var(--sp-success-700)]">
+              <DollarSign className="h-4 w-4 text-[color:var(--sp-success-600)]" />
               <span>{formatCurrency(total)}</span>
-              {items && <span className="text-xs text-gray-500 ml-1">({items})</span>}
+              {items && <span className="text-xs text-[color:var(--sp-neutral-500)] ml-1">({items})</span>}
             </div>
             ) : estadoMesa === 'en_cocina' ? (
-              <div className="text-xs text-blue-700">🍽️ {items ?? 0} plato{(items ?? 0) === 1 ? '' : 's'} pendientes</div>
+              <div className="text-xs text-[color:var(--sp-primary-700)]">🍽️ {items ?? 0} plato{(items ?? 0) === 1 ? '' : 's'} pendientes</div>
             ) : estadoMesa === 'servida' ? (
-              <div className="text-xs text-purple-700">🍽️ Comida servida</div>
+              <div className="text-xs text-[color:var(--sp-info-700)]">🍽️ Comida servida</div>
             ) : estadoMesa === 'inactiva' ? (
-            <div className="text-xs text-gray-500">Fuera de servicio</div>
+            <div className="text-xs text-[color:var(--sp-neutral-500)]">Fuera de servicio</div>
           ) : estadoMesa === 'mantenimiento' ? (
-            <div className="text-xs text-orange-700">En mantenimiento</div>
+            <div className="text-xs text-[color:var(--sp-warning-700)]">En mantenimiento</div>
           ) : (
-            <div className="text-xs text-gray-600">Cap. {capacidad ?? '-'} pers.</div>
+            <div className="text-xs text-[color:var(--sp-neutral-600)]">Cap. {capacidad ?? '-'} pers.</div>
           )}
         </div>
       </div>

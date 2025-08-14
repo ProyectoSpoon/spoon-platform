@@ -21,44 +21,41 @@ export interface ActionBarProps {
 
 type ActionBarColor = NonNullable<NonNullable<ActionBarProps['primary']>['color']>;
 
+// Mapeo de colores legacy a tokens semánticos
 const colorToClasses: Record<ActionBarColor, string> = {
-  blue: 'bg-blue-600 hover:bg-blue-700',
-  purple: 'bg-purple-600 hover:bg-purple-700',
-  yellow: 'bg-yellow-600 hover:bg-yellow-700',
-  emerald: 'bg-emerald-600 hover:bg-emerald-700',
-  red: 'bg-red-600 hover:bg-red-700',
-  indigo: 'bg-indigo-600 hover:bg-indigo-700',
-  orange: 'bg-orange-600 hover:bg-orange-700',
-  slate: 'bg-slate-600 hover:bg-slate-700',
-  amber: 'bg-amber-500 hover:bg-amber-600',
+  blue: 'bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] hover:bg-[color:var(--sp-primary-700)]',
+  purple: 'bg-[color:var(--sp-info-600)] text-[color:var(--sp-on-info)] hover:bg-[color:var(--sp-info-700)]',
+  yellow: 'bg-[color:var(--sp-warning-500)] text-[color:var(--sp-on-warning)] hover:bg-[color:var(--sp-warning-600)]',
+  emerald: 'bg-[color:var(--sp-success-600)] text-[color:var(--sp-on-success)] hover:bg-[color:var(--sp-success-700)]',
+  red: 'bg-[color:var(--sp-error-600)] text-[color:var(--sp-on-error)] hover:bg-[color:var(--sp-error-700)]',
+  indigo: 'bg-[color:var(--sp-primary-700)] text-[color:var(--sp-on-primary)] hover:bg-[color:var(--sp-primary-800)]',
+  orange: 'bg-[color:var(--sp-warning-600)] text-[color:var(--sp-on-warning)] hover:bg-[color:var(--sp-warning-700)]',
+  slate: 'bg-[color:var(--sp-neutral-700)] text-[color:var(--sp-on-surface-inverted)] hover:bg-[color:var(--sp-neutral-800)]',
+  amber: 'bg-[color:var(--sp-warning-500)] text-[color:var(--sp-on-warning)] hover:bg-[color:var(--sp-warning-600)]',
 };
 
 export const ActionBar: React.FC<ActionBarProps> = ({ primary, secondary, children, className }) => {
   return (
-    <div className={`p-4 border-t border-gray-200 sticky bottom-0 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 z-10 ${className || ''}`}>
-      {children && (
-        <div className="mb-3">
-          {children}
-        </div>
-      )}
-      {(primary || secondary) && (
-        <div className="flex gap-2">
-          {primary && (
-            <button
-              onClick={primary.onClick}
-              disabled={primary.disabled}
-              className={`flex-1 px-4 py-3 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${colorToClasses[primary.color || 'blue']} ${primary.className || ''}`}
-            >
-              {primary.label}
-            </button>
-          )}
+  <div className={`p-4 border-t border-[color:var(--sp-border)] sticky bottom-0 bg-[color:var(--sp-surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--sp-surface)]/80 z-10 ${className || ''}`}>
+      {children && <div className="mb-3">{children}</div>}
+  {(primary || secondary) && (
+    <div className="grid grid-cols-2 items-center gap-2 w-full">
           {secondary && (
             <button
               onClick={secondary.onClick}
               disabled={secondary.disabled}
-              className={`px-4 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${secondary.variant === 'outline' ? 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'} ${secondary.className || ''}`}
+      className={`justify-self-start min-w-[120px] px-4 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${secondary.variant === 'outline' ? 'bg-[color:var(--sp-surface)] border border-[color:var(--sp-border)] text-[color:var(--sp-on-surface)] hover:bg-[color:var(--sp-neutral-50)]' : 'bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-on-surface)] hover:bg-[color:var(--sp-neutral-200)]'} ${secondary.className || ''}`}
             >
               {secondary.label}
+            </button>
+          )}
+          {primary && (
+            <button
+              onClick={primary.onClick}
+              disabled={primary.disabled}
+      className={`justify-self-end min-w-[120px] px-4 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${colorToClasses[primary.color || 'blue']} ${primary.className || ''}`}
+            >
+              {primary.label}
             </button>
           )}
         </div>

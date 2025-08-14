@@ -55,7 +55,7 @@ describe('AuthPage', () => {
     fireEvent.change(screen.getByLabelText(/Teléfono móvil/i), { target: { value: '3001234567', name: 'phone' } });
     fireEvent.change(screen.getByLabelText(/^Contraseña$/i), { target: { value: '123456', name: 'password' } });
     fireEvent.change(screen.getByLabelText(/Confirmar Contraseña/i), { target: { value: '123456', name: 'confirmPassword' } });
-    fireEvent.click(screen.getByText(/Crear cuenta/i));
+  fireEvent.click(screen.getByRole('button', { name: /^Crear cuenta$/i }));
     await waitFor(() => {
       // El mock de register retorna { user: { id: '1' } } para este caso
     });

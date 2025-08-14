@@ -41,7 +41,7 @@ export function useRegister() {
     try {
       const result = await signUpUser({
         email: data.email.trim(),
-        ord: data.ord,
+  password: data.ord,
         first_name: data.first_name.trim(),
         last_name: data.last_name.trim(),
         phone: data.phone.trim()

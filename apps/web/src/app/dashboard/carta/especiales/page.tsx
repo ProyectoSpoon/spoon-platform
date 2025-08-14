@@ -6,36 +6,12 @@
 'use client';
 
 import React from 'react';
-import dynamic from 'next/dynamic';
 import { useSpecialData } from '@spoon/shared/hooks/special-dishes/useSpecialData';
+import SpecialesPage from './pages/SpecialesPage';
+import SpecialesWizardPage from './pages/SpecialesWizardPage';
+import EspecialesCombinationsPage from './pages/EspecialesCombinationsPage';
 
-// Carga diferida de secciones pesadas
-const SpecialesPage = dynamic(() => import('./pages/SpecialesPage'), {
-  loading: () => (
-    <div className="min-h-[300px] flex items-center justify-center text-sm text-gray-500">
-      Cargando lista de especiales…
-    </div>
-  ),
-});
-
-const SpecialesWizardPage = dynamic(() => import('./pages/SpecialesWizardPage'), {
-  loading: () => (
-    <div className="min-h-[300px] flex items-center justify-center text-sm text-gray-500">
-      Cargando asistente…
-    </div>
-  ),
-});
-
-const EspecialesCombinationsPage = dynamic(
-  () => import('./pages/EspecialesCombinationsPage'),
-  {
-    loading: () => (
-      <div className="min-h-[300px] flex items-center justify-center text-sm text-gray-500">
-        Cargando combinaciones…
-      </div>
-    ),
-  }
-);
+// Nota: Usamos imports estáticos para mayor estabilidad en desarrollo.
 
 export default function EspecialesMainPage() {
   const specialData = useSpecialData();
@@ -43,13 +19,13 @@ export default function EspecialesMainPage() {
   // ✅ MOSTRAR LOADING INICIAL
   if (specialData.initialLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-[color:var(--sp-surface)] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--sp-primary-600)] mx-auto mb-4"></div>
+          <h3 className="text-lg font-semibold text-[color:var(--sp-on-surface)] mb-2">
             Cargando Especiales...
           </h3>
-          <p className="text-gray-600 text-sm">
+          <p className="text-[color:var(--sp-on-surface-variant)] text-sm">
             Obteniendo información de platos especiales
           </p>
         </div>
@@ -60,15 +36,15 @@ export default function EspecialesMainPage() {
   // ✅ MOSTRAR ERROR SI NO HAY RESTAURANTE
   if (!specialData.restaurantId) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-[color:var(--sp-surface)] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[color:var(--sp-error-100)] rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">⚠️</span>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg font-semibold text-[color:var(--sp-on-surface)] mb-2">
             Error de Configuración
           </h3>
-          <p className="text-gray-600 text-sm">
+          <p className="text-[color:var(--sp-on-surface-variant)] text-sm">
             No se pudo identificar el restaurante. Verifica tu configuración.
           </p>
         </div>
@@ -112,22 +88,22 @@ export default function EspecialesMainPage() {
       <div className="flex items-center justify-end">
         <div className="flex gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">
+            <div className="text-2xl font-bold text-[color:var(--sp-warning-700)]">
               {specialData.specialDishes.length}
             </div>
-            <div className="text-sm text-gray-500">Especiales</div>
+            <div className="text-sm text-[color:var(--sp-on-surface-variant)]">Especiales</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-[color:var(--sp-success-700)]">
               {specialData.specialDishes.filter(dish => dish.is_active).length}
             </div>
-            <div className="text-sm text-gray-500">Activos Hoy</div>
+            <div className="text-sm text-[color:var(--sp-on-surface-variant)]">Activos Hoy</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-[color:var(--sp-info-700)]">
               {specialData.specialCombinations.length}
             </div>
-            <div className="text-sm text-gray-500">Combinaciones</div>
+            <div className="text-sm text-[color:var(--sp-on-surface-variant)]">Combinaciones</div>
           </div>
         </div>
       </div>
@@ -138,8 +114,8 @@ export default function EspecialesMainPage() {
       </div>
       
       {/* ✅ DEBUG INFO (Solo en desarrollo) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-8 p-4 bg-gray-100 rounded-lg text-xs">
+    {process.env.NODE_ENV === 'development' && (
+  <div className="mt-8 p-4 bg-[color:var(--sp-surface-elevated)] border border-[color:var(--sp-border)] rounded-lg text-xs">
           <h4 className="font-semibold mb-2">Debug Info:</h4>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -166,19 +142,19 @@ export default function EspecialesMainPage() {
           <div className="mt-4 flex gap-2">
             <button
               onClick={() => console.log('Special Data:', specialData)}
-              className="px-3 py-1 bg-blue-500 text-white text-xs rounded"
+              className="px-3 py-1 bg-[color:var(--sp-info-600)] text-[color:var(--sp-on-info)] text-xs rounded"
             >
               Log Data
             </button>
             <button
               onClick={() => specialData.loadInitialData()}
-              className="px-3 py-1 bg-green-500 text-white text-xs rounded"
+              className="px-3 py-1 bg-[color:var(--sp-success-600)] text-[color:var(--sp-on-success)] text-xs rounded"
             >
               Reload Data
             </button>
             <button
               onClick={() => specialData.setCurrentView('list')}
-              className="px-3 py-1 bg-orange-500 text-white text-xs rounded"
+              className="px-3 py-1 bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] text-xs rounded"
             >
               Reset View
             </button>

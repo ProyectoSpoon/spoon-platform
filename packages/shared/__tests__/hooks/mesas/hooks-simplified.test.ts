@@ -8,8 +8,8 @@
 
 describe('useMesaState (Tests simplificados)', () => {
   test('hook existe y puede ser importado', () => {
-    const { useMesaState } = require('../../hooks/mesas/core/useMesaState');
-    expect(typeof useMesaState).toBe('function');
+    const mod = require('@spoon/shared/hooks/mesas/core');
+    expect(typeof mod.useMesaState).toBe('function');
   });
 
   test('hook retorna estado inicial por defecto', () => {
@@ -20,21 +20,21 @@ describe('useMesaState (Tests simplificados)', () => {
 
 describe('useMesaActions (Tests simplificados)', () => {
   test('hook existe y puede ser importado', () => {
-    const { useMesaActions } = require('../../hooks/mesas/core/useMesaActions');
-    expect(typeof useMesaActions).toBe('function');
+    const mod = require('@spoon/shared/hooks/mesas/core');
+    expect(typeof mod.useMesaActions).toBe('function');
   });
 });
 
 describe('useMesaConfig (Tests simplificados)', () => {
   test('hook existe y puede ser importado', () => {
-    const { useMesaConfig } = require('../../hooks/mesas/core/useMesaConfig');
-    expect(typeof useMesaConfig).toBe('function');
+    const mod = require('@spoon/shared/hooks/mesas/core');
+    expect(typeof mod.useMesaConfig).toBe('function');
   });
 });
 
 describe('useMesaStats (Tests simplificados)', () => {
   test('hook existe y puede ser importado', () => {
-    const { useMesaStats } = require('../../hooks/mesas/core/useMesaStats');
-    expect(typeof useMesaStats).toBe('function');
+    const mod = require('@spoon/shared/hooks/mesas/core');
+    expect(typeof mod.useMesaStats).toBe('function');
   });
 });

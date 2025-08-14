@@ -108,9 +108,9 @@ export default function CajaPage() {
 
   // Renderizado principal
   return (
-  <div className="min-h-screen bg-slate-50 font-sans">
+  <div className="min-h-screen bg-[color:var(--sp-neutral-50)] font-sans">
       {/* Header fijo con estado de sesión */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-gray-100">
+  <div className="sticky top-0 z-20 bg-[color:var(--sp-surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--sp-surface)]/80 border-b border-[color:var(--sp-border)]">
         <div className="px-5 py-4">
           <CajaHeader
             estadoCaja={estadoCaja}
@@ -207,11 +207,11 @@ export default function CajaPage() {
       {/* Error global */}
       {error && (
   <div className="px-5 pb-5">
-          <Card className="bg-red-50 border-red-200 rounded-lg shadow-sm">
+      <Card className="bg-[color:var(--sp-error-50)] border-[color:var(--sp-error-200)] rounded-lg shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <span className="text-red-500">⚠️</span>
-                <span className="text-red-700 text-sm">{error}</span>
+        <span className="text-[color:var(--sp-error-500)]">⚠️</span>
+        <span className="text-[color:var(--sp-error-700)] text-sm">{error}</span>
               </div>
             </CardContent>
           </Card>

@@ -37,6 +37,7 @@ const MesaDetailsPanel: React.FC<MesaDetailsPanelProps> = ({
   // Estados locales
   const [wizardAbierto, setWizardAbierto] = useState(false);
   const [cobrando, setCobrando] = useState(false);
+  const [modalEditarAbierto, setModalEditarAbierto] = useState(false);
 
   // Hooks especializados
   const { estadisticas } = useMesas();
@@ -70,10 +71,10 @@ const MesaDetailsPanel: React.FC<MesaDetailsPanelProps> = ({
   // Si no está visible, mostrar estado inicial
   if (!isVisible) {
     return (
-      <div className="w-full bg-gray-50 border-l border-gray-200 flex items-center justify-center">
-        <div className="text-center text-gray-500 p-8">
-          <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-lg font-medium text-gray-700 mb-2">
+      <div className="w-full bg-[color:var(--sp-neutral-50)] border-l border-[color:var(--sp-neutral-200)] flex items-center justify-center">
+        <div className="text-center text-[color:var(--sp-neutral-600)] p-8">
+          <Clock className="h-12 w-12 mx-auto mb-4 text-[color:var(--sp-neutral-300)]" />
+          <h3 className="text-lg font-medium text-[color:var(--sp-neutral-800)] mb-2">
             Selecciona una mesa
           </h3>
           <p className="text-sm">
@@ -81,22 +82,14 @@ const MesaDetailsPanel: React.FC<MesaDetailsPanelProps> = ({
           </p>
         </div>
       </div>
-
-      {/* Modal de editar mesa */}
-      <EditarMesaModal
-        isOpen={modalEditarAbierto}
-        onClose={() => setModalEditarAbierto(false)}
-        mesa={mesa}
-        onGuardar={handleGuardarMesa}
-      />
     );
   }
 
   if (!mesa) {
     return (
-      <div className="w-full bg-white border-l border-gray-200 flex items-center justify-center">
-        <div className="text-center text-gray-500 p-8">
-          <h3 className="text-lg font-medium text-gray-700 mb-2">
+      <div className="w-full bg-[--sp-surface-elevated] border-l border-[color:var(--sp-neutral-200)] flex items-center justify-center">
+        <div className="text-center text-[color:var(--sp-neutral-600)] p-8">
+          <h3 className="text-lg font-medium text-[color:var(--sp-neutral-800)] mb-2">
             Mesa no encontrada
           </h3>
           <p className="text-sm">
@@ -104,14 +97,6 @@ const MesaDetailsPanel: React.FC<MesaDetailsPanelProps> = ({
           </p>
         </div>
       </div>
-
-      {/* Modal de editar mesa */}
-      <EditarMesaModal
-        isOpen={modalEditarAbierto}
-        onClose={() => setModalEditarAbierto(false)}
-        mesa={mesa}
-        onGuardar={handleGuardarMesa}
-      />
     );
   }
 
@@ -266,7 +251,7 @@ const MesaDetailsPanel: React.FC<MesaDetailsPanelProps> = ({
 
   return (
     <>
-      <div className="w-full bg-white border-l border-gray-200 flex flex-col h-full">
+  <div className="w-full bg-[--sp-surface-elevated] border-l border-[color:var(--sp-neutral-200)] flex flex-col h-full">
         
         {/* Header modular */}
         <MesaDetailsHeader 
@@ -304,6 +289,14 @@ const MesaDetailsPanel: React.FC<MesaDetailsPanelProps> = ({
           onClose={onClose}
         />
       </div>
+
+      {/* Modal de editar mesa */}
+      <EditarMesaModal
+        isOpen={modalEditarAbierto}
+        onClose={() => setModalEditarAbierto(false)}
+        mesa={mesa as unknown as Mesa}
+        onGuardar={handleGuardarMesa as unknown as (datosActualizados: Partial<any>) => Promise<boolean>}
+      />
 
       {/* Wizard de crear orden */}
       {restaurantId && mesaNumero && (

@@ -372,27 +372,27 @@ export const TIPOS_REPORTE = {
 
 export const CLASES_CSS = {
   // Estados
-  estadoEmitida: 'bg-green-100 text-green-800 border-green-200',
-  estadoAnulada: 'bg-red-100 text-red-800 border-red-200',
+  estadoEmitida: 'bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)] border-[color:var(--sp-success-200)]',
+  estadoAnulada: 'bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)] border-[color:var(--sp-error-200)]',
   
   // Métodos de pago
-  metodoPagoEfectivo: 'bg-green-100 text-green-800',
-  metodoPagoTarjeta: 'bg-blue-100 text-blue-800',
-  metodoPagoDigital: 'bg-purple-100 text-purple-800',
+  metodoPagoEfectivo: 'bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)]',
+  metodoPagoTarjeta: 'bg-[color:var(--sp-info-100)] text-[color:var(--sp-info-800)]',
+  metodoPagoDigital: 'bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-800)]',
   
   // Botones
-  botonPrimario: 'bg-blue-600 hover:bg-blue-700 text-white',
-  botonSecundario: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
-  botonPeligro: 'bg-red-600 hover:bg-red-700 text-white',
-  botonExito: 'bg-green-600 hover:bg-green-700 text-white',
+  botonPrimario: 'bg-[color:var(--sp-info-600)] hover:bg-[color:var(--sp-info-700)] text-[color:var(--sp-on-info)]',
+  botonSecundario: 'bg-[color:var(--sp-neutral-100)] hover:bg-[color:var(--sp-neutral-200)] text-[color:var(--sp-neutral-700)]',
+  botonPeligro: 'bg-[color:var(--sp-error-600)] hover:bg-[color:var(--sp-error-700)] text-[color:var(--sp-on-error)]',
+  botonExito: 'bg-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-700)] text-[color:var(--sp-on-success)]',
   
   // Inputs
-  inputNormal: 'border-gray-300 focus:border-blue-500 focus:ring-blue-500',
-  inputError: 'border-red-300 focus:border-red-500 focus:ring-red-500',
+  inputNormal: 'border-[color:var(--sp-neutral-300)] focus:border-[color:var(--sp-info-500)] focus:ring-[color:var(--sp-info-500)]',
+  inputError: 'border-[color:var(--sp-error-300)] focus:border-[color:var(--sp-error-500)] focus:ring-[color:var(--sp-error-500)]',
   
   // Contenedores
-  card: 'bg-white rounded-lg border shadow-sm',
-  modal: 'bg-white rounded-lg shadow-xl',
+  card: 'bg-[color:var(--sp-surface-elevated)] rounded-lg border shadow-sm',
+  modal: 'bg-[color:var(--sp-surface-elevated)] rounded-lg shadow-xl',
   
   // Texto
   montoGrande: 'text-2xl font-bold',

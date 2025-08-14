@@ -4,11 +4,17 @@
   "private": true,
   "main": "./index.ts",
   "types": "./index.ts",
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --ext .ts,.tsx ."
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.0.0",
     "typescript": "^5.0.0"
   }
 }

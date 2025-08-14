@@ -4,8 +4,25 @@
  * Generado automáticamente por refactoring
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Mesa, ConfiguracionMesas, EstadisticasMesas } from '../../../types/mesas';
+
+// Tipo flexible para elementos provenientes de getEstadoCompletoMesas
+type MesaApi = {
+  id?: string;
+  numero: number;
+  nombre?: string;
+  zona: string;
+  capacidad: number;
+  estado: any;
+  notas?: string;
+  detallesOrden?: {
+    total: number;
+    items: any[];
+  } | null;
+  created_at?: string;
+  updated_at?: string;
+};
 
 export interface MesaStateHook {
   // Estados principales
@@ -49,7 +66,7 @@ export const useMesaState = (restaurantId: string | null): MesaStateHook => {
   const [error, setError] = useState<string | null>(null);
 
   // Función para calcular estadísticas desde mesas
-  const calcularEstadisticas = (mesasArray: Mesa[]): EstadisticasMesas => {
+  const calcularEstadisticas = useCallback((mesasArray: Mesa[]): EstadisticasMesas => {
     const totalMesas = mesasArray.length;
     const mesasLibres = mesasArray.filter(m => m.estado === 'libre').length;
     const mesasOcupadas = mesasArray.filter(m => m.estado === 'ocupada').length;
@@ -71,10 +88,10 @@ export const useMesaState = (restaurantId: string | null): MesaStateHook => {
       totalPendiente,
       promedioTicket
     };
-  };
+  }, []);
 
   // Función para sincronizar mesas desde API
-  const sincronizarMesas = async (): Promise<void> => {
+  const sincronizarMesas = useCallback(async (): Promise<void> => {
     if (!restaurantId) return;
     
     try {
@@ -83,10 +100,10 @@ export const useMesaState = (restaurantId: string | null): MesaStateHook => {
       
       // Importar funciones de supabase dinámicamente
       const { getEstadoCompletoMesas } = await import('../../../lib/supabase');
-      const estadoCompleto = await getEstadoCompletoMesas(restaurantId);
+  const estadoCompleto = await getEstadoCompletoMesas(restaurantId);
       
       // Convertir al formato unificado
-      const mesasUnificadas: Mesa[] = estadoCompleto.mesas.map(mesa => ({
+      const mesasUnificadas: Mesa[] = (estadoCompleto.mesas as MesaApi[]).map((mesa: MesaApi) => ({
         id: mesa.id || `mesa-${mesa.numero}`,
         numero: mesa.numero,
         nombre: mesa.nombre,
@@ -97,7 +114,7 @@ export const useMesaState = (restaurantId: string | null): MesaStateHook => {
         ordenActiva: mesa.detallesOrden ? {
           id: `orden-${mesa.numero}`,
           total: mesa.detallesOrden.total,
-          items: mesa.detallesOrden.items.map(item => ({
+          items: (mesa.detallesOrden.items || []).map((item: any) => ({
             id: item.id || `item-${Date.now()}`,
             nombre: item.nombre || 'Sin nombre',
             cantidad: item.cantidad || 1,
@@ -123,10 +140,10 @@ export const useMesaState = (restaurantId: string | null): MesaStateHook => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [restaurantId, calcularEstadisticas]);
 
   // Función para sincronizar configuración
-  const sincronizarConfiguracion = async (): Promise<void> => {
+  const sincronizarConfiguracion = useCallback(async (): Promise<void> => {
     if (!restaurantId) return;
     
     try {
@@ -148,25 +165,25 @@ export const useMesaState = (restaurantId: string | null): MesaStateHook => {
     } finally {
       setLoadingConfiguracion(false);
     }
-  };
+  }, [restaurantId]);
 
   // Función para limpiar error
-  const limpiarError = (): void => {
+  const limpiarError = useCallback((): void => {
     setError(null);
-  };
+  }, []);
 
   // Efectos para sincronización inicial
   useEffect(() => {
     if (restaurantId) {
       sincronizarConfiguracion();
     }
-  }, [restaurantId]);
+  }, [restaurantId, sincronizarConfiguracion]);
 
   useEffect(() => {
     if (restaurantId && configuracion.configuradas) {
       sincronizarMesas();
     }
-  }, [restaurantId, configuracion.configuradas]);
+  }, [restaurantId, configuracion.configuradas, sincronizarMesas]);
 
   // Auto-refresh cada 30 segundos
   useEffect(() => {
@@ -174,7 +191,7 @@ export const useMesaState = (restaurantId: string | null): MesaStateHook => {
     
     const interval = setInterval(sincronizarMesas, 30000);
     return () => clearInterval(interval);
-  }, [restaurantId, configuracion.configuradas]);
+  }, [restaurantId, configuracion.configuradas, sincronizarMesas]);
 
   return {
     mesas,

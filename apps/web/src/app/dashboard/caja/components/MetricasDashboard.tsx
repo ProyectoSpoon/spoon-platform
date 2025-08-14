@@ -33,32 +33,32 @@ const MetricCard: React.FC<{
 
   const colorClasses = {
     green: {
-      bg: "bg-green-50",
-      border: "border-green-200",
-      icon: "text-green-600",
-      value: "text-green-700",
-      iconBg: "bg-green-100"
+      bg: "bg-[color:var(--sp-success-50)]",
+      border: "border-[color:var(--sp-success-200)]",
+      icon: "text-[color:var(--sp-success-600)]",
+      value: "text-[color:var(--sp-success-700)]",
+      iconBg: "bg-[color:var(--sp-success-100)]"
     },
     red: {
-      bg: "bg-red-50", 
-      border: "border-red-200",
-      icon: "text-red-600",
-      value: "text-red-700",
-      iconBg: "bg-red-100"
+      bg: "bg-[color:var(--sp-error-50)]", 
+      border: "border-[color:var(--sp-error-200)]",
+      icon: "text-[color:var(--sp-error-600)]",
+      value: "text-[color:var(--sp-error-700)]",
+      iconBg: "bg-[color:var(--sp-error-100)]"
     },
     blue: {
-      bg: "bg-blue-50",
-      border: "border-blue-200", 
-      icon: "text-blue-600",
-      value: "text-blue-700",
-      iconBg: "bg-blue-100"
+      bg: "bg-[color:var(--sp-info-50)]",
+      border: "border-[color:var(--sp-info-200)]", 
+      icon: "text-[color:var(--sp-info-600)]",
+      value: "text-[color:var(--sp-info-700)]",
+      iconBg: "bg-[color:var(--sp-info-100)]"
     },
     gray: {
-      bg: "bg-gray-50",
-      border: "border-gray-200",
-      icon: "text-gray-600", 
-      value: "text-gray-700",
-      iconBg: "bg-gray-100"
+      bg: "bg-[color:var(--sp-neutral-50)]",
+      border: "border-[color:var(--sp-neutral-200)]",
+      icon: "text-[color:var(--sp-neutral-600)]", 
+      value: "text-[color:var(--sp-neutral-700)]",
+      iconBg: "bg-[color:var(--sp-neutral-100)]"
     }
   };
 
@@ -78,14 +78,14 @@ const MetricCard: React.FC<{
             
             {/* Contenido principal */}
             <div>
-              <p className="text-[13px] font-medium text-[#64748b] mb-1.5">
+              <p className="text-[13px] font-medium text-[color:var(--sp-neutral-500)] mb-1.5">
                 {label}
               </p>
               <p className={`text-[22px] leading-7 font-bold ${classes.value}`}>
                 {formatCurrency(value)}
               </p>
               {subtitle && (
-                <p className="text-[11px] text-[#94a3b8] mt-1">
+                <p className="text-[11px] text-[color:var(--sp-neutral-400)] mt-1">
                   {subtitle}
                 </p>
               )}
@@ -95,12 +95,12 @@ const MetricCard: React.FC<{
           {/* Indicador de tendencia */}
           {trend && (
             <div className={`p-2 rounded-full ${
-              trend === 'up' ? 'bg-green-100' :
-              trend === 'down' ? 'bg-red-100' : 'bg-gray-100'
+              trend === 'up' ? 'bg-[color:var(--sp-success-100)]' :
+              trend === 'down' ? 'bg-[color:var(--sp-error-100)]' : 'bg-[color:var(--sp-neutral-100)]'
             }`}>
               <TrendingUp className={`w-4 h-4 ${
-                trend === 'up' ? 'text-green-600' :
-                trend === 'down' ? 'text-red-600 rotate-180' : 'text-gray-600'
+                trend === 'up' ? 'text-[color:var(--sp-success-600)]' :
+                trend === 'down' ? 'text-[color:var(--sp-error-600)] rotate-180' : 'text-[color:var(--sp-neutral-600)]'
               }`} />
             </div>
           )}
@@ -169,15 +169,15 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="animate-pulse">
+      <Card key={i} className="animate-pulse">
             <CardContent className="p-4">
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+        <div className="w-12 h-12 bg-[color:var(--sp-neutral-200)] rounded-lg"></div>
                 <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-20"></div>
-                  <div className="h-8 bg-gray-200 rounded w-32"></div>
+      <div className="h-4 bg-[color:var(--sp-neutral-200)] rounded w-20"></div>
+      <div className="h-8 bg-[color:var(--sp-neutral-200)] rounded w-32"></div>
                 </div>
               </div>
             </CardContent>
@@ -246,15 +246,15 @@ export const MetricasAlert: React.FC<{
   if (alerts.length === 0) return null;
 
   return (
-    <Card className="bg-yellow-50 border-yellow-200 border">
+    <Card className="bg-[color:var(--sp-warning-50)] border-[color:var(--sp-warning-200)] border">
       <CardContent className="p-4">
         <div className="flex items-start space-x-3">
-          <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-[color:var(--sp-warning-600)] mt-0.5" />
           <div>
-            <h4 className="font-medium text-yellow-800 mb-1">
+            <h4 className="font-medium text-[color:var(--sp-warning-800)] mb-1">
               Atención requerida
             </h4>
-            <ul className="text-sm text-yellow-700 space-y-1">
+            <ul className="text-sm text-[color:var(--sp-warning-700)] space-y-1">
               {alerts.map((alert, index) => (
                 <li key={index}>• {alert}</li>
               ))}

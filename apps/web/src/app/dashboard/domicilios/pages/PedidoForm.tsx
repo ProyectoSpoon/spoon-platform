@@ -112,11 +112,11 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
     return (
       <div className="h-full flex items-center justify-center p-8">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <AlertCircle className="w-16 h-16 text-[color:var(--sp-neutral-400)] mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-[color:var(--sp-neutral-900)] mb-2">
             No hay menu disponible
           </h3>
-          <p className="text-gray-600">
+          <p className="text-[color:var(--sp-neutral-600)]">
             Configure el menu del dia antes de crear pedidos.
           </p>
         </div>
@@ -126,16 +126,16 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between p-6 border-b border-gray-200">
+    <div className="flex items-center justify-between p-6 border-b border-[color:var(--sp-neutral-200)] bg-[--sp-surface]">
         <div>
-          <h2 className="heading-section text-gray-900">Nuevo Pedido</h2>
-          <p className="text-sm text-gray-600 mt-1">
+      <h2 className="heading-section text-[color:var(--sp-neutral-900)]">Nuevo Pedido</h2>
+      <p className="text-sm text-[color:var(--sp-neutral-600)] mt-1">
             Tiempo estimado: {DEFAULT_ESTIMATED_TIME} minutos
           </p>
         </div>
         <button
           onClick={onClose}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+      className="p-2 hover:bg-[color:var(--sp-neutral-100)] rounded-lg transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -151,50 +151,50 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
             </h3>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">
                 Nombre completo
               </label>
               <input
                 type="text"
                 value={formData.customer_name}
                 onChange={(e) => setFormData(prev => ({ ...prev, customer_name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
                 placeholder="Nombre del cliente"
               />
               {errors.customer_name && (
-                <p className="text-sm text-red-600 mt-1">{errors.customer_name}</p>
+                <p className="text-sm text-[color:var(--sp-error-600)] mt-1">{errors.customer_name}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">
                 Telefono
               </label>
               <input
                 type="tel"
                 value={formData.customer_phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, customer_phone: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
                 placeholder="3001234567"
               />
               {errors.customer_phone && (
-                <p className="text-sm text-red-600 mt-1">{errors.customer_phone}</p>
+                <p className="text-sm text-[color:var(--sp-error-600)] mt-1">{errors.customer_phone}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">
                 Direccion de entrega
               </label>
               <textarea
                 value={formData.delivery_address}
                 onChange={(e) => setFormData(prev => ({ ...prev, delivery_address: e.target.value }))}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
                 placeholder="Calle 123 Apartamento 12B"
               />
               {errors.delivery_address && (
-                <p className="text-sm text-red-600 mt-1">{errors.delivery_address}</p>
+                <p className="text-sm text-[color:var(--sp-error-600)] mt-1">{errors.delivery_address}</p>
               )}
             </div>
           </div>
@@ -206,26 +206,26 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
             </h3>
 
             <div className="grid gap-3">
-              {menu.combinaciones
+        {menu.combinaciones
                 .filter(c => c.is_available)
                 .map((combinacion) => (
                 <div 
                   key={combinacion.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors"
+          className="border border-[color:var(--sp-neutral-200)] rounded-lg p-4 hover:border-[color:var(--sp-primary-300)] transition-colors"
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">
+            <h4 className="font-medium text-[color:var(--sp-neutral-900)]">
                         {combinacion.combination_name}
                       </h4>
-                      <p className="value-number text-gray-900 mt-1">
+            <p className="value-number text-[color:var(--sp-neutral-900)] mt-1">
                         ${combinacion.combination_price.toLocaleString()}
                       </p>
                     </div>
-                    <button
+        <button
                       type="button"
                       onClick={() => agregarItem(combinacion.id)}
-                      className="px-3 py-1 bg-orange-600 text-white text-sm rounded hover:bg-orange-700 transition-colors"
+      className="px-3 py-1 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] text-sm rounded hover:bg-[color:var(--sp-primary-700)] transition-colors"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -235,7 +235,7 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
             </div>
 
             {errors.items && (
-              <p className="text-sm text-red-600">{errors.items}</p>
+        <p className="text-sm text-[color:var(--sp-error-600)]">{errors.items}</p>
             )}
           </div>
 
@@ -247,13 +247,13 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
 
               <div className="space-y-3">
                 {items.map((item, index) => (
-                  <div key={index} className="bg-gray-50 rounded-lg p-4">
+                  <div key={index} className="bg-[color:var(--sp-neutral-50)] rounded-lg p-4">
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">
+                        <h4 className="font-medium text-[color:var(--sp-neutral-900)]">
                           {item.combination_name}
                         </h4>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-[color:var(--sp-neutral-600)]">
                           ${item.unit_price.toLocaleString()} c/u
                         </p>
                       </div>
@@ -262,7 +262,7 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
                         <button
                           type="button"
                           onClick={() => actualizarCantidad(index, item.quantity - 1)}
-                          className="p-1 hover:bg-gray-200 rounded"
+                          className="p-1 hover:bg-[color:var(--sp-neutral-200)] rounded"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
@@ -272,16 +272,16 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
                         <button
                           type="button"
                           onClick={() => actualizarCantidad(index, item.quantity + 1)}
-                          className="p-1 hover:bg-gray-200 rounded"
+                          className="p-1 hover:bg-[color:var(--sp-neutral-200)] rounded"
                         >
                           <Plus className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
 
-                    <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Subtotal:</span>
-                      <span className="font-semibold text-gray-900">
+                    <div className="mt-3 pt-3 border-t border-[color:var(--sp-neutral-200)] flex justify-between items-center">
+                      <span className="text-sm text-[color:var(--sp-neutral-600)]">Subtotal:</span>
+                      <span className="font-semibold text-[color:var(--sp-neutral-900)]">
                         ${calcularSubtotal(item).toLocaleString()}
                       </span>
                     </div>
@@ -292,21 +292,21 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">
               Notas especiales
             </label>
             <textarea
               value={formData.special_notes}
               onChange={(e) => setFormData(prev => ({ ...prev, special_notes: e.target.value }))}
               rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className="w-full px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
               placeholder="Instrucciones adicionales"
             />
           </div>
         </div>
       </div>
 
-      <div className="border-t border-gray-200 p-6 bg-white">
+  <div className="border-t border-[color:var(--sp-neutral-200)] p-6 bg-[--sp-surface-elevated]">
         {items.length > 0 && (
           <div className="mb-4 space-y-2 text-sm">
             <div className="flex justify-between">
@@ -328,14 +328,14 @@ export default function PedidoForm({ menu, onSubmit, loading, onClose }: PedidoF
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-2 border border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] rounded-lg hover:bg-[color:var(--sp-neutral-50)] transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading || items.length === 0}
-            className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 px-4 py-2 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] rounded-lg hover:bg-[color:var(--sp-primary-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Creando...' : 'Crear Pedido'}
           </button>

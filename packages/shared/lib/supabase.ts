@@ -1275,7 +1275,7 @@ export const cobrarMesa = async (restaurantId: string, mesaNumero: number) => {
     }
     
     
-    const { data: mesa } = await supabase
+  const { data: _mesa } = await supabase
       .from('restaurant_mesas')
       .select('estado')
       .eq('restaurant_id', restaurantId)
@@ -1530,7 +1530,7 @@ export const configurarMesas = async (
 
     if (totalMesas > totalActual) {
       // CASO A: AGREGAR MESAS (tu caso actual: 8 → 12)
-      const mesasParaAgregar = totalMesas - totalActual;
+  const _mesasParaAgregar = totalMesas - totalActual;
       
       
       const mesasNuevas: any[] = [];
@@ -1549,7 +1549,7 @@ export const configurarMesas = async (
         });
       }
       
-      const { data, error } = await supabase
+  const { data: _data, error } = await supabase
         .from('restaurant_mesas')
         .insert(mesasNuevas)
         .select();
@@ -1834,7 +1834,7 @@ export const getEstadoCompletoMesas = async (restaurantId: string) => {
 export const reconfigurarMesas = async (
   restaurantId: string,
   nuevoTotal: number,
-  mantenerExistentes: boolean = true
+  _mantenerExistentes: boolean = true
 ): Promise<RestaurantMesa[]> => {
   try {
     
@@ -1856,7 +1856,7 @@ export const reconfigurarMesas = async (
         });
       }
       
-      const { data, error } = await supabase
+  const { data: _data2, error } = await supabase
         .from('restaurant_mesas')
         .insert(mesasParaAgregar)
         .select();

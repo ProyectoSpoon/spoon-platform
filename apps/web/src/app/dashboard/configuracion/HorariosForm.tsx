@@ -174,8 +174,8 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-orange-600" />
-          <p className="text-gray-600">Cargando horarios...</p>
+          <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-[color:var(--sp-primary-600)]" />
+          <p className="text-[color:var(--sp-neutral-600)]">Cargando horarios...</p>
         </div>
       </div>
     );
@@ -186,7 +186,7 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
   return (
   <FormCard readOnly={readOnly} onToggleEdit={onToggleEdit} hideHeaderEdit contentClassName="space-y-6">
       {/* Tabs de días + acción editar */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+  <div className="bg-[color:var(--sp-neutral-50)] p-4 rounded-lg">
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-1 overflow-x-auto">
             {DIAS_SEMANA.map((dia) => (
@@ -195,8 +195,8 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
                 onClick={() => setDiaSeleccionado(dia)}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                   diaSeleccionado === dia
-                    ? 'bg-orange-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
+        ? 'bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)]'
+        : 'bg-[color:var(--sp-surface)] text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-100)]'
                 }`}
                 disabled={readOnly}
               >
@@ -213,7 +213,7 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
 
       {/* Vista general */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gray-50 p-4 rounded-lg">
+  <div className="bg-[color:var(--sp-neutral-50)] p-4 rounded-lg">
           <h4 className="heading-section mb-4">Resumen de la semana</h4>
           <div className="space-y-3">
             {DIAS_SEMANA.map((dia) => {
@@ -223,21 +223,21 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
                   key={dia}
                   className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
                     diaSeleccionado === dia
-                      ? 'border-orange-300 bg-orange-50'
-                      : 'border-gray-200 bg-white'
+                      ? 'border-[color:var(--sp-primary-300)] bg-[color:var(--sp-primary-50)]'
+                      : 'border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-surface)]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-3 h-3 rounded-full ${
-                        horarioDia.abierto ? 'bg-green-500' : 'bg-red-500'
+                        horarioDia.abierto ? 'bg-[color:var(--sp-success-500)]' : 'bg-[color:var(--sp-error-500)]'
                       }`}
                     />
-                    <span className="font-medium text-gray-900 w-20">
+                    <span className="font-medium text-[color:var(--sp-neutral-900)] w-20">
                       {NOMBRES_DIAS[dia]}
                     </span>
                   </div>
-                  <div className="flex-1 text-sm text-gray-600 mx-4">
+                  <div className="flex-1 text-sm text-[color:var(--sp-neutral-600)] mx-4">
                     {horarioDia.abierto ? (
                       horarioDia.turnos.map((turno, i) => (
                         <span key={i} className="mr-3">
@@ -245,13 +245,13 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
                         </span>
                       ))
                     ) : (
-                      <span className="text-red-600">Cerrado</span>
+                      <span className="text-[color:var(--sp-error-600)]">Cerrado</span>
                     )}
                   </div>
                   <InlineEditButton
                     onClick={() => setDiaSeleccionado(dia)}
                     disabled={readOnly}
-                    className="h-8 w-8 border-orange-200 text-orange-600 hover:bg-orange-50"
+                    className="h-8 w-8 border-[color:var(--sp-primary-200)] text-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-50)]"
                     label={`Editar ${NOMBRES_DIAS[dia]}`}
                   />
                 </div>
@@ -261,23 +261,23 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
         </div>
 
         {/* Editor */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
+  <div className="bg-[color:var(--sp-surface-elevated)] border border-[color:var(--sp-neutral-200)] rounded-lg p-4">
           <h4 className="heading-section mb-4">
             Configurar {NOMBRES_DIAS[diaSeleccionado]}
           </h4>
           <div className="space-y-4">
             {/* Estado del día */}
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
+              <label className="text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2 block">
                 Estado del día:
               </label>
               <div className="flex gap-2">
                 <button
                   onClick={() => toggleDiaAbierto(diaSeleccionado, true)}
-                  className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
+          className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
                     horarioDiaActual.abierto
-                      ? 'bg-orange-600 text-white border-orange-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            ? 'bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] border-[color:var(--sp-primary-600)]'
+            : 'bg-[color:var(--sp-surface)] text-[color:var(--sp-neutral-700)] border-[color:var(--sp-neutral-300)] hover:bg-[color:var(--sp-neutral-50)]'
                   }`}
                 disabled={readOnly}
                 >
@@ -285,10 +285,10 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
                 </button>
                 <button
                   onClick={() => toggleDiaAbierto(diaSeleccionado, false)}
-                  className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
+          className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
                     !horarioDiaActual.abierto
-                      ? 'bg-orange-600 text-white border-orange-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            ? 'bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] border-[color:var(--sp-primary-600)]'
+            : 'bg-[color:var(--sp-surface)] text-[color:var(--sp-neutral-700)] border-[color:var(--sp-neutral-300)] hover:bg-[color:var(--sp-neutral-50)]'
                   }`}
                   disabled={readOnly}
                 >
@@ -299,20 +299,20 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
             {/* Horarios */}
             {horarioDiaActual.abierto && (
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-3 block">
+                <label className="text-sm font-medium text-[color:var(--sp-neutral-700)] mb-3 block">
                   Horarios:
                 </label>
                 <div className="space-y-4">
                   {horarioDiaActual.turnos.map((turno, indice) => (
-                    <div key={indice} className="border border-gray-200 rounded-lg p-4">
+                    <div key={indice} className="border border-[color:var(--sp-neutral-200)] rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium text-gray-700">
+                        <span className="text-sm font-medium text-[color:var(--sp-neutral-700)]">
                           Turno {indice + 1}
                         </span>
                         {horarioDiaActual.turnos.length > 1 && (
                           <button
                             onClick={() => eliminarTurno(diaSeleccionado, indice)}
-                            className="text-red-600 hover:text-red-800 text-sm flex items-center gap-1"
+                            className="text-[color:var(--sp-error-600)] hover:text-[color:var(--sp-error-800)] text-sm flex items-center gap-1"
                           >
                             <Trash2 className="w-3 h-3" />
                             Eliminar
@@ -321,11 +321,11 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="text-xs text-gray-600 mb-1 block">Apertura:</label>
+                          <label className="text-xs text-[color:var(--sp-neutral-600)] mb-1 block">Apertura:</label>
                           <select
                             value={turno.horaApertura}
                             onChange={(e) => actualizarTurno(diaSeleccionado, indice, { horaApertura: e.target.value })}
-                            className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 border-gray-300 disabled:bg-gray-50 disabled:text-gray-700 disabled:border-gray-200 disabled:cursor-default disabled:focus:ring-0"
+                            className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)] border-[color:var(--sp-neutral-300)] disabled:bg-[color:var(--sp-neutral-50)] disabled:text-[color:var(--sp-neutral-700)] disabled:border-[color:var(--sp-neutral-200)] disabled:cursor-default disabled:focus:ring-0"
                             disabled={readOnly}
                           >
                             {opcionesHora.map(opcion => (
@@ -336,11 +336,11 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
                           </select>
                         </div>
                         <div>
-                          <label className="text-xs text-gray-600 mb-1 block">Cierre:</label>
+                          <label className="text-xs text-[color:var(--sp-neutral-600)] mb-1 block">Cierre:</label>
                           <select
                             value={turno.horaCierre}
                             onChange={(e) => actualizarTurno(diaSeleccionado, indice, { horaCierre: e.target.value })}
-                            className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 border-gray-300 disabled:bg-gray-50 disabled:text-gray-700 disabled:border-gray-200 disabled:cursor-default disabled:focus:ring-0"
+                            className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)] border-[color:var(--sp-neutral-300)] disabled:bg/[color:var(--sp-neutral-50)] disabled:text-[color:var(--sp-neutral-700)] disabled:border-[color:var(--sp-neutral-200)] disabled:cursor-default disabled:focus:ring-0"
                             disabled={readOnly}
                           >
                             {opcionesHora.map(opcion => (
@@ -357,8 +357,8 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
                     onClick={() => agregarTurno(diaSeleccionado)}
                     className={`w-full py-2 text-sm border rounded-lg transition-colors flex items-center justify-center gap-2 ${
                       horarioDiaActual.turnos.length >= 3
-                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'text-orange-600 border-orange-200 hover:bg-orange-50'
+                        ? 'border-[color:var(--sp-neutral-200)] text-[color:var(--sp-neutral-400)] cursor-not-allowed'
+                        : 'text-[color:var(--sp-primary-600)] border-[color:var(--sp-primary-200)] hover:bg-[color:var(--sp-primary-50)]'
                     }`}
                     disabled={readOnly || horarioDiaActual.turnos.length >= 3}
                   >
@@ -372,8 +372,8 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
               </div>
             )}
             {/* Copiar horarios */}
-            <div className="pt-4 border-t border-gray-200">
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
+            <div className="pt-4 border-t border-[color:var(--sp-neutral-200)]">
+              <label className="text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2 block">
                 Acciones rápidas:
               </label>
               <select
@@ -383,7 +383,7 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
                     e.target.value = '';
                   }
                 }}
-                className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 border-gray-300 disabled:bg-gray-50 disabled:text-gray-700 disabled:border-gray-200 disabled:cursor-default disabled:focus:ring-0"
+                className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)] border-[color:var(--sp-neutral-300)] disabled:bg-[color:var(--sp-neutral-50)] disabled:text-[color:var(--sp-neutral-700)] disabled:border-[color:var(--sp-neutral-200)] disabled:cursor-default disabled:focus:ring-0"
                 defaultValue=""
                 disabled={readOnly}
               >

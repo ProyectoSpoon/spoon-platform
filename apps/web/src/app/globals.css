@@ -3,8 +3,93 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Brand - primary orange scale */
+    --sp-primary-50: #fff7ed;
+    --sp-primary-100: #ffedd5;
+    --sp-primary-200: #fed7aa;
+    --sp-primary-300: #fdba74;
+    --sp-primary-400: #fb923c;
+    --sp-primary-500: #f97316;
+    --sp-primary-600: #ea580c;
+    --sp-primary-700: #c2410c;
+    --sp-primary-800: #9a3412;
+    --sp-primary-900: #7c2d12;
+
+    /* Neutral */
+    --sp-neutral-0: #ffffff;
+    --sp-neutral-50: #f8fafc;
+    --sp-neutral-100: #f1f5f9;
+    --sp-neutral-200: #e2e8f0;
+    --sp-neutral-300: #cbd5e1;
+    --sp-neutral-400: #94a3b8;
+    --sp-neutral-500: #64748b;
+    --sp-neutral-600: #475569;
+    --sp-neutral-700: #334155;
+    --sp-neutral-800: #1e293b;
+    --sp-neutral-900: #0f172a;
+  --sp-neutral-950: #020617;
+
+    /* Semantic */
+    --sp-success: #10b981;
+    --sp-warning: #f59e0b;
+    --sp-error: #ef4444;
+    --sp-info: #3b82f6;
+
+  /* UI Surfaces & text tokens */
+  --sp-surface: var(--sp-neutral-0);
+  --sp-surface-elevated: var(--sp-neutral-0);
+  --sp-on-surface: var(--sp-neutral-900);
+  --sp-on-surface-variant: var(--sp-neutral-600);
+  --sp-on-surface-inverted: var(--sp-neutral-0);
+  --sp-on-primary: var(--sp-neutral-0);
+  --sp-on-success: var(--sp-neutral-0);
+  --sp-on-warning: var(--sp-neutral-900);
+  --sp-on-error: var(--sp-neutral-0);
+  --sp-on-info: var(--sp-neutral-0);
+  --sp-border: var(--sp-neutral-200);
+  --sp-focus: var(--sp-primary-600);
+  --sp-overlay: color-mix(in oklab, var(--sp-neutral-950)_60%, transparent);
+  }
+
+  /* Dark Theme (class-based) */
+  .dark {
+    --sp-surface: var(--sp-neutral-900);
+    --sp-surface-elevated: var(--sp-neutral-800);
+    --sp-on-surface: var(--sp-neutral-50);
+  --sp-on-surface-variant: var(--sp-neutral-400);
+    --sp-on-surface-inverted: var(--sp-neutral-900);
+    --sp-on-primary: var(--sp-neutral-0);
+    --sp-on-success: var(--sp-neutral-0);
+    --sp-on-warning: var(--sp-neutral-900);
+    --sp-on-error: var(--sp-neutral-0);
+    --sp-on-info: var(--sp-neutral-0);
+    --sp-border: color-mix(in oklab, var(--sp-neutral-700)_80%, var(--sp-neutral-600));
+    --sp-focus: var(--sp-primary-500);
+    --sp-overlay: color-mix(in oklab, var(--sp-neutral-950)_70%, transparent);
+  }
+
+  /* Optional: Respect system preference when .dark not enforced */
+  @media (prefers-color-scheme: dark) {
+    :root:not(.light):not(.dark) {
+      --sp-surface: var(--sp-neutral-900);
+      --sp-surface-elevated: var(--sp-neutral-800);
+      --sp-on-surface: var(--sp-neutral-50);
+  --sp-on-surface-variant: var(--sp-neutral-400);
+      --sp-on-surface-inverted: var(--sp-neutral-900);
+      --sp-on-primary: var(--sp-neutral-0);
+      --sp-on-success: var(--sp-neutral-0);
+      --sp-on-warning: var(--sp-neutral-900);
+      --sp-on-error: var(--sp-neutral-0);
+      --sp-on-info: var(--sp-neutral-0);
+      --sp-border: color-mix(in oklab, var(--sp-neutral-700)_80%, var(--sp-neutral-600));
+      --sp-focus: var(--sp-primary-500);
+      --sp-overlay: color-mix(in oklab, var(--sp-neutral-950)_70%, transparent);
+    }
+  }
+
   * {
-    @apply border-gray-200;
+  border-color: var(--sp-border);
   }
   
   html {
@@ -12,34 +97,37 @@
   }
   
   body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  @apply bg-gray-50 text-gray-900 antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background-color: var(--sp-surface);
+    color: var(--sp-on-surface);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 @layer components {
   /* Componentes personalizados de SPOON */
   .btn-primary {
-    @apply bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+  @apply bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)] text-[color:var(--sp-on-primary)] font-medium py-2 px-4 rounded-lg transition-colors;
   }
   
   .btn-secondary {
-    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors;
+  @apply bg-[color:var(--sp-surface)] border border-[color:var(--sp-border)] text-[color:var(--sp-on-surface)] hover:bg-[color:var(--sp-neutral-50)] font-medium py-2 px-4 rounded-lg transition-colors;
   }
   
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent;
+  @apply w-full px-3 py-2 border border-[color:var(--sp-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--sp-focus)] focus:border-transparent placeholder:text-[color:var(--sp-on-surface-variant)] text-[color:var(--sp-on-surface)];
   }
 
   /* Tipografía unificada */
-  .heading-page { @apply text-[18px] font-semibold text-gray-900; }
+  .heading-page { @apply text-[18px] font-semibold text-[color:var(--sp-on-surface)]; }
 
-  .heading-section { @apply text-[16px] font-semibold text-gray-900; }
+  .heading-section { @apply text-[16px] font-semibold text-[color:var(--sp-on-surface)]; }
 
-  .subtitle { @apply text-[14px] text-gray-600; }
+  .subtitle { @apply text-[14px] text-[color:var(--sp-on-surface-variant)]; }
 
-  .value-number { @apply text-[22px] font-bold text-gray-900; }
+  .value-number { @apply text-[22px] font-bold text-[color:var(--sp-on-surface)]; }
 
-  .label-tertiary { @apply text-[13px] font-medium text-[#64748b]; }
-  .subtle-text { @apply text-[11px] text-[#94a3b8]; }
+  .label-tertiary { @apply text-[13px] font-medium text-[color:var(--sp-on-surface-variant)]; }
+  .subtle-text { @apply text-[11px] text-[color:var(--sp-on-surface-variant)]; }
 }

@@ -12,7 +12,7 @@ export const InlineEditButton: React.FC<InlineEditButtonProps> = ({ label = 'Edi
       type="button"
       disabled={editing || props.disabled}
       className={
-        'shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-default disabled:hover:bg-transparent ' +
+        'shrink-0 inline-flex items-center justify-center h-10 w-10 rounded-lg border border-[color:var(--sp-border)] text-[color:var(--sp-on-surface)] hover:bg-[color:var(--sp-neutral-50)] disabled:opacity-50 disabled:cursor-default disabled:hover:bg-transparent ' +
         className
       }
       aria-label={label}

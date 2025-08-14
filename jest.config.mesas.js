@@ -9,7 +9,7 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   
   // Paths y aliases
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@spoon/shared/(.*)$': '<rootDir>/packages/shared/$1',
     '^@/(.*)$': '<rootDir>/apps/web/src/$1'
   },
@@ -33,9 +33,7 @@ module.exports = {
   // Configuración para React 18
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: {
-        jsx: 'react-jsx'
-      }
+      tsconfig: '<rootDir>/tsconfig.jest.json'
     }]
   },
   

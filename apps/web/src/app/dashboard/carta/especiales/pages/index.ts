@@ -1,12 +1,12 @@
 // ========================================
 // EXPORTS CENTRALIZADOS PARA ESPECIALES
-// File: src/app/dashboard/carta/especiales/index.ts
+// File: src/app/dashboard/carta/especiales/pages/index.ts
 // ========================================
 
 // ✅ Páginas principales
-export { default as SpecialesPage } from './pages/SpecialesPage';
-export { default as SpecialesWizardPage } from './pages/SpecialesWizardPage';
-export { default as EspecialesCombinationsPage } from './pages/EspecialesCombinationsPage';
+export { default as SpecialesPage } from './SpecialesPage';
+export { default as SpecialesWizardPage } from './SpecialesWizardPage';
+export { default as EspecialesCombinationsPage } from './EspecialesCombinationsPage';
 
 // ✅ Componentes (cuando los creemos)
 // export { default as SpecialDishCard } from './components/SpecialDishCard';

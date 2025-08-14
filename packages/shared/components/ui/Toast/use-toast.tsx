@@ -1,4 +1,6 @@
 // packages/shared/components/ui/Toast/use-toast.tsx
+"use client";
+// packages/shared/components/ui/Toast/use-toast.tsx
 import React, { useState, useCallback } from 'react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -31,7 +33,7 @@ function updateGlobalState(newState: ToastState) {
 }
 
 export function useToast() {
-  const [state, setState] = useState<ToastState>(globalState);
+  const [_toastState, setState] = useState<ToastState>(globalState);
 
   // Suscribirse a cambios globales
   React.useEffect(() => {
@@ -42,6 +44,12 @@ export function useToast() {
         listeners.splice(index, 1);
       }
     };
+  }, []);
+  const removeToast = useCallback((id: string) => {
+    const newState = {
+      toasts: globalState.toasts.filter(toast => toast.id !== id),
+    };
+    updateGlobalState(newState);
   }, []);
 
   const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
@@ -63,14 +71,7 @@ export function useToast() {
     }, newToast.duration);
 
     return newToast.id;
-  }, []);
-
-  const removeToast = useCallback((id: string) => {
-    const newState = {
-      toasts: globalState.toasts.filter(toast => toast.id !== id),
-    };
-    updateGlobalState(newState);
-  }, []);
+  }, [removeToast]);
 
   const toastMethods = React.useMemo(() => ({
     success: (message: string, title?: string) => 
@@ -84,7 +85,7 @@ export function useToast() {
   }), [addToast]);
 
   return {
-    toasts: state.toasts,
+    toasts: _toastState.toasts,
     toast: toastMethods,
     removeToast,
   };

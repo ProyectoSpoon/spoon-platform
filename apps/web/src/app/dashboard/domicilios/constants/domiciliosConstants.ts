@@ -23,12 +23,12 @@ export const ESTADOS_LABELS = {
 } as const;
 
 export const ESTADOS_COLORS = {
-  [ESTADOS_PEDIDO.RECIBIDO]: 'bg-yellow-100 text-yellow-800',
-  [ESTADOS_PEDIDO.COCINANDO]: 'bg-blue-100 text-blue-800',
-  [ESTADOS_PEDIDO.LISTO]: 'bg-green-100 text-green-800',
-  [ESTADOS_PEDIDO.ENVIADO]: 'bg-purple-100 text-purple-800',
-  [ESTADOS_PEDIDO.ENTREGADO]: 'bg-indigo-100 text-indigo-800',
-  [ESTADOS_PEDIDO.PAGADO]: 'bg-gray-100 text-gray-800'
+  [ESTADOS_PEDIDO.RECIBIDO]: 'bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-800)]',
+  [ESTADOS_PEDIDO.COCINANDO]: 'bg-[color:var(--sp-info-100)] text-[color:var(--sp-info-800)]',
+  [ESTADOS_PEDIDO.LISTO]: 'bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)]',
+  [ESTADOS_PEDIDO.ENVIADO]: 'bg-[color:var(--sp-info-100)] text-[color:var(--sp-info-800)]',
+  [ESTADOS_PEDIDO.ENTREGADO]: 'bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-800)]',
+  [ESTADOS_PEDIDO.PAGADO]: 'bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-800)]'
 } as const;
 
 // ✅ ESTADOS DE DOMICILIARIOS
@@ -45,9 +45,9 @@ export const DOMICILIARIO_LABELS = {
 } as const;
 
 export const DOMICILIARIO_COLORS = {
-  [ESTADOS_DOMICILIARIO.DISPONIBLE]: 'bg-green-100 text-green-800',
-  [ESTADOS_DOMICILIARIO.OCUPADO]: 'bg-red-100 text-red-800',
-  [ESTADOS_DOMICILIARIO.DESCONECTADO]: 'bg-gray-100 text-gray-800'
+  [ESTADOS_DOMICILIARIO.DISPONIBLE]: 'bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)]',
+  [ESTADOS_DOMICILIARIO.OCUPADO]: 'bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)]',
+  [ESTADOS_DOMICILIARIO.DESCONECTADO]: 'bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-800)]'
 } as const;
 
 // ✅ ICONOS POR ESTADO

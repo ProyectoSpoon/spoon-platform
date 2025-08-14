@@ -20,7 +20,10 @@ export const ESTADOS_FUERA_SERVICIO: MesaEstado[] = ['inactiva', 'mantenimiento'
 // Transiciones válidas de estado
 export const TRANSICIONES_VALIDAS: Record<MesaEstado, MesaEstado[]> = {
   libre: ['ocupada', 'reservada', 'inactiva', 'mantenimiento'],
-  ocupada: ['libre'], // Solo libre después de cobrar
+  ocupada: ['en_cocina', 'por_cobrar', 'libre'],
+  en_cocina: ['servida', 'por_cobrar', 'ocupada'],
+  servida: ['por_cobrar', 'ocupada'],
+  por_cobrar: ['libre'],
   reservada: ['ocupada', 'libre', 'inactiva'],
   inactiva: ['libre'],
   mantenimiento: ['libre']
@@ -30,15 +33,21 @@ export const TRANSICIONES_VALIDAS: Record<MesaEstado, MesaEstado[]> = {
 export const ICONOS_ESTADO: Record<MesaEstado, string> = {
   libre: '✅',
   ocupada: '🔴',
+  en_cocina: '👨‍🍳',
+  servida: '🍽️',
+  por_cobrar: '💵',
   reservada: '📅',
   inactiva: '❌',
-  mantenimiento: '🔧'
+  mantenimiento: '�️'
 };
 
 // Acciones disponibles por estado
 export const ACCIONES_POR_ESTADO: Record<MesaEstado, string[]> = {
   libre: ['crear_orden', 'reservar', 'inactivar', 'mantenimiento'],
-  ocupada: ['cobrar', 'editar_orden', 'eliminar_orden'],
+  ocupada: ['enviar_a_cocina', 'editar_orden', 'eliminar_orden', 'cobrar'],
+  en_cocina: ['marcar_servida', 'cobrar'],
+  servida: ['cobrar'],
+  por_cobrar: ['cobrar', 'cancelar_cuenta'],
   reservada: ['crear_orden', 'liberar_reserva', 'inactivar'],
   inactiva: ['activar'],
   mantenimiento: ['activar', 'actualizar_notas']

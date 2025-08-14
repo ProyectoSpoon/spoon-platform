@@ -231,17 +231,17 @@ export default function InformacionGeneralPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[--sp-surface] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando información...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--sp-primary-600)] mx-auto mb-4"></div>
+          <p className="text-[color:var(--sp-neutral-600)]">Cargando información...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+  <div className="min-h-screen bg-[--sp-surface] p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Header */}
@@ -257,7 +257,7 @@ export default function InformacionGeneralPage() {
               </Button>
               
               <div className="text-center flex-1">
-                <span className="text-sm text-gray-500 font-medium">Paso 1 de 4</span>
+                <span className="text-sm text-[color:var(--sp-neutral-500)] font-medium">Paso 1 de 4</span>
               </div>
               
               <div className="w-20"></div>
@@ -266,11 +266,11 @@ export default function InformacionGeneralPage() {
             <CardTitle>
               Información General
             </CardTitle>
-            <p className="text-gray-600">
+            <p className="text-[color:var(--sp-neutral-600)]">
               Empecemos con los datos básicos de tu restaurante
             </p>
             {userInfo && (
-              <p className="text-xs text-blue-600 mt-2">
+              <p className="text-xs text-[color:var(--sp-info-600)] mt-2">
                 👤 {userInfo.email} • {restaurantId ? `Editando restaurante` : 'Nuevo restaurante'}
               </p>
             )}
@@ -282,7 +282,7 @@ export default function InformacionGeneralPage() {
           <CardContent>
             <div className="space-y-8">
               {/* Nombre del restaurante */}
-              <div className="pb-2 border-b border-gray-200">
+              <div className="pb-2 border-b border-[color:var(--sp-neutral-200)]">
                 <Input
                   label="Nombre del Restaurante *"
                   name="name"
@@ -290,7 +290,7 @@ export default function InformacionGeneralPage() {
                   onChange={handleInputChange}
                   placeholder="Ej: Restaurante Doña María, El Rincón de la Abuela..."
                   leftIcon={
-                    <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 text-[color:var(--sp-primary-600)]" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.84L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.84l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
                     </svg>
                   }
@@ -299,7 +299,7 @@ export default function InformacionGeneralPage() {
               </div>
 
               {/* Contacto */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2 pb-2 border-b border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2 pb-2 border-b border-[color:var(--sp-neutral-200)]">
                 <div>
                   <Input
                     label={`Teléfono del Restaurante * ${isPhonePreFilled ? '(Pre-llenado)' : ''}`}
@@ -309,7 +309,7 @@ export default function InformacionGeneralPage() {
                     onChange={handleInputChange}
                     placeholder="Ej: +57 312 345 6789"
                     leftIcon={
-                      <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-[color:var(--sp-primary-600)]" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
                       </svg>
                     }
@@ -330,7 +330,7 @@ export default function InformacionGeneralPage() {
                     onChange={handleInputChange}
                     placeholder="Ej: contacto@restaurante.com"
                     leftIcon={
-                      <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-[color:var(--sp-primary-600)]" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
                         <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
                       </svg>
@@ -345,9 +345,9 @@ export default function InformacionGeneralPage() {
               </div>
 
               {/* Tipo de cocina */}
-              <div className="pt-2 pb-2 border-b border-gray-200">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <svg className="inline w-5 h-5 text-orange-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <div className="pt-2 pb-2 border-b border-[color:var(--sp-neutral-200)]">
+                <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">
+          <svg className="inline w-5 h-5 text-[color:var(--sp-primary-600)] mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
                   </svg>
                   Tipo de Cocina
@@ -356,7 +356,7 @@ export default function InformacionGeneralPage() {
                   name="cuisineType"
                   value={formData.cuisineType}
                   onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="w-full p-3 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
                 >
                   <option value="">Selecciona qué tipo de comida ofreces</option>
                   {cuisineTypes.map(type => (
@@ -365,11 +365,11 @@ export default function InformacionGeneralPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[color:var(--sp-neutral-500)] mt-1">
                   Esto ayuda a los clientes a encontrar exactamente lo que buscan
                 </p>
                 {cuisineTypes.length === 0 && (
-                  <p className="text-xs text-orange-600 mt-1">
+                  <p className="text-xs text-[color:var(--sp-warning-700)] mt-1">
                     ⚠️ No se pudieron cargar los tipos de cocina. Intenta recargar la página.
                   </p>
                 )}
@@ -377,7 +377,7 @@ export default function InformacionGeneralPage() {
 
               {/* Descripción */}
               <div className="pt-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">
                   Descripción del Restaurante (Opcional)
                 </label>
                 <textarea
@@ -386,9 +386,9 @@ export default function InformacionGeneralPage() {
                   onChange={handleInputChange}
                   placeholder="Cuéntanos sobre tu restaurante: ¿qué lo hace especial? ¿Cuál es tu plato estrella? ¿Qué ambiente ofreces?"
                   rows={4}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="w-full p-3 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[color:var(--sp-neutral-500)] mt-1">
                   Una buena descripción ayuda a los clientes a conocer tu restaurante antes de visitarlo
                 </p>
               </div>
@@ -409,7 +409,7 @@ export default function InformacionGeneralPage() {
                 ← Configuración
               </Button>
               
-              <Button
+      <Button
                 onClick={handleSave}
                 disabled={saving || !isFormValid}
                 loading={saving}
@@ -418,7 +418,7 @@ export default function InformacionGeneralPage() {
               >
                 {saving ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[--sp-on-primary]"></div>
                     Guardando...
                   </>
                 ) : isFormValid ? (
@@ -429,11 +429,11 @@ export default function InformacionGeneralPage() {
               </Button>
             </div>
             {!isFormValid && (
-              <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <p className="text-sm text-orange-700">
+              <div className="mt-3 p-3 bg-[color:var(--sp-warning-50)] border border-[color:var(--sp-warning-200)] rounded-lg">
+                <p className="text-sm text-[color:var(--sp-warning-700)]">
                   📝 <strong>Campos obligatorios:</strong>
                 </p>
-                <ul className="text-xs text-orange-600 mt-1 space-y-1">
+                <ul className="text-xs text-[color:var(--sp-warning-600)] mt-1 space-y-1">
                   {!formData.name.trim() && <li>• Nombre del restaurante</li>}
                   {!formData.phone.trim() && <li>• Teléfono de contacto</li>}
                   {!formData.email.trim() && <li>• Email de contacto</li>}
@@ -444,18 +444,18 @@ export default function InformacionGeneralPage() {
         </Card>
 
         {/* Progreso visual mejorado */}
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-[color:var(--sp-info-50)] border-[color:var(--sp-info-200)]">
           <CardContent>
             <div className="flex items-center gap-3">
-              <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-8 h-8 text-[color:var(--sp-info-600)]" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.84L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.84l-7-3z"/>
               </svg>
               <div>
-                <h3 className="font-bold text-blue-800">Información Básica</h3>
-                <p className="text-sm text-blue-700">
+                <h3 className="font-bold text-[color:var(--sp-info-800)]">Información Básica</h3>
+                <p className="text-sm text-[color:var(--sp-info-700)]">
                   Esta información aparecerá en tu perfil público y ayudará a los clientes a encontrarte y contactarte.
                 </p>
-                <div className="flex items-center gap-4 text-xs text-blue-600 mt-2">
+                <div className="flex items-center gap-4 text-xs text-[color:var(--sp-info-600)] mt-2">
                   {cuisineTypes.length > 0 && (
                     <span>✅ {cuisineTypes.length} tipos de cocina disponibles</span>
                   )}

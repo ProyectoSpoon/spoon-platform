@@ -98,15 +98,15 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
     <div className="space-y-6">
       {/* ✅ TABLA DE PRODUCTOS SELECCIONADOS */}
       {totalProducts > 0 ? (
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="bg-[--sp-surface] rounded-lg shadow-sm">
+          <div className="px-6 py-4 border-b border-[color:var(--sp-neutral-200)] flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-medium text-gray-900">Productos del Menú</h3>
-              <p className="text-sm text-gray-600 mt-1">
+              <h3 className="text-lg font-medium text-[color:var(--sp-neutral-900)]">Productos del Menú</h3>
+              <p className="text-sm text-[color:var(--sp-neutral-600)] mt-1">
                 {totalProducts} productos seleccionados en {totalCategories} categorías
               </p>
               {hasUnsavedChanges && (
-                <div className="mt-2 flex items-center gap-2 text-amber-600 text-sm">
+                <div className="mt-2 flex items-center gap-2 text-[color:var(--sp-warning-600)] text-sm">
                   <AlertTriangle className="h-4 w-4" />
                   Hay cambios sin guardar
                 </div>
@@ -117,7 +117,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
               <button
                 onClick={handleSaveMenu}
                 disabled={loadingStates.saving || !hasUnsavedChanges}
-                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center px-4 py-2 bg-[color:var(--sp-success-600)] text-[--sp-on-success] rounded-lg hover:bg-[color:var(--sp-success-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loadingStates.saving ? (
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -129,7 +129,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
               
               <button
                 onClick={handleExportMenu}
-                className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center px-4 py-2 border border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] rounded-lg hover:bg-[color:var(--sp-neutral-50)] transition-colors"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Exportar
@@ -137,7 +137,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
               
               <button
                 onClick={onOpenWizard}
-                className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                className="flex items-center px-4 py-2 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] rounded-lg hover:bg-[color:var(--sp-primary-700)] transition-colors"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Editar Menú
@@ -147,64 +147,64 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
           
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-[color:var(--sp-neutral-50)]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[color:var(--sp-neutral-500)] uppercase tracking-wider">
                     Producto
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[color:var(--sp-neutral-500)] uppercase tracking-wider">
                     Categoría del Menú
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[color:var(--sp-neutral-500)] uppercase tracking-wider">
                     Precio Base
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[color:var(--sp-neutral-500)] uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-[--sp-surface] divide-y divide-[color:var(--sp-neutral-200)]">
                 {Object.entries(selectedProducts).map(([categoryId, productos]: [string, Producto[]]) =>
                   productos.map((producto) => {
                     const categoryName = CATEGORIAS_MENU_CONFIG.find(cat => cat.id === categoryId)?.nombre || categoryId;
                     
                     return (
-                      <tr key={`${categoryId}-${producto.id}`} className="hover:bg-gray-50">
+                      <tr key={`${categoryId}-${producto.id}`} className="hover:bg-[color:var(--sp-neutral-50)]">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                                <span className="text-sm font-medium text-orange-600">
+                              <div className="h-10 w-10 rounded-full bg-[color:var(--sp-primary-100)] flex items-center justify-center">
+                                <span className="text-sm font-medium text-[color:var(--sp-primary-600)]">
                                   {getIconForCategory(categoryName)}
                                 </span>
                               </div>
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-sm font-medium text-[color:var(--sp-neutral-900)]">
                                 {producto.name}
                               </div>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-[color:var(--sp-neutral-500)]">
                                 {producto.description}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-800)]">
                             {categoryName}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[color:var(--sp-neutral-900)]">
                           ${(producto.price || producto.suggested_price_min || 0).toLocaleString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center gap-3">
-                            <button className="text-indigo-600 hover:text-indigo-900 transition-colors">
+                            <button className="text-[color:var(--sp-info-600)] hover:text-[color:var(--sp-info-900)] transition-colors">
                               <Eye className="h-4 w-4" />
                             </button>
                             <button 
                               onClick={() => handleRemoveProduct(categoryId, producto.id)}
-                              className="text-red-600 hover:text-red-900 transition-colors"
+                              className="text-[color:var(--sp-error-600)] hover:text-[color:var(--sp-error-900)] transition-colors"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -220,21 +220,21 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
         </div>
       ) : (
         /* ✅ ESTADO VACÍO */
-        <div className="bg-white rounded-lg shadow-sm p-12">
+  <div className="bg-[--sp-surface] rounded-lg shadow-sm p-12">
           <div className="text-center">
-            <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Plus className="w-12 h-12 text-orange-600" />
+            <div className="w-24 h-24 bg-[color:var(--sp-primary-100)] rounded-full flex items-center justify-center mx-auto mb-6">
+              <Plus className="w-12 h-12 text-[color:var(--sp-primary-600)]" />
             </div>
-            <h3 className="heading-section text-gray-900 mb-4">
+            <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-4">
               No hay productos seleccionados
             </h3>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            <p className="text-[color:var(--sp-neutral-600)] mb-8 max-w-md mx-auto">
               Usa el asistente paso a paso para seleccionar productos de cada categoría y crear tu menú del día. 
               Las combinaciones se generarán automáticamente.
             </p>
             <button
               onClick={onOpenWizard}
-              className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+              className="px-6 py-3 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] rounded-lg hover:bg-[color:var(--sp-primary-700)] transition-colors"
             >
               Crear Menú del Día
             </button>
@@ -244,13 +244,13 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
 
       {/* ✅ LOADING OVERLAY */}
       {loadingStates.saving && (
-        <div className="fixed inset-0 z-40 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-            <h3 className="heading-section text-gray-900 mb-2">
+        <div className="fixed inset-0 z-40 bg-[--sp-overlay] backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-[--sp-surface-elevated] rounded-xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--sp-primary-600)] mx-auto mb-4"></div>
+            <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-2">
               Guardando menú...
             </h3>
-            <p className="text-gray-600 text-sm">
+            <p className="text-[color:var(--sp-neutral-600)] text-sm">
               Estamos guardando tu configuración de menú.
             </p>
           </div>

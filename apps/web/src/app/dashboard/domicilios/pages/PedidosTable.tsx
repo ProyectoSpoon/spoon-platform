@@ -86,11 +86,11 @@ export default function PedidosTable({
 
   if (pedidos.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-        <h3 className="heading-section text-gray-900 mb-2">
+      <div className="bg-[--sp-surface-elevated] rounded-lg shadow-sm p-12 text-center">
+  <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-2">
           No hay pedidos hoy
         </h3>
-        <p className="text-gray-600">
+  <p className="text-[color:var(--sp-neutral-600)]">
           Los pedidos apareceran aqui cuando los clientes realicen ordenes.
         </p>
       </div>
@@ -98,14 +98,14 @@ export default function PedidosTable({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="heading-section text-gray-900">
+    <div className="bg-[--sp-surface-elevated] rounded-lg shadow-sm overflow-hidden">
+      <div className="px-6 py-4 border-b border-[color:var(--sp-neutral-200)]">
+        <h3 className="heading-section text-[color:var(--sp-neutral-900)]">
           Pedidos de Hoy ({pedidos.length})
         </h3>
       </div>
 
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-[color:var(--sp-neutral-200)]">
         {pedidos.map((pedido) => {
           const isExpanded = pedidoExpandido === pedido.id;
           const siguientesEstados = getSiguientesEstados(pedido.status);
@@ -119,14 +119,14 @@ export default function PedidosTable({
                   
                   <button
                     onClick={() => setPedidoExpandido(isExpanded ? null : pedido.id)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-[color:var(--sp-neutral-400)] hover:text-[color:var(--sp-neutral-600)]"
                   >
                     {isExpanded ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
 
                   <div>
                     <div className="flex items-center space-x-3">
-                      <h4 className="font-semibold text-gray-900">
+                      <h4 className="font-semibold text-[color:var(--sp-neutral-900)]">
                         {pedido.customer_name}
                       </h4>
                       <span className={'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + ESTADOS_COLORS[pedido.status]}>
@@ -134,7 +134,7 @@ export default function PedidosTable({
                       </span>
                     </div>
                     
-                    <div className="flex items-center text-sm text-gray-600 mt-1">
+                    <div className="flex items-center text-sm text-[color:var(--sp-neutral-600)] mt-1">
                       <Clock className="w-4 h-4 mr-1" />
                       <span>{formatearTiempo(pedido.created_at)} • Hace {tiempoTranscurrido}</span>
                       
@@ -146,10 +146,10 @@ export default function PedidosTable({
 
                 <div className="flex items-center space-x-3">
                   <div className="text-right">
-                    <p className="value-number text-gray-900">
+                    <p className="value-number text-[color:var(--sp-neutral-900)]">
                       ${Math.round((pedido.total_amount + pedido.delivery_fee) / 100).toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-[color:var(--sp-neutral-500)]">
                       {pedido.order_items.length} items
                     </p>
                   </div>
@@ -160,7 +160,7 @@ export default function PedidosTable({
                         {estado === ESTADOS_PEDIDO.ENVIADO ? (
                           <select
                             onChange={(e) => handleCambiarEstado(pedido.id, estado, e.target.value)}
-                            className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500"
+                            className="px-3 py-1 text-sm border border-[color:var(--sp-neutral-300)] rounded-md focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
                             disabled={loading.actualizando_estado}
                           >
                             <option value="">Asignar domiciliario</option>
@@ -173,7 +173,7 @@ export default function PedidosTable({
                         ) : estado === ESTADOS_PEDIDO.PAGADO ? (
                           <button
                             onClick={() => setPedidoParaPago(pedido.id)}
-                            className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50"
+                            className="px-3 py-1 bg-[color:var(--sp-success-600)] text-[--sp-on-success] text-sm rounded-md hover:bg-[color:var(--sp-success-700)] disabled:opacity-50"
                             disabled={loading.registrando_pago || !pedido.assigned_delivery_person_id}
                           >
                             <DollarSign className="w-4 h-4 inline mr-1" />
@@ -182,7 +182,7 @@ export default function PedidosTable({
                         ) : (
                           <button
                             onClick={() => handleCambiarEstado(pedido.id, estado)}
-                            className="px-3 py-1 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 disabled:opacity-50"
+                            className="px-3 py-1 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] text-sm rounded-md hover:bg-[color:var(--sp-primary-700)] disabled:opacity-50"
                             disabled={loading.actualizando_estado}
                           >
                             {ESTADOS_LABELS[estado]}
@@ -195,32 +195,32 @@ export default function PedidosTable({
               </div>
 
               {isExpanded && (
-                <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
+                <div className="mt-4 pt-4 border-t border-[color:var(--sp-neutral-100)] space-y-4">
                   
                   <div className="flex items-start space-x-2">
-                    <MapPin className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <MapPin className="w-5 h-5 text-[color:var(--sp-neutral-400)] mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Direccion:</p>
-                      <p className="text-sm text-gray-600">{pedido.delivery_address}</p>
+                      <p className="text-sm font-medium text-[color:var(--sp-neutral-900)]">Direccion:</p>
+                      <p className="text-sm text-[color:var(--sp-neutral-600)]">{pedido.delivery_address}</p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-gray-900 mb-2">Items del pedido:</p>
+                    <p className="text-sm font-medium text-[color:var(--sp-neutral-900)] mb-2">Items del pedido:</p>
                     <div className="space-y-2">
                       {pedido.order_items.map((item, index) => (
-                        <div key={index} className="bg-gray-50 rounded-md p-3">
+                        <div key={index} className="bg-[color:var(--sp-neutral-50)] rounded-md p-3">
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
-                              <p className="font-medium text-gray-900">
+                              <p className="font-medium text-[color:var(--sp-neutral-900)]">
                                 {item.quantity}x {item.combination_name}
                               </p>
                               {item.extras && item.extras.length > 0 && (
                                 <div className="mt-1">
-                                  <p className="text-xs text-gray-600">Extras:</p>
+                                  <p className="text-xs text-[color:var(--sp-neutral-600)]">Extras:</p>
                                   <div className="flex flex-wrap gap-1 mt-1">
                                     {item.extras.map((extra, i) => (
-                                      <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-orange-100 text-orange-800">
+                                      <span key={i} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-800)]">
                                         {extra.nombre}
                                         {extra.precio > 0 && ' (+$' + extra.precio.toLocaleString() + ')'}
                                       </span>
@@ -229,7 +229,7 @@ export default function PedidosTable({
                                 </div>
                               )}
                             </div>
-                            <p className="text-sm font-semibold text-gray-900">
+                            <p className="text-sm font-semibold text-[color:var(--sp-neutral-900)]">
                               ${item.subtotal.toLocaleString()}
                             </p>
                           </div>
@@ -240,10 +240,10 @@ export default function PedidosTable({
 
                   {pedido.assigned_delivery_person && (
                     <div className="flex items-center space-x-2">
-                      <User className="w-5 h-5 text-gray-400" />
+                      <User className="w-5 h-5 text-[color:var(--sp-neutral-400)]" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Domiciliario:</p>
-                        <span className="text-sm text-gray-600">
+                        <p className="text-sm font-medium text-[color:var(--sp-neutral-900)]">Domiciliario:</p>
+                        <span className="text-sm text-[color:var(--sp-neutral-600)]">
                           {pedido.assigned_delivery_person.name}
                         </span>
                       </div>
@@ -252,16 +252,16 @@ export default function PedidosTable({
 
                   {pedido.special_notes && (
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Notas especiales:</p>
-                      <p className="text-sm text-gray-600 bg-yellow-50 p-2 rounded-md mt-1">
+                      <p className="text-sm font-medium text-[color:var(--sp-neutral-900)]">Notas especiales:</p>
+                      <p className="text-sm text-[color:var(--sp-neutral-600)] bg-[color:var(--sp-warning-50)] p-2 rounded-md mt-1">
                         {pedido.special_notes}
                       </p>
                     </div>
                   )}
 
                   <div>
-                    <p className="text-sm font-medium text-gray-900 mb-2">Timeline:</p>
-                    <div className="space-y-1 text-sm text-gray-600">
+                    <p className="text-sm font-medium text-[color:var(--sp-neutral-900)] mb-2">Timeline:</p>
+                    <div className="space-y-1 text-sm text-[color:var(--sp-neutral-600)]">
                       <div className="flex justify-between">
                         <span>Recibido:</span>
                         <span>{formatearTiempo(pedido.created_at)}</span>
@@ -290,16 +290,16 @@ export default function PedidosTable({
               )}
 
               {pedidoParaPago === pedido.id && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                  <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                    <h3 className="heading-section text-gray-900 mb-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[--sp-overlay]">
+                  <div className="bg-[--sp-surface-elevated] rounded-lg p-6 max-w-md w-full mx-4">
+                    <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-4">
                       Registrar Pago
                     </h3>
                     
                     <div className="space-y-4">
                       <div>
-                        <p className="text-sm text-gray-600">Cliente: {pedido.customer_name}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-[color:var(--sp-neutral-600)]">Cliente: {pedido.customer_name}</p>
+                        <p className="text-sm text-[color:var(--sp-neutral-600)]">
                           Total: ${Math.round((pedido.total_amount + pedido.delivery_fee) / 100).toLocaleString()}
                         </p>
                       </div>
@@ -315,7 +315,7 @@ export default function PedidosTable({
                             });
                             setPedidoParaPago(null);
                           }}
-                          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                          className="flex-1 px-4 py-2 bg-[color:var(--sp-success-600)] text-[--sp-on-success] rounded-lg hover:bg-[color:var(--sp-success-700)]"
                         >
                           Efectivo
                         </button>
@@ -330,7 +330,7 @@ export default function PedidosTable({
                             });
                             setPedidoParaPago(null);
                           }}
-                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                          className="flex-1 px-4 py-2 bg-[color:var(--sp-info-600)] text-[--sp-on-info] rounded-lg hover:bg-[color:var(--sp-info-700)]"
                         >
                           Digital
                         </button>
@@ -338,7 +338,7 @@ export default function PedidosTable({
 
                       <button
                         onClick={() => setPedidoParaPago(null)}
-                        className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                        className="w-full px-4 py-2 border border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] rounded-lg hover:bg-[color:var(--sp-neutral-50)]"
                       >
                         Cancelar
                       </button>

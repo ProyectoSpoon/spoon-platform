@@ -59,11 +59,11 @@ export default function DashboardPage() {
     <div className="p-6 space-y-6">
       
       {/* Bienvenida principal */}
-      <div className="bg-gradient-to-r from-orange-50 to-blue-50 rounded-lg border border-orange-200 p-8 text-center">
+  <div className="bg-gradient-to-r from-[color:var(--sp-primary-50)] to-[color:var(--sp-info-50)] rounded-lg border border-[color:var(--sp-primary-200)] p-8 text-center">
         <div className="max-w-2xl mx-auto">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center">
-              <Coffee className="h-8 w-8 text-white" />
+      <div className="flex justify-center mb-4">
+    <div className="w-16 h-16 bg-[color:var(--sp-primary-600)] rounded-full flex items-center justify-center">
+      <Coffee className="h-8 w-8 text-[color:var(--sp-on-primary)]" />
             </div>
           </div>
           
@@ -75,22 +75,22 @@ export default function DashboardPage() {
             Tu plataforma para gestionar tu restaurante y conectar con más comensales
           </p>
           
-          <div className="bg-white/60 rounded-lg p-4 inline-block">
+  <div className="bg-[color:var(--sp-surface-elevated)]/60 rounded-lg p-4 inline-block">
             {mounted ? (
               <>
-                <div className="value-number text-orange-600 mb-1">
+        <div className="value-number text-[color:var(--sp-primary-600)] mb-1">
                   {formatTime(currentTime)}
                 </div>
-                <div className="text-sm text-gray-600 capitalize">
+        <div className="text-sm text-[color:var(--sp-neutral-600)] capitalize">
                   {formatDate(currentTime)}
                 </div>
               </>
             ) : (
               <>
-                <div className="value-number text-orange-600 mb-1">
+        <div className="value-number text-[color:var(--sp-primary-600)] mb-1">
                   --:--:--
                 </div>
-                <div className="text-sm text-gray-600">
+        <div className="text-sm text-[color:var(--sp-neutral-600)]">
                   Cargando fecha...
                 </div>
               </>
@@ -104,20 +104,20 @@ export default function DashboardPage() {
         
         {/* Configuración */}
         <Link href="/dashboard/configuracion" className="group">
-          <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 hover:border-orange-300">
+          <div className="bg-[color:var(--sp-surface-elevated)] rounded-lg border border-[color:var(--sp-border)] p-6 hover:shadow-lg transition-all duration-200 hover:border-[color:var(--sp-primary-300)]">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
-                <Settings className="h-6 w-6 text-orange-600" />
+              <div className="p-3 bg-[color:var(--sp-primary-100)] rounded-lg group-hover:bg-[color:var(--sp-primary-200)] transition-colors">
+                <Settings className="h-6 w-6 text-[color:var(--sp-primary-600)]" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Configuración</h3>
-                <p className="text-sm text-gray-600">Configura tu restaurante</p>
+                <h3 className="font-semibold text-[color:var(--sp-neutral-900)]">Configuración</h3>
+                <p className="text-sm text-[color:var(--sp-neutral-600)]">Configura tu restaurante</p>
               </div>
             </div>
-            <p className="text-gray-700 text-sm">
+            <p className="text-[color:var(--sp-neutral-700)] text-sm">
               Completa la información de tu restaurante, horarios, ubicación y más.
             </p>
-            <div className="mt-4 flex items-center text-orange-600 text-sm font-medium group-hover:text-orange-700">
+            <div className="mt-4 flex items-center text-[color:var(--sp-primary-600)] text-sm font-medium group-hover:text-[color:var(--sp-primary-700)]">
               Ir a configuración
               <ExternalLink className="h-4 w-4 ml-1" />
             </div>
@@ -125,75 +125,75 @@ export default function DashboardPage() {
         </Link>
 
         {/* Menú Diario */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 opacity-60">
+  <div className="bg-[color:var(--sp-surface-elevated)] rounded-lg border border-[color:var(--sp-border)] p-6 opacity-60">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Menu className="h-6 w-6 text-blue-600" />
+            <div className="p-3 bg-[color:var(--sp-info-100)] rounded-lg">
+              <Menu className="h-6 w-6 text-[color:var(--sp-info-600)]" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Menú Diario</h3>
-              <p className="text-sm text-gray-600">Próximamente</p>
+              <h3 className="font-semibold text-[color:var(--sp-neutral-900)]">Menú Diario</h3>
+              <p className="text-sm text-[color:var(--sp-neutral-600)]">Próximamente</p>
             </div>
           </div>
-          <p className="text-gray-700 text-sm">
+          <p className="text-[color:var(--sp-neutral-700)] text-sm">
             Configura los platos disponibles para hoy y aparece en búsquedas.
           </p>
-          <div className="mt-4 text-gray-400 text-sm">
+          <div className="mt-4 text-[color:var(--sp-neutral-400)] text-sm">
             Disponible pronto
           </div>
         </div>
 
         {/* Analytics */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 opacity-60">
+  <div className="bg-[color:var(--sp-surface-elevated)] rounded-lg border border-[color:var(--sp-border)] p-6 opacity-60">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <Eye className="h-6 w-6 text-green-600" />
+            <div className="p-3 bg-[color:var(--sp-success-100)] rounded-lg">
+              <Eye className="h-6 w-6 text-[color:var(--sp-success-600)]" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Analytics</h3>
-              <p className="text-sm text-gray-600">Próximamente</p>
+              <h3 className="font-semibold text-[color:var(--sp-neutral-900)]">Analytics</h3>
+              <p className="text-sm text-[color:var(--sp-neutral-600)]">Próximamente</p>
             </div>
           </div>
-          <p className="text-gray-700 text-sm">
+          <p className="text-[color:var(--sp-neutral-700)] text-sm">
             Ve las estadísticas de búsquedas, visitas y rendimiento de tu restaurante.
           </p>
-          <div className="mt-4 text-gray-400 text-sm">
+          <div className="mt-4 text-[color:var(--sp-neutral-400)] text-sm">
             Disponible pronto
           </div>
         </div>
       </div>
 
       {/* Estado actual */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+  <div className="bg-[color:var(--sp-surface-elevated)] rounded-lg border border-[color:var(--sp-border)] p-6">
   <h2 className="heading-section mb-4">Estado Actual</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="p-4 bg-[color:var(--sp-warning-50)] border border-[color:var(--sp-warning-200)] rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-              <span className="font-medium text-yellow-900">Configuración</span>
+              <AlertCircle className="h-5 w-5 text-[color:var(--sp-warning-600)]" />
+              <span className="font-medium text-[color:var(--sp-warning-900)]">Configuración</span>
             </div>
-            <p className="text-sm text-yellow-700">
+            <p className="text-sm text-[color:var(--sp-warning-700)]">
               Completa la configuración de tu restaurante para empezar
             </p>
           </div>
 
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="p-4 bg-[color:var(--sp-error-50)] border border-[color:var(--sp-error-200)] rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <span className="font-medium text-red-900">Menú</span>
+              <AlertCircle className="h-5 w-5 text-[color:var(--sp-error-600)]" />
+              <span className="font-medium text-[color:var(--sp-error-900)]">Menú</span>
             </div>
-            <p className="text-sm text-red-700">
+            <p className="text-sm text-[color:var(--sp-error-700)]">
               Sin menú configurado para hoy
             </p>
           </div>
 
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="p-4 bg-[color:var(--sp-neutral-50)] border border-[color:var(--sp-neutral-200)] rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <Eye className="h-5 w-5 text-gray-600" />
-              <span className="font-medium text-gray-900">Visibilidad</span>
+              <Eye className="h-5 w-5 text-[color:var(--sp-neutral-600)]" />
+              <span className="font-medium text-[color:var(--sp-neutral-900)]">Visibilidad</span>
             </div>
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-[color:var(--sp-neutral-700)]">
               No visible en búsquedas aún
             </p>
           </div>
@@ -201,19 +201,19 @@ export default function DashboardPage() {
       </div>
 
       {/* Información de SPOON */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+  <div className="bg-[color:var(--sp-surface-elevated)] rounded-lg border border-[color:var(--sp-border)] p-6">
   <h2 className="heading-section mb-4">Acerca de SPOON</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h3 className="font-medium text-gray-900 mb-2">¿Qué es SPOON?</h3>
-            <p className="text-sm text-gray-700 mb-4">
+            <h3 className="font-medium text-[color:var(--sp-neutral-900)] mb-2">¿Qué es SPOON?</h3>
+            <p className="text-sm text-[color:var(--sp-neutral-700)] mb-4">
               SPOON es tu socio tecnológico que te ayuda a vender más con nuestro menú digital gratuito, 
               y luego usa esa información para que ahorres tiempo y dinero comprando tus insumos.
             </p>
             
-            <h4 className="font-medium text-gray-900 mb-2">¿Cómo funciona?</h4>
-            <ul className="text-sm text-gray-700 space-y-1">
+            <h4 className="font-medium text-[color:var(--sp-neutral-900)] mb-2">¿Cómo funciona?</h4>
+            <ul className="text-sm text-[color:var(--sp-neutral-700)] space-y-1">
               <li>• Configuras tu restaurante y menú diario</li>
               <li>• Los comensales te encuentran cuando buscan comida</li>
               <li>• Analizamos tu demanda para optimizar compras</li>
@@ -222,29 +222,29 @@ export default function DashboardPage() {
           </div>
           
           <div>
-            <h3 className="font-medium text-gray-900 mb-2">Beneficios para tu restaurante</h3>
+            <h3 className="font-medium text-[color:var(--sp-neutral-900)] mb-2">Beneficios para tu restaurante</h3>
             <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="h-5 w-5 text-[color:var(--sp-success-500)] mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Más clientes</p>
-                  <p className="text-xs text-gray-600">Aparece cuando buscan tu tipo de comida</p>
+                  <p className="text-sm font-medium text-[color:var(--sp-neutral-900)]">Más clientes</p>
+                  <p className="text-xs text-[color:var(--sp-neutral-600)]">Aparece cuando buscan tu tipo de comida</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="h-5 w-5 text-[color:var(--sp-success-500)] mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Ahorro en compras</p>
-                  <p className="text-xs text-gray-600">Mejores precios en insumos basados en tu demanda</p>
+                  <p className="text-sm font-medium text-[color:var(--sp-neutral-900)]">Ahorro en compras</p>
+                  <p className="text-xs text-[color:var(--sp-neutral-600)]">Mejores precios en insumos basados en tu demanda</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="h-5 w-5 text-[color:var(--sp-success-500)] mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Gratis para empezar</p>
-                  <p className="text-xs text-gray-600">Sin costos iniciales, pagas solo cuando vendes más</p>
+                  <p className="text-sm font-medium text-[color:var(--sp-neutral-900)]">Gratis para empezar</p>
+                  <p className="text-xs text-[color:var(--sp-neutral-600)]">Sin costos iniciales, pagas solo cuando vendes más</p>
                 </div>
               </div>
             </div>
@@ -253,7 +253,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Footer motivacional */}
-      <div className="bg-gradient-to-r from-orange-600 to-blue-600 rounded-lg p-6 text-white text-center">
+  <div className="bg-gradient-to-r from-[color:var(--sp-primary-600)] to-[color:var(--sp-info-600)] rounded-lg p-6 text-[color:var(--sp-on-primary)] text-center">
         <div className="flex justify-center mb-3">
           <Heart className="h-6 w-6" />
         </div>

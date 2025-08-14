@@ -23,17 +23,17 @@ export const MesaDetailsHeader: React.FC<MesaDetailsHeaderProps> = ({
   
   const getColorClasses = () => {
     const colorMap = {
-      green: 'bg-green-600',
-      red: 'bg-red-600', 
-      yellow: 'bg-yellow-600',
-      gray: 'bg-gray-700',
-      orange: 'bg-orange-600'
-    };
-    return colorMap[estadoDisplay.color as keyof typeof colorMap] || 'bg-gray-600';
+      green: 'bg-[color:var(--sp-success-600)]',
+      red: 'bg-[color:var(--sp-error-600)]', 
+      yellow: 'bg-[color:var(--sp-warning-600)]',
+      gray: 'bg-[color:var(--sp-neutral-700)]',
+      orange: 'bg-[color:var(--sp-warning-600)]'
+    } as const;
+    return colorMap[estadoDisplay.color as keyof typeof colorMap] || 'bg-[color:var(--sp-neutral-600)]';
   };
 
   return (
-    <div className={`${getColorClasses()} text-white p-4 flex justify-between items-center`}>
+    <div className={`${getColorClasses()} text-[--sp-on-primary] p-4 flex justify-between items-center`}>
       <div className="flex items-center gap-3">
         <div>
           <h2 className="text-lg font-bold">
@@ -54,7 +54,7 @@ export const MesaDetailsHeader: React.FC<MesaDetailsHeaderProps> = ({
       
       <button
         onClick={onClose}
-        className="text-white hover:text-gray-300 transition-colors p-1"
+        className="text-[--sp-on-primary] hover:opacity-90 transition-colors p-1"
         aria-label="Cerrar panel de detalles"
       >
         <X className="h-5 w-5" />

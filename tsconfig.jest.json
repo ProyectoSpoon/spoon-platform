@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "lib": ["dom", "es2019"],
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": false,
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@spoon/shared/*": ["packages/shared/*"],
+      "@/*": ["apps/web/src/*"]
+    },
+    "types": ["jest", "node", "@testing-library/jest-dom"]
+  },
+  "include": [
+    "packages/shared/**/*.ts",
+    "packages/shared/**/*.tsx",
+    "apps/web/src/**/*.ts",
+    "apps/web/src/**/*.tsx",
+    "jest.setup.js"
+  ]
+}

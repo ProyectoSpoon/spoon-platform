@@ -16,21 +16,21 @@ export const SidebarResumen: React.FC<{
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        <Card><CardContent className="p-4"><p className="text-xs text-gray-500">BALANCE</p><p className="text-xl font-bold text-blue-700">{fmt(balance)}</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-xs text-gray-500">VENTAS</p><p className="text-xl font-bold text-green-700">{fmt(ventas)}</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-xs text-gray-500">GASTOS</p><p className="text-xl font-bold text-red-700">{fmt(gastos)}</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-xs text-gray-500">ÓRDENES</p><p className="text-xl font-bold text-purple-700">{ordenes}</p></CardContent></Card>
+  <Card><CardContent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">BALANCE</p><p className="text-xl font-bold text-[color:var(--sp-info-700)]">{fmt(balance)}</p></CardContent></Card>
+  <Card><CardContent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">VENTAS</p><p className="text-xl font-bold text-[color:var(--sp-success-700)]">{fmt(ventas)}</p></CardContent></Card>
+  <Card><CardContent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">GASTOS</p><p className="text-xl font-bold text-[color:var(--sp-error-700)]">{fmt(gastos)}</p></CardContent></Card>
+  <Card><CardContent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">ÓRDENES</p><p className="text-xl font-bold text-[color:var(--sp-primary-700)]">{ordenes}</p></CardContent></Card>
       </div>
 
       {estadisticas.length > 0 && (
         <Card>
           <CardContent className="p-4 space-y-2">
             <p className="text-sm font-semibold">📊 Estadísticas Rápidas</p>
-            <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3">
               {estadisticas.map((e, i) => (
                 <div key={i} className="text-xs">
-                  <p className="text-gray-500">{e.label}</p>
-                  <p className="font-medium text-gray-800">{e.value}</p>
+      <p className="text-[color:var(--sp-neutral-500)]">{e.label}</p>
+      <p className="font-medium text-[color:var(--sp-neutral-800)]">{e.value}</p>
                 </div>
               ))}
             </div>
@@ -43,7 +43,7 @@ export const SidebarResumen: React.FC<{
           <CardContent className="p-4 space-y-2">
             <p className="text-sm font-semibold">⚠️ Alertas y Notificaciones</p>
             {alertas.map((a, i) => (
-              <div key={i} className={`text-xs px-3 py-2 rounded border ${a.tipo==='warning'?'bg-blue-50 border-blue-200 text-blue-800': a.tipo==='success'?'bg-green-50 border-green-200 text-green-800':'bg-gray-50 border-gray-200 text-gray-700'}`}>
+              <div key={i} className={`text-xs px-3 py-2 rounded border ${a.tipo==='warning'?'bg-[color:var(--sp-warning-50)] border-[color:var(--sp-warning-200)] text-[color:var(--sp-warning-800)]': a.tipo==='success'?'bg-[color:var(--sp-success-50)] border-[color:var(--sp-success-200)] text-[color:var(--sp-success-800)]':'bg-[color:var(--sp-neutral-50)] border-[color:var(--sp-neutral-200)] text-[color:var(--sp-neutral-700)]'}`}>
                 {a.label}
               </div>
             ))}
@@ -58,8 +58,8 @@ export const SidebarResumen: React.FC<{
             <div className="space-y-2 text-sm">
               {actividad.map((r, i) => (
                 <div key={i} className="flex items-center justify-between">
-                  <span className="text-gray-700">{r.label}</span>
-                  {r.value && <span className="text-green-700 font-medium">{r.value}</span>}
+                  <span className="text-[color:var(--sp-neutral-700)]">{r.label}</span>
+                  {r.value && <span className="text-[color:var(--sp-success-700)] font-medium">{r.value}</span>}
                 </div>
               ))}
             </div>

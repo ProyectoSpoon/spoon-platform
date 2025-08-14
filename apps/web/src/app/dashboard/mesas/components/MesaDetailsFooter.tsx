@@ -30,17 +30,17 @@ export const MesaDetailsFooter: React.FC<MesaDetailsFooterProps> = ({
   }
 
   return (
-    <div className="border-t bg-gray-50 p-4 space-y-3">
+    <div className="border-t border-[color:var(--sp-neutral-200)] bg-[--sp-surface] p-4 space-y-3">
       {mesa.estado === 'ocupada' && mesa.ordenActiva ? (
         <>
           <Button
             onClick={onCobrar}
             disabled={cobrando || !mesa.ordenActiva.total}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-lg"
+            className="w-full bg-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-700)] text-[--sp-on-success] font-bold py-3 text-lg"
           >
             {cobrando ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[--sp-on-success] mr-2"></div>
                 Procesando...
               </>
             ) : (
@@ -70,10 +70,10 @@ export const MesaDetailsFooter: React.FC<MesaDetailsFooterProps> = ({
         </Button>
       )}
 
-      <div className="text-center text-xs text-gray-500">
+    <div className="text-center text-xs text-[color:var(--sp-neutral-500)]">
         {mesa.estado === 'ocupada' 
           ? '💡 Como administrador puedes editar, eliminar o cobrar órdenes'
-          : '🔧 Panel de administrador - Control total de mesas'
+      : '🛠️ Panel de administrador - Control total de mesas'
         }
       </div>
     </div>

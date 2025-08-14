@@ -78,8 +78,8 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-orange-600" />
-        <p className="text-gray-600">Cargando imágenes...</p>
+  <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-[color:var(--sp-primary-600)]" />
+  <p className="text-[color:var(--sp-neutral-600)]">Cargando imágenes...</p>
       </div>
     );
   }
@@ -95,12 +95,12 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Logo */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Logo del Restaurante</label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+      <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">Logo del Restaurante</label>
+      <div className="border-2 border-dashed border-[color:var(--sp-neutral-300)] rounded-lg p-6 text-center">
             {imageUrls.logo_url ? (
               <div className="space-y-4">
                 <img src={imageUrls.logo_url} alt="Logo actual" className="mx-auto h-32 w-32 object-cover rounded-lg" />
-                <p className="text-sm text-gray-600">Logo actual</p>
+        <p className="text-sm text-[color:var(--sp-neutral-600)]">Logo actual</p>
                 {!readOnly && (
                   <Button variant="outline" size="sm" onClick={() => setImageUrls(prev => ({ ...prev, logo_url: '' }))}>
                     Remover logo
@@ -109,8 +109,8 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
               </div>
             ) : (
               <div className="space-y-2">
-                <Upload className="h-12 w-12 text-gray-400 mx-auto" />
-                <p className="text-sm text-gray-600">
+        <Upload className="h-12 w-12 text-[color:var(--sp-neutral-400)] mx-auto" />
+        <p className="text-sm text-[color:var(--sp-neutral-600)]">
                   Arrastra una imagen aquí o
                   {!readOnly && (
                     <Button type="button" variant="link" onClick={() => logoInputRef.current?.click()}>
@@ -118,7 +118,7 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
                     </Button>
                   )}
                 </p>
-                <p className="text-xs text-gray-500">PNG, JPG hasta 2MB</p>
+        <p className="text-xs text-[color:var(--sp-neutral-500)]">PNG, JPG hasta 2MB</p>
                 <input
                   ref={logoInputRef}
                   type="file"
@@ -133,12 +133,12 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
         </div>
         {/* Portada */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Imagen de Portada</label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+      <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">Imagen de Portada</label>
+      <div className="border-2 border-dashed border-[color:var(--sp-neutral-300)] rounded-lg p-6 text-center">
             {imageUrls.cover_image_url ? (
               <div className="space-y-4">
                 <img src={imageUrls.cover_image_url} alt="Portada actual" className="mx-auto h-32 w-full object-cover rounded-lg" />
-                <p className="text-sm text-gray-600">Portada actual</p>
+        <p className="text-sm text-[color:var(--sp-neutral-600)]">Portada actual</p>
                 {!readOnly && (
                   <Button variant="outline" size="sm" onClick={() => setImageUrls(prev => ({ ...prev, cover_image_url: '' }))}>
                     Remover portada
@@ -147,8 +147,8 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
               </div>
             ) : (
               <div className="space-y-2">
-                <Upload className="h-12 w-12 text-gray-400 mx-auto" />
-                <p className="text-sm text-gray-600">
+        <Upload className="h-12 w-12 text-[color:var(--sp-neutral-400)] mx-auto" />
+        <p className="text-sm text-[color:var(--sp-neutral-600)]">
                   Arrastra una imagen aquí o
                   {!readOnly && (
                     <Button type="button" variant="link" onClick={() => coverInputRef.current?.click()}>
@@ -156,7 +156,7 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
                     </Button>
                   )}
                 </p>
-                <p className="text-xs text-gray-500">PNG, JPG hasta 5MB</p>
+        <p className="text-xs text-[color:var(--sp-neutral-500)]">PNG, JPG hasta 5MB</p>
                 <input
                   ref={coverInputRef}
                   type="file"

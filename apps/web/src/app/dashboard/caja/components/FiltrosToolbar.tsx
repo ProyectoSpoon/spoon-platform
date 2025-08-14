@@ -37,12 +37,12 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
     <div className="space-y-4">
       {/* Navegación principal */}
       <div className="flex items-center justify-between">
-        <nav className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+        <nav className="flex space-x-1 bg-[color:var(--sp-neutral-100)] rounded-lg p-1">
           <Button
             variant={tabActiva === 'movimientos' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => onTabChange('movimientos')}
-            className={tabActiva === 'movimientos' ? 'bg-white shadow-sm' : ''}
+            className={tabActiva === 'movimientos' ? 'bg-[color:var(--sp-surface)] shadow-sm' : ''}
           >
             Transacciones
           </Button>
@@ -50,7 +50,7 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
             variant={tabActiva === 'arqueo' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => onTabChange('arqueo')}
-            className={tabActiva === 'arqueo' ? 'bg-white shadow-sm' : ''}
+            className={tabActiva === 'arqueo' ? 'bg-[color:var(--sp-surface)] shadow-sm' : ''}
           >
             Cierres de caja
           </Button>
@@ -71,7 +71,7 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
             <select 
               value={filtroTiempo} 
               onChange={(e) => onFiltroTiempoChange?.(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm w-32"
+              className="px-3 py-2 border border-[color:var(--sp-neutral-300)] rounded-md text-sm w-32"
             >
               <option value="hoy">Diario</option>
               <option value="semana">Semanal</option>
@@ -81,7 +81,7 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
 
             {/* Selector de fecha */}
             <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-gray-500" />
+              <Calendar className="w-4 h-4 text-[color:var(--sp-neutral-500)]" />
               <Input
                 type="date"
                 value={filtroFecha}
@@ -92,7 +92,7 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
 
             {/* Buscador */}
             <div className="flex-1 relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-[color:var(--sp-neutral-400)]" />
               <Input
                 placeholder="Buscar concepto..."
                 value={busqueda}

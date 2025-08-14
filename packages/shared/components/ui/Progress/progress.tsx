@@ -31,17 +31,17 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
     };
     
     const variantClasses = {
-      default: 'bg-orange-500',
-      success: 'bg-green-500',
-      warning: 'bg-yellow-500',
-      error: 'bg-red-500'
+      default: 'bg-[color:var(--sp-primary-600)]',
+      success: 'bg-[color:var(--sp-success)]',
+      warning: 'bg-[color:var(--sp-warning)]',
+      error: 'bg-[color:var(--sp-error)]'
     };
     
     const textColor = {
-      default: 'text-orange-600',
-      success: 'text-green-600',
-      warning: 'text-yellow-600',
-      error: 'text-red-600'
+      default: 'text-[color:var(--sp-primary)]',
+      success: 'text-[color:var(--sp-success)]',
+      warning: 'text-[color:var(--sp-warning)]',
+      error: 'text-[color:var(--sp-error)]'
     };
 
     return (
@@ -49,7 +49,7 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
         {(label || showPercentage) && (
           <div className="flex items-center justify-between mb-2">
             {label && (
-              <span className="text-sm font-medium text-gray-700">{label}</span>
+              <span className="text-sm font-medium text-[color:var(--sp-neutral-700)]">{label}</span>
             )}
             {showPercentage && (
               <span className={cn("text-sm font-bold", textColor[variant])}>
@@ -59,9 +59,9 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
           </div>
         )}
         
-        <div 
+    <div 
           className={cn(
-            "w-full bg-gray-200 rounded-full overflow-hidden",
+      "w-full bg-[color:var(--sp-neutral-200)] rounded-full overflow-hidden",
             sizeClasses[size],
             className
           )}

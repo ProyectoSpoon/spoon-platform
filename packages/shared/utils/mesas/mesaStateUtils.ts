@@ -39,6 +39,9 @@ export const getEstadoDisplay = (mesa: Mesa) => {
   const config = {
     libre: { color: 'green', texto: 'Libre', descripcion: 'Disponible para nuevos clientes' },
     ocupada: { color: 'red', texto: 'Ocupada', descripcion: 'Mesa con orden activa' },
+  en_cocina: { color: 'yellow', texto: 'En cocina', descripcion: 'Pedido en preparación' },
+  servida: { color: 'yellow', texto: 'Servida', descripcion: 'Comida servida' },
+  por_cobrar: { color: 'yellow', texto: 'Por cobrar', descripcion: 'Cuenta solicitada' },
     reservada: { color: 'yellow', texto: 'Reservada', descripcion: 'Mesa reservada' },
     inactiva: { color: 'gray', texto: 'Inactiva', descripcion: 'Fuera de servicio' },
     mantenimiento: { color: 'orange', texto: 'Mantenimiento', descripcion: 'En mantenimiento' }

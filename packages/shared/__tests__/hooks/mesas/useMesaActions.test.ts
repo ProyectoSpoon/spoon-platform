@@ -3,11 +3,11 @@
  * Testing para acciones de mesa
  */
 
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react';
 import { useMesaActions } from '@spoon/shared/hooks/mesas/core/useMesaActions';
 
 // Mock de supabase
-jest.mock('../../lib/supabase', () => ({
+jest.mock('@spoon/shared/lib/supabase', () => ({
   crearOrdenMesa: jest.fn(),
   cobrarMesa: jest.fn(),
   reservarMesaManual: jest.fn(),
@@ -35,7 +35,7 @@ describe('useMesaActions', () => {
       items: [{ tipo: 'menu_dia' as const, cantidad: 1, precioUnitario: 15000 }]
     };
 
-    let response;
+  let response: any = {};
     await act(async () => {
       response = await result.current.crearOrden(ordenData);
     });
@@ -47,7 +47,7 @@ describe('useMesaActions', () => {
   test('cobrar mesa sin restaurantId retorna error', async () => {
     const { result } = renderHook(() => useMesaActions(null));
 
-    let response;
+  let response: any = {};
     await act(async () => {
       response = await result.current.cobrarMesa(1);
     });
@@ -64,7 +64,7 @@ describe('useMesaActions', () => {
       items: []      // Vacío
     };
 
-    let response;
+  let response: any = {};
     await act(async () => {
       response = await result.current.crearOrden(ordenInvalida);
     });

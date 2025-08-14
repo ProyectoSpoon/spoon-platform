@@ -4,8 +4,8 @@
  * Generado automáticamente por refactoring
  */
 
-import { useState, useEffect } from 'react';
-import { Mesa, ItemOrden } from '../../../types/mesas';
+import { useState, useEffect, useCallback } from 'react';
+import { ItemOrden } from '../../../types/mesas';
 
 export interface MesaDetails {
   mesa: number;
@@ -34,7 +34,7 @@ export const useMesaDetails = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const cargarDetalles = async (): Promise<void> => {
+  const cargarDetalles = useCallback(async (): Promise<void> => {
     if (!restaurantId || !mesaNumero) {
       setDetalles(null);
       return;
@@ -72,17 +72,17 @@ export const useMesaDetails = (
     } finally {
       setLoading(false);
     }
-  };
+  }, [restaurantId, mesaNumero]);
 
-  const limpiarDetalles = (): void => {
+  const limpiarDetalles = useCallback((): void => {
     setDetalles(null);
     setError(null);
-  };
+  }, []);
 
   // Cargar detalles cuando cambian los parámetros
   useEffect(() => {
     cargarDetalles();
-  }, [restaurantId, mesaNumero]);
+  }, [cargarDetalles]);
 
   return {
     detalles,

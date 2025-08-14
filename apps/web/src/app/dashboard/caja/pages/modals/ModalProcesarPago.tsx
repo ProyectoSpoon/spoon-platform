@@ -130,27 +130,27 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
   // Pantalla de éxito
   if (pagoExitoso) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-[color:var(--sp-neutral-950)]/50 flex items-center justify-center z-50">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
             <div className="mb-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-[color:var(--sp-success-100)] rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">✅</span>
               </div>
-              <h3 className="heading-section text-gray-900 mb-2">
+              <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-2">
                 ¡Pago Procesado!
               </h3>
-              <p className="text-gray-600">
+              <p className="text-[color:var(--sp-neutral-600)]">
                 {orden.identificador} - {formatCurrency(orden.monto_total)}
               </p>
             </div>
 
             {pagoExitoso.cambio > 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                <div className="font-semibold text-yellow-800">
+              <div className="bg-[color:var(--sp-warning-50)] border border-[color:var(--sp-warning-200)] rounded-lg p-4 mb-4">
+                <div className="font-semibold text-[color:var(--sp-warning-800)]">
                   Cambio a entregar:
                 </div>
-                <div className="value-number text-yellow-900">
+                <div className="value-number text-[color:var(--sp-warning-900)]">
                   {formatCurrency(pagoExitoso.cambio)}
                 </div>
               </div>
@@ -166,7 +166,7 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div className="fixed inset-0 bg-[color:var(--sp-neutral-950)]/50 flex items-center justify-center z-50">
       <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -184,7 +184,7 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
         
         <CardContent className="space-y-6">
           {/* Información de la orden */}
-          <div className="bg-gray-50 rounded-lg p-4">
+      <div className="bg-[color:var(--sp-neutral-50)] rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
                 <span>
@@ -199,7 +199,7 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
               </div>
             </div>
             {orden.detalles && (
-              <p className="text-sm text-gray-600">{orden.detalles}</p>
+        <p className="text-sm text-[color:var(--sp-neutral-600)]">{orden.detalles}</p>
             )}
           </div>
 
@@ -237,7 +237,7 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
 
               {/* Montos sugeridos */}
               <div className="space-y-2">
-                <label className="text-xs text-gray-500">Montos sugeridos</label>
+                <label className="text-xs text-[color:var(--sp-neutral-500)]">Montos sugeridos</label>
                 <div className="grid grid-cols-2 gap-2">
                   {getMontosSugeridos().map((monto) => (
                     <Button
@@ -256,12 +256,12 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
 
               {/* Cambio calculado */}
               {cambioCalculado > 0 && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div className="bg-[color:var(--sp-warning-50)] border border-[color:var(--sp-warning-200)] rounded-lg p-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-yellow-800">
+                    <span className="text-sm font-medium text-[color:var(--sp-warning-800)]">
                       Cambio a entregar:
                     </span>
-                    <span className="font-bold text-yellow-900">
+                    <span className="font-bold text-[color:var(--sp-warning-900)]">
                       {formatCurrency(cambioCalculado)}
                     </span>
                   </div>
@@ -270,7 +270,7 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
 
               {/* Error si monto insuficiente */}
               {montoRecibido < orden.monto_total && (
-                <div className="text-sm text-red-600">
+                <div className="text-sm text-[color:var(--sp-error-600)]">
                   Monto insuficiente. Faltan {formatCurrency(orden.monto_total - montoRecibido)}
                 </div>
               )}
@@ -279,8 +279,8 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
 
           {/* Error general */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <div className="text-sm text-red-700">{error}</div>
+            <div className="bg-[color:var(--sp-error-50)] border border-[color:var(--sp-error-200)] rounded-lg p-3">
+              <div className="text-sm text-[color:var(--sp-error-700)]">{error}</div>
             </div>
           )}
 
@@ -300,11 +300,11 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
                 procesando || 
                 (metodoPago === 'efectivo' && montoRecibido < orden.monto_total)
               }
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className="flex-1 bg-[color:var(--sp-info-600)] hover:bg-[color:var(--sp-info-700)]"
             >
               {procesando ? (
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-[color:var(--sp-on-info)] border-t-transparent rounded-full animate-spin"></div>
                   <span>Procesando...</span>
                 </div>
               ) : (
