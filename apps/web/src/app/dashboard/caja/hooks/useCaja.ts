@@ -4,7 +4,8 @@ import {
   supabase, 
   getUserProfile, 
   getTransaccionesDelDia,
-  getGastosDelDia
+  getGastosDelDia,
+  getTransaccionesYGastosEnRango
 } from '@spoon/shared/lib/supabase';
 import { CAJA_CONFIG, CAJA_MESSAGES } from '../../caja/constants/cajaConstants';
 import { useCajaSesion } from './useCajaSesion';
@@ -29,6 +30,8 @@ export const useCaja = () => {
   const { sesionActual, estadoCaja } = useCajaSesion();
   const [ordenesMesas, setOrdenesMesas] = useState<OrdenPendiente[]>([]);
   const [ordenesDelivery, setOrdenesDelivery] = useState<OrdenPendiente[]>([]);
+  // Filtro de fecha (Bogotá day string: YYYY-MM-DD)
+  const [fechaFiltro, setFechaFiltro] = useState<string>(new Date().toISOString().slice(0, 10));
   const [metricas, setMetricas] = useState<MetricasCaja>({
     balance: 0,
     ventasTotales: 0,
@@ -41,6 +44,8 @@ export const useCaja = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [periodo, setPeriodo] = useState<'hoy' | 'semana' | 'mes' | 'personalizado'>('hoy');
+  const [fechaFinFiltro, setFechaFinFiltro] = useState<string | null>(null);
 
   // ===============================
   // FUNCIÓN ROBUSTA PARA OBTENER DATOS
@@ -66,7 +71,7 @@ export const useCaja = () => {
       console.log('📊 Obteniendo datos de caja con retry automático...');
 
       // EJECUTAR TODAS LAS QUERIES CON ERROR HANDLING
-      const [mesasData, deliveryData, transaccionesData, gastosData] = await Promise.all([
+  const [mesasData, deliveryData, transaccionesData, gastosData] = await Promise.all([
         // 1. Órdenes de mesas pendientes
         executeWithRetry(
           async () => {
@@ -115,17 +120,58 @@ export const useCaja = () => {
           ERROR_CONFIGS.DATABASE
         ),
 
-        // 3. Transacciones del día
-        executeWithRetry(
-          () => getTransaccionesDelDia(profile.restaurant_id!),
-          ERROR_CONFIGS.DATABASE
-        ),
+        // 3 y 4. Métricas dependiendo del periodo seleccionado
+        (async () => {
+          if (periodo === 'hoy') {
+            return executeWithRetry(
+              () => getTransaccionesDelDia(profile.restaurant_id!, fechaFiltro),
+              ERROR_CONFIGS.DATABASE
+            );
+          }
+          // Calcular rango Bogotá según periodo
+          const start = new Date(`${fechaFiltro}T00:00:00.000-05:00`);
+          let end: Date;
+          if (periodo === 'semana') {
+            // Semana: desde lunes de la semana de fechaFiltro hasta domingo
+            const day = start.getUTCDay(); // 0 dom .. 6 sab, en UTC del -05 fijo funciona para comparativa aproximada
+            const offsetToMonday = ((day + 6) % 7); // días desde lunes
+            const monday = new Date(start);
+            monday.setUTCDate(start.getUTCDate() - offsetToMonday);
+            const sunday = new Date(monday);
+            sunday.setUTCDate(monday.getUTCDate() + 6);
+            const sStr = monday.toISOString().slice(0,10);
+            const eStr = sunday.toISOString().slice(0,10);
+            const rango = await executeWithRetry(
+              () => getTransaccionesYGastosEnRango(profile.restaurant_id!, sStr, eStr),
+              ERROR_CONFIGS.DATABASE
+            );
+            return rango;
+          }
+          if (periodo === 'mes') {
+            const y = start.getUTCFullYear();
+            const m = start.getUTCMonth();
+            const first = new Date(Date.UTC(y, m, 1));
+            const last = new Date(Date.UTC(y, m + 1, 0));
+            const sStr = first.toISOString().slice(0,10);
+            const eStr = last.toISOString().slice(0,10);
+            const rango = await executeWithRetry(
+              () => getTransaccionesYGastosEnRango(profile.restaurant_id!, sStr, eStr),
+              ERROR_CONFIGS.DATABASE
+            );
+            return rango;
+          }
+          // personalizado
+          const sStr = fechaFiltro;
+          const eStr = (fechaFinFiltro || fechaFiltro);
+          const rango = await executeWithRetry(
+            () => getTransaccionesYGastosEnRango(profile.restaurant_id!, sStr, eStr),
+            ERROR_CONFIGS.DATABASE
+          );
+          return rango;
+        })(),
 
-        // 4. Gastos del día
-        executeWithRetry(
-          () => getGastosDelDia(profile.restaurant_id!),
-          ERROR_CONFIGS.DATABASE
-        )
+        // placeholder para gastos cuando periodo === 'hoy'; cuando no es hoy, lo trae el paquete rango
+        Promise.resolve(null)
       ]);
 
       // TRANSFORMAR Y COMBINAR DATOS
@@ -151,8 +197,27 @@ export const useCaja = () => {
       const porCobrarTotal = [...mesasTransformadas, ...deliveryTransformadas]
         .reduce((sum, orden) => sum + orden.monto_total, 0);
 
+      // Unificar forma de métricas según la rama tomada
+      const totales = periodo === 'hoy'
+        ? {
+            totalVentas: (transaccionesData as any).totalVentas,
+            totalEfectivo: (transaccionesData as any).totalEfectivo,
+            totalTarjeta: (transaccionesData as any).totalTarjeta,
+            totalDigital: (transaccionesData as any).totalDigital,
+            transacciones: (transaccionesData as any).transacciones,
+            totalGastos: (gastosData as any)?.totalGastos ?? 0
+          }
+        : {
+            totalVentas: (transaccionesData as any).totalVentas,
+            totalEfectivo: (transaccionesData as any).totalEfectivo,
+            totalTarjeta: (transaccionesData as any).totalTarjeta,
+            totalDigital: (transaccionesData as any).totalDigital,
+            transacciones: (transaccionesData as any).transacciones,
+            totalGastos: (transaccionesData as any).totalGastos
+          };
+
       const balance = sesionId 
-        ? sesionMontoInicial + transaccionesData.totalVentas - gastosData.totalGastos
+        ? sesionMontoInicial + totales.totalVentas - totales.totalGastos
         : 0;
 
       // ACTUALIZAR ESTADO
@@ -160,13 +225,13 @@ export const useCaja = () => {
       setOrdenesDelivery(deliveryTransformadas);
       setMetricas({
         balance,
-        ventasTotales: transaccionesData.totalVentas,
+        ventasTotales: totales.totalVentas,
         porCobrar: porCobrarTotal,
-        gastosTotales: gastosData.totalGastos,
-        transaccionesDelDia: transaccionesData.transacciones,
-        totalEfectivo: transaccionesData.totalEfectivo,
-        totalTarjeta: transaccionesData.totalTarjeta,
-        totalDigital: transaccionesData.totalDigital
+        gastosTotales: totales.totalGastos,
+        transaccionesDelDia: totales.transacciones,
+        totalEfectivo: totales.totalEfectivo,
+        totalTarjeta: totales.totalTarjeta,
+        totalDigital: totales.totalDigital
       });
 
       setError(null);
@@ -182,7 +247,7 @@ export const useCaja = () => {
     } finally {
       setLoading(false);
     }
-  }, [sesionId, sesionMontoInicial]);
+  }, [sesionId, sesionMontoInicial, fechaFiltro, periodo, fechaFinFiltro]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
   // Mantener una referencia estable a la función para evitar re-suscripciones
@@ -290,6 +355,8 @@ export const useCaja = () => {
         subscriptionGastos.unsubscribe();
         subscriptionOrdenes.unsubscribe();
       };
+    } else {
+      console.log('⏸️ Caja cerrada: sin WebSockets activos');
     }
   }, [estadoCaja, sesionId, restaurantId]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -438,7 +505,14 @@ const procesarPago = async (
     calcularCambio,
     
     // Utilidades
-    refrescar: obtenerDatosCaja,
+  refrescar: obtenerDatosCaja,
+  // filtros de fecha/periodo
+  setFechaFiltro,
+  fechaFiltro,
+  periodo,
+  setPeriodo,
+  fechaFinFiltro,
+  setFechaFinFiltro,
     
     // Debug y monitoreo
     getDebugInfo

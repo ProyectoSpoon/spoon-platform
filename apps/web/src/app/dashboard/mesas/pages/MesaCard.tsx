@@ -1,6 +1,7 @@
 // Componente individual de mesa - Compatible con Sistema Maestro + Diseño Mejorado
 import React from 'react';
 import { TEXTOS_ESTADO, COLORES_ESTADO } from '@spoon/shared/constants/mesas/mesasConstants';
+import { getEstadoDisplay } from '@spoon/shared/utils/mesas';
 import { Users, MapPin, AlertCircle, Clock, DollarSign, Sparkles } from 'lucide-react';
 
 // ========================================
@@ -64,11 +65,12 @@ const MesaCard: React.FC<MesaCardProps> = ({
   };
 
   // Determinar el estado visual (prioridad: estadoMesa si existe)
-  const estadoVisual = estadoMesa ? (estadoMesa === 'libre' ? 'vacia' : 'ocupada') : estado;
+  const display = getEstadoDisplay({ estado: (estadoMesa ?? (estado === 'ocupada' ? 'ocupada' : 'libre')) as any });
+  const estadoVisual = display.estado === 'libre' ? 'vacia' : 'ocupada';
   
   // Determinar si está deshabilitada - SOLO INACTIVAS Y MANTENIMIENTO (administrador puede el resto)
   const isDisabled = estadoMesa === 'inactiva' || estadoMesa === 'mantenimiento';
-  const isOcupada = estado === 'ocupada';
+  const isOcupada = display.estado === 'ocupada';
   
   // Obtener configuración visual mejorada según el estado
   const getEstadoConfig = () => {
@@ -170,19 +172,10 @@ const MesaCard: React.FC<MesaCardProps> = ({
 
   const config = getEstadoConfig();
   // Color base exacto por estado (usa estadoMesa si existe, de lo contrario mapea 'estado')
-  const estadoClave = (estadoMesa ?? (estado === 'ocupada' ? 'ocupada' : 'libre')) as keyof typeof COLORES_ESTADO;
-  const baseColor = COLORES_ESTADO[estadoClave];
+  const baseColor = COLORES_ESTADO[display.estado as keyof typeof COLORES_ESTADO];
 
   // Obtener texto del estado
-  const getTextoEstado = () => {
-    if (estadoMesa === 'reservada') return TEXTOS_ESTADO.reservada;
-    if (estadoMesa === 'inactiva') return TEXTOS_ESTADO.inactiva;
-    if (estadoMesa === 'mantenimiento') return TEXTOS_ESTADO.mantenimiento;
-    if (estadoMesa === 'en_cocina') return TEXTOS_ESTADO.en_cocina;
-    if (estadoMesa === 'servida') return TEXTOS_ESTADO.servida;
-    if (estadoMesa === 'por_cobrar') return TEXTOS_ESTADO.por_cobrar;
-    return estado === 'ocupada' ? TEXTOS_ESTADO.ocupada : TEXTOS_ESTADO.libre;
-  };
+  const getTextoEstado = () => display.texto || (estado === 'ocupada' ? TEXTOS_ESTADO.ocupada : TEXTOS_ESTADO.libre);
 
   // Tiempo transcurrido calculado localmente (auto-actualizado)
   const [elapsedMinutes, setElapsedMinutes] = React.useState<number | null>(null);
@@ -222,7 +215,7 @@ const MesaCard: React.FC<MesaCardProps> = ({
   focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--sp-primary-400)]
       `}
       aria-pressed={!!seleccionada}
-      aria-label={`${nombre || `Mesa ${numero}`}, ${getTextoEstado()}${isOcupada && total ? `, total ${formatCurrency(total)}` : ''}`}
+  aria-label={`${nombre || `Mesa ${numero}`}, ${getTextoEstado()}${isOcupada && total ? `, total ${formatCurrency(total)}` : ''}`}
     >
       {/* Indicador de estado - esquina superior derecha */}
    <div className={`absolute top-3 right-3 w-3 h-3 rounded-full shadow-sm`}

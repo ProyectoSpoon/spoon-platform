@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent } from '@spoon/shared/components/ui/Card';
 
 // Hooks
@@ -10,7 +10,6 @@ import { useGastos } from '../hooks/useGastos';
 
 // Componentes
 import { CajaHeader, CajaStatus } from '../components/CajaHeader';
-import { SidebarResumen } from '@spoon/shared';
 import { MetricasDashboard, MetricasAlert } from '../components/MetricasDashboard';
 import { FiltrosToolbar } from '../components/FiltrosToolbar';
 import { MovimientosPanel } from '../components/MovimientosPanel';
@@ -19,6 +18,7 @@ import { EmptyStates } from '../components/EmptyState';
 // Modals
 import { ModalProcesarPago } from './modals/ModalProcesarPago';
 import GastoWizardSlideOver from './modals/GastoWizardSlideOver';
+import ModalAperturaCaja from './modals/ModalAperturaCaja';
 
 // Types
 import { OrdenPendiente } from '../types/cajaTypes';
@@ -35,7 +35,12 @@ export default function CajaPage() {
     procesarPago, 
     loading,
     error,
-    refrescar
+  refrescar,
+  setFechaFiltro,
+  periodo,
+  setPeriodo,
+  fechaFinFiltro,
+  setFechaFinFiltro
   } = useCaja();
   const { gastos, crearGasto, loading: loadingGastos } = useGastos();
 
@@ -44,22 +49,52 @@ export default function CajaPage() {
   const [filtros, setFiltros] = useState({
     tiempo: 'hoy',
     fecha: new Date().toISOString().split('T')[0],
-    busqueda: ''
+  fechaFin: new Date().toISOString().split('T')[0],
+  busqueda: ''
   });
   const [modals, setModals] = useState({
     pago: false,
     gasto: false,
-    orden: null as OrdenPendiente | null
+  orden: null as OrdenPendiente | null,
+  apertura: false
   });
 
-  // Datos combinados
-  const ordenesPendientes = [...ordenesMesas, ...ordenesDelivery];
-  const transaccionesDelDia = metricas.transaccionesDelDia || [];
+  // Datos combinados y filtrados
+  const ordenesPendientes = useMemo(() => {
+    const all = [...ordenesMesas, ...ordenesDelivery];
+    const term = filtros.busqueda?.trim().toLowerCase();
+    if (!term) return all;
+    return all.filter(o =>
+      (o.identificador?.toLowerCase().includes(term)) ||
+      (o.detalles?.toLowerCase().includes(term))
+    );
+  }, [ordenesMesas, ordenesDelivery, filtros.busqueda]);
+
+  const transaccionesDelDia = useMemo(() => {
+    const list = metricas.transaccionesDelDia || [];
+    const term = filtros.busqueda?.trim().toLowerCase();
+    if (!term) return list;
+    return list.filter(t =>
+      t.metodo_pago?.toLowerCase().includes(term) ||
+      t.tipo_orden?.toLowerCase().includes(term) ||
+      t.orden_id?.toLowerCase().includes(term)
+    );
+  }, [metricas.transaccionesDelDia, filtros.busqueda]);
+
+  const gastosFiltrados = useMemo(() => {
+    const list = gastos || [];
+    const term = filtros.busqueda?.trim().toLowerCase();
+    if (!term) return list;
+    return list.filter((g: any) =>
+      g.concepto?.toLowerCase().includes(term) ||
+      g.categoria?.toLowerCase().includes(term) ||
+      g.notas?.toLowerCase().includes(term)
+    );
+  }, [gastos, filtros.busqueda]);
 
   // Handlers
-  const handleAbrirCaja = async () => {
-    // Tu lógica de abrir caja
-    await abrirCaja(5000000, 'Apertura automática');
+  const handleAbrirCaja = () => {
+    setModals(prev => ({ ...prev, apertura: true }));
   };
 
   const handleCerrarCaja = async () => {
@@ -114,7 +149,7 @@ export default function CajaPage() {
         <div className="px-5 py-4">
           <CajaHeader
             estadoCaja={estadoCaja}
-            ordensPendientes={ordenesPendientes.length}
+            ordenesPendientes={ordenesPendientes.length}
             onAbrirCaja={handleAbrirCaja}
             onCerrarCaja={handleCerrarCaja}
             onNuevaVenta={handleNuevaVenta}
@@ -136,18 +171,35 @@ export default function CajaPage() {
         <Card className="rounded-lg shadow-sm"><CardContent className="p-4">{EmptyStates.cajaAbierta(handleAbrirCaja)}</CardContent></Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-5">
-          {/* Columna izquierda 70%: acciones + métricas + filtros/panel */}
-          <div className="lg:col-span-7 space-y-5">
+          {/* Columna principal: acciones + métricas + filtros/panel */}
+          <div className="lg:col-span-10 space-y-5">
             <MetricasDashboard metricas={metricas} loading={loading} />
             <MetricasAlert metricas={metricas} />
 
             <FiltrosToolbar
               tabActiva={tabActiva}
               onTabChange={setTabActiva}
-              filtroTiempo={filtros.tiempo}
-              onFiltroTiempoChange={(tiempo) => setFiltros(prev => ({ ...prev, tiempo }))}
+              filtroTiempo={periodo}
+              onFiltroTiempoChange={(tiempo) => {
+                setFiltros(prev => ({ ...prev, tiempo }));
+                setPeriodo(tiempo as any);
+                // si se cambia el periodo, refrescar con la fecha actual
+                refrescar();
+              }}
               filtroFecha={filtros.fecha}
-              onFiltroFechaChange={(fecha) => setFiltros(prev => ({ ...prev, fecha }))}
+              onFiltroFechaChange={(fecha) => {
+                setFiltros(prev => ({ ...prev, fecha }));
+                setFechaFiltro(fecha);
+                refrescar();
+              }}
+              filtroFechaFin={filtros.fechaFin}
+              onFiltroFechaFinChange={(fecha) => {
+                setFiltros(prev => ({ ...prev, fechaFin: fecha }));
+                setFechaFinFiltro(fecha);
+                refrescar();
+              }}
+              // soporte opcional de fecha fin para personalizado
+              // el componente actual no recibe fechaFin explícita, pero dejamos el estado listo
               busqueda={filtros.busqueda}
               onBusquedaChange={(busqueda) => setFiltros(prev => ({ ...prev, busqueda }))}
               onDescargar={handleDescargarReporte}
@@ -161,7 +213,7 @@ export default function CajaPage() {
                   <MovimientosPanel
                     ordenesPendientes={ordenesPendientes}
                     transacciones={transaccionesDelDia}
-                    gastos={gastos}
+                    gastos={gastosFiltrados}
                     onProcesarPago={handleProcesarPago}
                     loading={loading}
                   />
@@ -172,33 +224,6 @@ export default function CajaPage() {
                 )}
               </CardContent>
             </Card>
-          </div>
-
-          {/* Sidebar derecha 30% */}
-          <div className="lg:col-span-3 space-y-5">
-            <SidebarResumen
-              variant="caja"
-              balance={metricas.balance}
-              ordenes={metricas.transaccionesDelDia?.length || 0}
-              metaDelDia={'47%'}
-              variacionVsAyer={'+12%'}
-              estadisticas={[
-                { label: 'Ticket Promedio', value: '$7.833' },
-                { label: 'Hora Pico', value: '12:00-2:00' },
-                { label: 'Productos Vendidos', value: '0' },
-                { label: 'Tiempo Activo', value: '4h 30m' },
-              ]}
-              alertas={[
-                { label: 'Caja abierta hace 4h 30m', tipo: 'info' },
-                { label: 'Backup automático realizado', tipo: 'success' },
-                { label: 'Cierre de caja recomendado', tipo: 'warning' },
-              ]}
-              actividad={[
-                { label: 'Producto A x2', value: '$36.000' },
-                { label: 'Producto B', value: '$10.500' },
-                { label: 'Producto C', value: '$5.000' },
-              ]}
-            />
           </div>
         </div>
       )}
@@ -224,6 +249,20 @@ export default function CajaPage() {
         isOpen={modals.pago}
         onClose={() => setModals(prev => ({ ...prev, pago: false, orden: null }))}
         onConfirmar={handleConfirmarPago}
+        loading={loading}
+      />
+
+      {/* Modal: Apertura de caja */}
+      <ModalAperturaCaja
+        isOpen={modals.apertura}
+        onClose={() => setModals(prev => ({ ...prev, apertura: false }))}
+        onConfirmar={async (monto, notas) => {
+          const res = await abrirCaja(monto, notas);
+          if (!res.success) {
+            return { success: false, error: res.error } as any;
+          }
+          return { success: true } as any;
+        }}
         loading={loading}
       />
 

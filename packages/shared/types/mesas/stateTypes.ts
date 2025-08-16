@@ -23,7 +23,9 @@ export interface Mesa {
   
   // Configuración física
   nombre?: string;
-  zona: string;
+  zona?: string;
+  // zona es opcional tras cambio de schema
+  // mantener firma, pero el origen de datos puede no tenerla
   capacidad: number;
   
   // Estado operacional

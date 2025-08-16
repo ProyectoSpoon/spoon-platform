@@ -8,8 +8,9 @@ import { RefreshCw, DollarSign, Settings, AlertCircle, Plus } from 'lucide-react
 import { useMesas } from '@spoon/shared/hooks/mesas';
 import MesaCard from './MesaCard';
 import MesaDetallesPanel from './MesaDetallesPanel';
-import ConfiguracionMesasModal from '@spoon/shared/components/mesas/ConfiguracionMesasModal';
+import ConfiguracionMesasPanel from '@spoon/shared/components/mesas/ConfiguracionMesasPanel';
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
+import { getEstadoDisplay } from '@spoon/shared/utils/mesas';
 
 // Interface para distribución de zonas
 interface DistribucionZonas {
@@ -70,15 +71,9 @@ const MesasPage: React.FC = () => {
   };
 
   // Manejar configuración
-  const handleConfigurar = async (
-    totalMesas: number, 
-    distribucion: DistribucionZonas
-  ): Promise<boolean> => {
-    console.log('🔧 Configurando mesas:', { totalMesas, distribucion });
-    
+  const handleConfigurar = async (totalMesas: number): Promise<boolean> => {
     try {
-      const result = await configurarMesasIniciales(totalMesas, distribucion);
-      console.log('✅ Resultado configuración:', result);
+      const result = await configurarMesasIniciales(totalMesas);
       return result;
     } catch (error) {
       console.error('❌ Error en configuración:', error);
@@ -98,16 +93,16 @@ const MesasPage: React.FC = () => {
     : Object.values(mesasOcupadas).reduce((sum, mesa) => sum + mesa.total, 0);
     
   const mesasActivas = configuracion.configuradas
-    ? mesasCompletas.filter(m => ['ocupada', 'en_cocina', 'servida', 'por_cobrar'].includes(m.estado)).length
+    ? mesasCompletas.filter(m => ['ocupada', 'en_cocina', 'servida', 'por_cobrar'].includes(getEstadoDisplay(m).estado)).length
     : Object.keys(mesasOcupadas).length;
 
   const ordenesEnCocina = configuracion.configuradas
-    ? mesasCompletas.filter(m => m.estado === 'en_cocina').length
+    ? mesasCompletas.filter(m => getEstadoDisplay(m).estado === 'en_cocina').length
     : 0;
 
   const totalPorCobrar = configuracion.configuradas
     ? mesasCompletas
-        .filter(m => m.estado === 'por_cobrar' && m.detallesOrden)
+        .filter(m => getEstadoDisplay(m).estado === 'por_cobrar' && m.detallesOrden)
         .reduce((sum, m) => sum + (m.detallesOrden?.total || 0), 0)
     : 0;
 
@@ -127,7 +122,7 @@ const MesasPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[color:var(--sp-neutral-50)]">
+  <div className="relative min-h-screen bg-[color:var(--sp-neutral-50)]">
       {/* Header superior fijo de la vista */}
   <div className="bg-[color:var(--sp-surface)] border-b border-[color:var(--sp-border)]">
         <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
@@ -135,7 +130,7 @@ const MesasPage: React.FC = () => {
             <h1 className="heading-page">Gestión de Mesas</h1>
             <p className="subtitle">
               {configuracion.configuradas
-                ? `${configuracion.totalMesas} mesas configuradas en ${configuracion.zonas.length} zona${configuracion.zonas.length > 1 ? 's' : ''}`
+                ? `${configuracion.totalMesas} mesas configuradas`
                 : 'Control de mesas y cobros'}
               {mesaSeleccionada && ` • Mesa ${mesaSeleccionada} seleccionada`}
             </p>
@@ -150,7 +145,7 @@ const MesasPage: React.FC = () => {
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Actualizar
-              </Button>
+              </Button> 
             )}
             <Button
               onClick={() => setModalConfiguracion(true)}
@@ -165,8 +160,8 @@ const MesasPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Contenido principal: grid 70/30 con panel derecho de 350px */}
-      <div className="max-w-[1400px] mx-auto px-6 py-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_350px]">
+  {/* Contenido principal: grid 70/30 con panel derecho de 350px */}
+  <div className="max-w-[1400px] mx-auto px-6 py-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_350px]">
         {/* Columna izquierda */}
         <div className="space-y-6 order-1 md:order-2 lg:order-1">
           {/* KPIs compactos */}
@@ -191,21 +186,7 @@ const MesasPage: React.FC = () => {
                 <div className="mt-1 value-number text-[color:var(--sp-warning-700)]">{formatCurrency(totalPorCobrar)}</div>
               </div>
             )}
-            {configuracion.configuradas && configuracion.zonas.length > 1 && configuracion.zonas
-              .filter((zona: string) => {
-                const z = (zona || '').trim().toLowerCase();
-                return z !== 'principal' && z !== 'comedor principal';
-              })
-              .map((zona: string) => {
-              const mesasZona = mesasCompletas.filter(m => m.zona === zona);
-              const ocupadasZona = mesasZona.filter(m => m.ocupada).length;
-              return (
-                <div key={zona} className="flex-[1_1_150px] bg-[color:var(--sp-surface-elevated)] border-l-4 border-[color:var(--sp-primary-500)] rounded-lg shadow-sm p-4 transition-shadow hover:shadow-md">
-                  <div className="label-tertiary text-xs">{zona}</div>
-                  <div className="mt-1 value-number text-[20px]">{ocupadasZona}/{mesasZona.length}</div>
-                </div>
-              );
-            })}
+            {/* Zonas eliminadas del modelo: se remueven KPIs por zona */}
           </div>
 
           {/* Contenido según configuración */}
@@ -214,19 +195,18 @@ const MesasPage: React.FC = () => {
               {/* Grid de mesas - auto-fit */}
               <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))] [grid-auto-rows:1fr]">
                 {mesasCompletas
-                  .filter(mesa => mesa.estado !== 'inactiva')
                   .map((mesa) => (
                     <MesaCard
                       key={mesa.numero}
                       numero={mesa.numero}
-                      estado={mesa.ocupada ? 'ocupada' : 'vacia'}
+                      estado={getEstadoDisplay(mesa).estado === 'libre' ? 'vacia' : 'ocupada'}
                       total={mesa.detallesOrden?.total}
                       onClick={() => handleMesaClick(mesa.numero)}
                       // Props adicionales del sistema maestro
                       nombre={mesa.nombre}
                       zona={mesa.zona}
                       capacidad={mesa.capacidad}
-                      estadoMesa={mesa.estado}
+                      estadoMesa={getEstadoDisplay(mesa).estado}
                       items={mesa.detallesOrden?.items?.length}
                       comensales={mesa.detallesOrden?.comensales}
                       inicioAtencion={mesa.detallesOrden?.fechaCreacion}
@@ -244,7 +224,6 @@ const MesasPage: React.FC = () => {
                       <h3 className="heading-section text-[color:var(--sp-primary-800)]">Resumen del día</h3>
                       <p className="text-[color:var(--sp-primary-700)] text-sm">
                         {mesasActivas} mesa{mesasActivas > 1 ? 's' : ''} pendiente{mesasActivas > 1 ? 's' : ''} de cobro
-                        {configuracion.zonas.length > 1 && ` • ${configuracion.zonas.length} zonas activas`}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 text-[color:var(--sp-primary-800)]">
@@ -262,8 +241,8 @@ const MesasPage: React.FC = () => {
                 ¡Configura tus mesas para empezar!
               </h3>
               <p className="text-[color:var(--sp-neutral-600)] mb-6 max-w-md mx-auto">
-                El sistema maestro de mesas te permite personalizar tu restaurante con nombres, zonas,
-                capacidades y mucho más. Es rápido y fácil de configurar.
+                El sistema maestro de mesas te permite personalizar tu restaurante con nombres y capacidades.
+                Es rápido y fácil de configurar.
               </p>
               <div className="flex gap-4 justify-center">
                 <Button
@@ -275,12 +254,7 @@ const MesasPage: React.FC = () => {
                   {loadingConfiguracion ? 'Configurando...' : 'Configurar Mesas'}
                 </Button>
               </div>
-              <div className="mt-8 pt-6 border-t border-[color:var(--sp-neutral-200)]">
-                <p className="text-sm text-[color:var(--sp-neutral-500)]">
-                  💡 <strong>Tip:</strong> Puedes configurar zonas como &quot;Comedor&quot;, &quot;Terraza&quot;, &quot;VIP&quot;
-                  y personalizar cada mesa con nombres y capacidades específicas.
-                </p>
-              </div>
+              {/* Zonas eliminadas: se retira tip relacionado */}
             </div>
           )}
         </div>
@@ -294,13 +268,14 @@ const MesasPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal de configuración de mesas (mantiene funcionalidad) */}
-      <ConfiguracionMesasModal
+      {/* Panel de configuración de mesas (una sola pantalla, fondo difuminado) */}
+      <ConfiguracionMesasPanel
         isOpen={modalConfiguracion}
         onClose={() => setModalConfiguracion(false)}
         onConfigurar={handleConfigurar}
         loading={loadingConfiguracion}
-        configuracionActual={configuracion}
+  configuracionActual={configuracion}
+  restaurantId={restaurantId || undefined}
       />
     </div>
   );

@@ -5,7 +5,7 @@ import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
 interface CajaHeaderProps {
   estadoCaja: 'abierta' | 'cerrada';
-  ordensPendientes?: number;
+  ordenesPendientes?: number;
   onAbrirCaja: () => void;
   onCerrarCaja: () => void;
   onNuevaVenta: () => void;
@@ -17,7 +17,7 @@ interface CajaHeaderProps {
 
 export const CajaHeader: React.FC<CajaHeaderProps> = ({
   estadoCaja,
-  ordensPendientes = 0,
+  ordenesPendientes = 0,
   onAbrirCaja,
   onCerrarCaja,
   onNuevaVenta,
@@ -39,9 +39,9 @@ export const CajaHeader: React.FC<CajaHeaderProps> = ({
             <span className="text-[12px] text-[color:var(--sp-success-700)] font-medium">
               Caja Abierta
             </span>
-            {ordensPendientes > 0 && (
+      {ordenesPendientes > 0 && (
               <span className="text-[12px] bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-700)] px-2 py-1 rounded-full">
-                {ordensPendientes} pendientes
+        {ordenesPendientes} pendientes
               </span>
             )}
             {requiereSaneamiento && (
@@ -83,11 +83,12 @@ export const CajaHeader: React.FC<CajaHeaderProps> = ({
           </Button>
         )}
 
-        {/* Botón Nueva Venta - Simplificado */}
-  <Button
+        {/* Botón Nueva Venta - Variante verde + estados focus/active visibles */}
+        <Button
+          variant="outline"
           onClick={onNuevaVenta}
           disabled={estadoCaja === 'cerrada' || loading}
-          className="bg-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-700)] text-[color:var(--sp-on-success)]"
+          className="bg-[color:var(--sp-success-50)] text-[color:var(--sp-success-800)] border-[color:var(--sp-success-200)] hover:bg-[color:var(--sp-success-100)] hover:border-[color:var(--sp-success-300)] hover:text-[color:var(--sp-success-900)] hover:shadow-sm active:bg-[color:var(--sp-success-200)] focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 transition-colors"
         >
           <Plus className="w-4 h-4 mr-2" />
           Nueva venta
@@ -116,6 +117,20 @@ export const CajaStatus: React.FC<{
   if (estadoCaja === 'cerrada' || !sesionActual) return null;
 
   const formatCurrency = (centavos: number) => formatCurrencyCOP(centavos);
+  // Asegurar hora mostrada en zona horaria de Bogotá para evitar desfases
+  const formatHoraBogota = (isoString: string) => {
+    try {
+      return new Intl.DateTimeFormat('es-CO', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'America/Bogota'
+      }).format(new Date(isoString));
+    } catch {
+      // Fallback seguro
+      return new Date(isoString).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    }
+  };
 
   return (
     <div className="bg-[color:var(--sp-success-50)] border border-[color:var(--sp-success-200)] rounded-lg p-3">
@@ -126,10 +141,7 @@ export const CajaStatus: React.FC<{
             <span className="font-medium text-[color:var(--sp-success-800)]">Sesión activa</span>
           </div>
           <span className="text-[color:var(--sp-success-700)]">
-            Desde: {new Date(sesionActual.abierta_at).toLocaleTimeString('es-CO', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
+            Desde: {formatHoraBogota(sesionActual.abierta_at)}
           </span>
           <span className="text-[color:var(--sp-success-700)]">
             Inicial: {formatCurrency(sesionActual.monto_inicial)}

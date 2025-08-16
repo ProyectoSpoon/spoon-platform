@@ -13,6 +13,8 @@ interface FiltrosToolbarProps {
   onFiltroTiempoChange?: (filtro: string) => void;
   filtroFecha?: string;
   onFiltroFechaChange?: (fecha: string) => void;
+  filtroFechaFin?: string; // para personalizado
+  onFiltroFechaFinChange?: (fecha: string) => void;
   busqueda?: string;
   onBusquedaChange?: (busqueda: string) => void;
   onDescargar?: () => void;
@@ -27,6 +29,8 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
   onFiltroTiempoChange,
   filtroFecha = new Date().toISOString().split('T')[0],
   onFiltroFechaChange,
+  filtroFechaFin,
+  onFiltroFechaFinChange,
   busqueda = '',
   onBusquedaChange,
   onDescargar,
@@ -37,20 +41,34 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
     <div className="space-y-4">
       {/* Navegación principal */}
       <div className="flex items-center justify-between">
-        <nav className="flex space-x-1 bg-[color:var(--sp-neutral-100)] rounded-lg p-1">
+    <nav className="flex space-x-1 bg-[color:var(--sp-neutral-100)] rounded-lg p-1" role="tablist" aria-label="Navegación de transacciones">
           <Button
-            variant={tabActiva === 'movimientos' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             onClick={() => onTabChange('movimientos')}
-            className={tabActiva === 'movimientos' ? 'bg-[color:var(--sp-surface)] shadow-sm' : ''}
+            aria-pressed={tabActiva === 'movimientos'}
+      role="tab"
+      aria-selected={tabActiva === 'movimientos'}
+            className={
+              tabActiva === 'movimientos'
+        ? 'bg-[color:var(--sp-surface)] text-[color:var(--sp-on-surface)] shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 active:ring-2 active:ring-[color:var(--sp-focus)] active:ring-offset-2'
+        : 'text-[color:var(--sp-on-surface)]/80 hover:text-[color:var(--sp-on-surface)] focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 active:ring-2 active:ring-[color:var(--sp-focus)] active:ring-offset-2'
+            }
           >
             Transacciones
           </Button>
           <Button
-            variant={tabActiva === 'arqueo' ? 'default' : 'ghost'}
+            variant="ghost"
             size="sm"
             onClick={() => onTabChange('arqueo')}
-            className={tabActiva === 'arqueo' ? 'bg-[color:var(--sp-surface)] shadow-sm' : ''}
+            aria-pressed={tabActiva === 'arqueo'}
+      role="tab"
+      aria-selected={tabActiva === 'arqueo'}
+            className={
+              tabActiva === 'arqueo'
+        ? 'bg-[color:var(--sp-surface)] text-[color:var(--sp-on-surface)] shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 active:ring-2 active:ring-[color:var(--sp-focus)] active:ring-offset-2'
+        : 'text-[color:var(--sp-on-surface)]/80 hover:text-[color:var(--sp-on-surface)] focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 active:ring-2 active:ring-[color:var(--sp-focus)] active:ring-offset-2'
+            }
           >
             Cierres de caja
           </Button>
@@ -79,7 +97,7 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
               <option value="personalizado">Personalizado</option>
             </select>
 
-            {/* Selector de fecha */}
+            {/* Selector de fecha(s) */}
             <div className="flex items-center space-x-2">
               <Calendar className="w-4 h-4 text-[color:var(--sp-neutral-500)]" />
               <Input
@@ -88,6 +106,17 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
                 onChange={(e) => onFiltroFechaChange?.(e.target.value)}
                 className="w-40"
               />
+              {filtroTiempo === 'personalizado' && (
+                <>
+                  <span className="text-sm text-[color:var(--sp-neutral-600)]">a</span>
+                  <Input
+                    type="date"
+                    value={filtroFechaFin || filtroFecha}
+                    onChange={(e) => onFiltroFechaFinChange?.(e.target.value)}
+                    className="w-40"
+                  />
+                </>
+              )}
             </div>
 
             {/* Buscador */}

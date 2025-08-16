@@ -8,13 +8,14 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 import ActionBar, { ActionBarProps } from '@spoon/shared/components/ui/ActionBar';
+import { getEstadoDisplay } from '@spoon/shared/utils/mesas';
 
 // Interfaces
 interface Mesa {
   id: string;
   numero: number;
   nombre?: string;
-  zona: string;
+  zona?: string;
   capacidad: number;
   estado: 'libre' | 'ocupada' | 'reservada' | 'mantenimiento' | 'inactiva' | 'en_cocina' | 'servida' | 'por_cobrar';
   notas?: string;
@@ -26,7 +27,7 @@ interface Mesa {
     fechaCreacion?: string;
     comensales?: number;
   } | null;
-  created_at: string;
+  created_at: string; 
   updated_at: string;
 }
 
@@ -60,8 +61,42 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
 
   // Estados locales
   const [wizardAbierto, setWizardAbierto] = useState(false);
+  // Edición básica movida al ConfiguracionMesasPanel
 
   const formatCurrency = (value: number) => formatCurrencyCOP(value || 0);
+  const estadoDisplay = mesa ? getEstadoDisplay(mesa) : null;
+  
+  // Mapear color lógico a tokens del sistema de diseño
+  const colorToClasses = (tone: 'green'|'red'|'yellow'|'gray'|'orange') => {
+    switch (tone) {
+      case 'green':
+        return {
+          bg100: 'bg-[color:var(--sp-success-100)]',
+          text600: 'text-[color:var(--sp-success-600)]',
+          text800: 'text-[color:var(--sp-success-800)]'
+        };
+      case 'red':
+        return {
+          bg100: 'bg-[color:var(--sp-error-100)]',
+          text600: 'text-[color:var(--sp-error-600)]',
+          text800: 'text-[color:var(--sp-error-800)]'
+        };
+      case 'yellow':
+      case 'orange':
+        return {
+          bg100: 'bg-[color:var(--sp-warning-100)]',
+          text600: 'text-[color:var(--sp-warning-600)]',
+          text800: 'text-[color:var(--sp-warning-800)]'
+        };
+      case 'gray':
+      default:
+        return {
+          bg100: 'bg-[color:var(--sp-neutral-100)]',
+          text600: 'text-[color:var(--sp-neutral-600)]',
+          text800: 'text-[color:var(--sp-neutral-800)]'
+        };
+    }
+  };
   const formatTime = (iso?: string) => {
     if (!iso) return null;
     const start = new Date(iso);
@@ -87,6 +122,8 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
     onClose();
   };
 
+  // Edición básica removida de este panel
+
   // Si no hay mesa, mostrar estado vacío
   if (!mesa) {
     return (
@@ -107,26 +144,10 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
   return (
     <div className="h-full flex flex-col bg-[color:var(--sp-surface)]">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-[color:var(--sp-border)] sticky top-0 bg-[color:var(--sp-surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--sp-surface)]/80 z-10">
+  <div className="flex items-center justify-between p-6 border-b border-[color:var(--sp-border)] sticky top-0 bg-[color:var(--sp-surface)] z-10">
         <div className="flex items-center space-x-3">
-          <div className={`p-3 rounded-xl ${
-            mesa.estado === 'libre' ? 'bg-[color:var(--sp-success-100)]' :
-            mesa.estado === 'ocupada' ? 'bg-[color:var(--sp-error-100)]' :
-            mesa.estado === 'reservada' ? 'bg-[color:var(--sp-warning-100)]' :
-            mesa.estado === 'en_cocina' ? 'bg-[color:var(--sp-primary-100)]' :
-            mesa.estado === 'servida' ? 'bg-[color:var(--sp-info-100)]' :
-            mesa.estado === 'por_cobrar' ? 'bg-[color:var(--sp-warning-100)]' :
-            'bg-[color:var(--sp-neutral-100)]'
-          }`}>
-            <span className={`text-2xl ${
-              mesa.estado === 'libre' ? 'text-[color:var(--sp-success-600)]' :
-              mesa.estado === 'ocupada' ? 'text-[color:var(--sp-error-600)]' :
-              mesa.estado === 'reservada' ? 'text-[color:var(--sp-warning-600)]' :
-              mesa.estado === 'en_cocina' ? 'text-[color:var(--sp-primary-600)]' :
-              mesa.estado === 'servida' ? 'text-[color:var(--sp-info-600)]' :
-              mesa.estado === 'por_cobrar' ? 'text-[color:var(--sp-warning-600)]' :
-              'text-[color:var(--sp-neutral-600)]'
-            }`}>
+          <div className={`p-3 rounded-xl ${estadoDisplay ? colorToClasses(estadoDisplay.color).bg100 : 'bg-[color:var(--sp-neutral-100)]'}`}>
+            <span className={`text-2xl ${estadoDisplay ? colorToClasses(estadoDisplay.color).text600 : 'text-[color:var(--sp-neutral-600)]'}`}>
               👥
             </span>
           </div>
@@ -135,7 +156,7 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
               {mesa.nombre || `Mesa ${mesa.numero}`}
             </h2>
             <p className="text-sm text-[color:var(--sp-neutral-500)]">
-              {mesa.zona} • Capacidad {mesa.capacidad} {mesa.capacidad === 1 ? 'persona' : 'personas'}
+              {mesa.zona ? `${mesa.zona} • ` : ''}Capacidad {mesa.capacidad} {mesa.capacidad === 1 ? 'persona' : 'personas'}
               {mesa.detallesOrden?.comensales != null && ` • 👥 ${mesa.detallesOrden.comensales} ${mesa.detallesOrden.comensales === 1 ? 'persona' : 'personas'}`}
             </p>
           </div>
@@ -194,36 +215,33 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
           </div>
         )}
 
+  {/* Información básica editable movida al panel de configuración */}
+
         {/* Estado actual */}
         <div className="mb-6">
           <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-3">
             Estado Actual
           </h3>
-          <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-            mesa.estado === 'libre' ? 'bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)]' :
-            mesa.estado === 'ocupada' ? 'bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)]' :
-            mesa.estado === 'reservada' ? 'bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-800)]' :
-            mesa.estado === 'en_cocina' ? 'bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-800)]' :
-            mesa.estado === 'servida' ? 'bg-[color:var(--sp-info-100)] text-[color:var(--sp-info-800)]' :
-            mesa.estado === 'por_cobrar' ? 'bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-800)]' :
-            'bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-800)]'
-          }`}>
-            {mesa.estado === 'libre' && '🟢 Libre'}
-            {mesa.estado === 'ocupada' && '🔴 Ocupada'}
-            {mesa.estado === 'reservada' && '🟡 Reservada'}
-            {mesa.estado === 'en_cocina' && '🍳 En cocina'}
-            {mesa.estado === 'servida' && '🍽️ Servida'}
-            {mesa.estado === 'por_cobrar' && '💳 Por cobrar'}
-            {mesa.estado === 'mantenimiento' && '🔧 Mantenimiento'}
+          <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${estadoDisplay ? colorToClasses(estadoDisplay.color).bg100 + ' ' + colorToClasses(estadoDisplay.color).text800 : 'bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-800)]'}`}>
+            {estadoDisplay?.estado === 'libre' && '🟢 '}
+            {estadoDisplay?.estado === 'ocupada' && '🔴 '}
+            {estadoDisplay?.estado === 'reservada' && '🟡 '}
+            {estadoDisplay?.estado === 'en_cocina' && '🍳 '}
+            {estadoDisplay?.estado === 'servida' && '🍽️ '}
+            {estadoDisplay?.estado === 'por_cobrar' && '💳 '}
+            {estadoDisplay?.estado === 'mantenimiento' && '🔧 '}
+            {estadoDisplay?.texto || mesa.estado}
           </div>
         </div>
 
         {/* Información */}
         <div className="grid grid-cols-1 gap-4 mb-6">
-          <div className="flex items-center space-x-2">
-            <span>📍</span>
-            <span className="text-sm text-[color:var(--sp-neutral-600)]">Zona: {mesa.zona}</span>
-          </div>
+          {mesa.zona && (
+            <div className="flex items-center space-x-2">
+              <span>📍</span>
+              <span className="text-sm text-[color:var(--sp-neutral-600)]">Zona: {mesa.zona}</span>
+            </div>
+          )}
           <div className="flex items-center space-x-2">
             <span>👥</span>
             <span className="text-sm text-[color:var(--sp-neutral-600)]">Capacidad: {mesa.capacidad} personas</span>

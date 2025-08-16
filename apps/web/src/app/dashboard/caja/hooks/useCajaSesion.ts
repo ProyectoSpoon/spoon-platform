@@ -103,28 +103,44 @@ export const useCajaSesion = () => {
       }
 
       if (data) {
-        setSesionActual(data);
-        setEstadoCaja('abierta');
-        // Saneador: si la sesión es de un día anterior, intentar cierre automático una vez
-        try {
-          const inicioHoy = new Date();
-          inicioHoy.setHours(0, 0, 0, 0);
-          const abiertaAt = new Date((data as any).abierta_at || (data as any).fechaApertura);
-          if (abiertaAt && abiertaAt < inicioHoy) {
+        // Comparar fechas en zona 'America/Bogota' para evitar falsos positivos
+        const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' });
+        const hoyBogota = fmt.format(new Date()); // YYYY-MM-DD
+        const abiertaAt = new Date((data as any).abierta_at || (data as any).fechaApertura);
+        const abiertaDiaBogota = fmt.format(abiertaAt);
+
+        const esDeDiaPrevio = abiertaDiaBogota < hoyBogota;
+
+        if (esDeDiaPrevio) {
+          // No cambiamos a 'abierta' todavía; intentamos cierre automático primero
+          try {
             if (!saneadorEjecutado.current) {
               saneadorEjecutado.current = true;
+              // Asegurar que cerrarCaja use la sesión correcta
+              sesionIdRef.current = (data as any).id || null;
               const cierre = await cerrarCaja('Cierre automático: sesión previa');
               if (!cierre.success) {
+                // Si no se pudo cerrar, reflejar estado y mostrar aviso de saneamiento
+                setSesionActual(data);
+                setEstadoCaja('abierta');
                 setRequiereSaneamiento(true);
               } else {
+                // Quedó cerrada
+                setSesionActual(null);
+                setEstadoCaja('cerrada');
                 setRequiereSaneamiento(false);
               }
             }
-          } else {
-            setRequiereSaneamiento(false);
+          } catch {
+            setSesionActual(data);
+            setEstadoCaja('abierta');
+            setRequiereSaneamiento(true);
           }
-        } catch {
-          setRequiereSaneamiento(true);
+        } else {
+          // Sesión es del día actual → marcar como abierta normalmente
+          setSesionActual(data);
+          setEstadoCaja('abierta');
+          setRequiereSaneamiento(false);
         }
       } else {
         setSesionActual(null);

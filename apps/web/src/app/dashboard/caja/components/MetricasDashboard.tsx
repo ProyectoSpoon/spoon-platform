@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '@spoon/shared/components/ui/Card';
-import { TrendingUp, DollarSign, Receipt, AlertCircle } from 'lucide-react';
+import { TrendingUp, DollarSign, Receipt, AlertCircle, ListOrdered } from 'lucide-react';
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
 interface MetricasData {
@@ -27,35 +27,37 @@ const MetricCard: React.FC<{
   color: 'green' | 'blue' | 'red' | 'gray';
   trend?: 'up' | 'down' | 'neutral';
   badges?: Array<{ label: string; value: number; color: string }>;
-}> = ({ icon, label, value, subtitle, color, trend, badges = [] }) => {
+  format?: 'currency' | 'number';
+}> = ({ icon, label, value, subtitle, color, trend, badges = [], format = 'currency' }) => {
   
   const formatCurrency = (centavos: number) => formatCurrencyCOP(centavos);
+  const formatValue = (val: number) => (format === 'currency' ? formatCurrency(val) : new Intl.NumberFormat('es-CO').format(val));
 
   const colorClasses = {
     green: {
       bg: "bg-[color:var(--sp-success-50)]",
-      border: "border-[color:var(--sp-success-200)]",
+      border: "border-[color:var(--sp-border)]",
       icon: "text-[color:var(--sp-success-600)]",
       value: "text-[color:var(--sp-success-700)]",
       iconBg: "bg-[color:var(--sp-success-100)]"
     },
     red: {
       bg: "bg-[color:var(--sp-error-50)]", 
-      border: "border-[color:var(--sp-error-200)]",
+      border: "border-[color:var(--sp-border)]",
       icon: "text-[color:var(--sp-error-600)]",
       value: "text-[color:var(--sp-error-700)]",
       iconBg: "bg-[color:var(--sp-error-100)]"
     },
     blue: {
       bg: "bg-[color:var(--sp-info-50)]",
-      border: "border-[color:var(--sp-info-200)]", 
+      border: "border-[color:var(--sp-border)]", 
       icon: "text-[color:var(--sp-info-600)]",
       value: "text-[color:var(--sp-info-700)]",
       iconBg: "bg-[color:var(--sp-info-100)]"
     },
     gray: {
       bg: "bg-[color:var(--sp-neutral-50)]",
-      border: "border-[color:var(--sp-neutral-200)]",
+      border: "border-[color:var(--sp-border)]",
       icon: "text-[color:var(--sp-neutral-600)]", 
       value: "text-[color:var(--sp-neutral-700)]",
       iconBg: "bg-[color:var(--sp-neutral-100)]"
@@ -63,17 +65,19 @@ const MetricCard: React.FC<{
   };
 
   const classes = colorClasses[color];
+  // Normalizar tamaño/color del ícono para que todas las tarjetas se vean consistentes
+  const StyledIcon = React.isValidElement(icon)
+    ? React.cloneElement(icon as React.ReactElement, { className: `w-5 h-5 ${classes.icon}` })
+    : icon;
 
   return (
-    <Card className={`${classes.bg} ${classes.border} border transition-all duration-200 hover:shadow-md`}>
+    <Card className={`rounded-lg shadow-sm ${classes.bg} ${classes.border} border transition-all duration-200 hover:shadow-md`}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Icono */}
             <div className={`p-2.5 rounded-lg ${classes.iconBg}`}>
-              <div className={`w-5 h-5 ${classes.icon}`}>
-                {icon}
-              </div>
+              {StyledIcon}
             </div>
             
             {/* Contenido principal */}
@@ -82,7 +86,7 @@ const MetricCard: React.FC<{
                 {label}
               </p>
               <p className={`text-[22px] leading-7 font-bold ${classes.value}`}>
-                {formatCurrency(value)}
+                {formatValue(value)}
               </p>
               {subtitle && (
                 <p className="text-[11px] text-[color:var(--sp-neutral-400)] mt-1">
@@ -169,8 +173,8 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
 
   if (loading) {
     return (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[1, 2, 3].map((i) => (
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
       <Card key={i} className="animate-pulse">
             <CardContent className="p-4">
               <div className="flex items-center space-x-4">
@@ -188,7 +192,7 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       {/* Balance */}
       <MetricCard
         icon={<TrendingUp />}
@@ -218,6 +222,17 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
         subtitle={metricas.gastosTotales > 0 ? "Egresos del día" : "Sin gastos registrados"}
         color="red"
         trend={metricas.gastosTotales > 0 ? 'down' : 'neutral'}
+      />
+
+      {/* Órdenes (KPI) */}
+      <MetricCard
+        icon={<ListOrdered />}
+        label="Órdenes"
+        value={metricas.transaccionesDelDia.length}
+        subtitle="Cantidad de órdenes del día"
+        color="gray"
+        trend={metricas.transaccionesDelDia.length > 0 ? 'up' : 'neutral'}
+        format="number"
       />
     </div>
   );

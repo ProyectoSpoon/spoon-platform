@@ -48,7 +48,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
 // Estados predefinidos comunes
 export const EmptyStates = {
-  ordensPendientes: (onNuevaVenta?: () => void) => (
+  ordenesPendientes: (onNuevaVenta?: () => void) => (
     <EmptyState
       icon="💰"
       title="No hay órdenes pendientes"

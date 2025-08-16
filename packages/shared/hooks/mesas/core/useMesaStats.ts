@@ -57,11 +57,11 @@ export const useMesaStats = (mesas: Mesa[]): MesaStatsHook => {
     const porcentajeDisponibilidad = mesasDisponibles > 0 ? (mesasLibres / mesasDisponibles) * 100 : 0;
     
     // Estadísticas por zona
-    const zonas = Array.from(new Set(mesas.map(m => m.zona)));
+  const zonas = Array.from(new Set(mesas.map(m => m.zona).filter(Boolean))) as string[];
     const estadisticasPorZona: { [zona: string]: any } = {};
     
     zonas.forEach(zona => {
-      const mesasZona = mesas.filter(m => m.zona === zona && m.estado !== 'inactiva');
+  const mesasZona = mesas.filter(m => m.zona === zona && m.estado !== 'inactiva');
       const total = mesasZona.length;
       const libres = mesasZona.filter(m => m.estado === 'libre').length;
       const ocupadas = mesasZona.filter(m => m.estado === 'ocupada').length;

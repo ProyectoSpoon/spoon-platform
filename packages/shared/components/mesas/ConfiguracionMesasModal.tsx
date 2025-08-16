@@ -108,11 +108,11 @@ const ConfiguracionMesasModal: React.FC<ConfiguracionMesasModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-[color:color-mix(in_srgb,var(--sp-neutral-900)_60%,transparent)] z-50 flex items-center justify-center p-4">
-      <div className="bg-[color:var(--sp-neutral-0)] rounded-lg shadow-xl max-w-md w-full">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
         
-        {/* Header Simple */}
-  <div className="bg-[color:var(--sp-neutral-900)] text-[color:var(--sp-neutral-0)] p-6 flex justify-between items-center rounded-t-lg">
+    {/* Header Simple */}
+  <div className="bg-neutral-900 text-white p-6 flex justify-between items-center rounded-t-lg">
           <div>
             <h2 className="text-xl font-bold">
               {configuracionActual?.configuradas ? 'Reconfigurar Mesas' : 'Configurar Mesas'}
@@ -186,22 +186,7 @@ const ConfiguracionMesasModal: React.FC<ConfiguracionMesasModalProps> = ({
                 </button>
               </div>
 
-              {/* Presets rápidos */}
-              <div className="flex justify-center gap-2">
-                {[8, 12, 16, 20, 24].map(preset => (
-                  <button
-                    key={preset}
-                    onClick={() => setTotalMesas(preset)}
-                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                      totalMesas === preset 
-                        ? 'bg-[color:var(--sp-info-500)] text-[color:var(--sp-neutral-0)]' 
-                        : 'bg-[color:var(--sp-neutral-0)] border border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-600)] hover:border-[color:var(--sp-neutral-400)]'
-                    }`}
-                  >
-                    {preset}
-                  </button>
-                ))}
-              </div>
+              {/* Presets rápidos eliminados: se mantiene solo control manual (+/-, input) */}
             </div>
 
             {/* Vista previa */}

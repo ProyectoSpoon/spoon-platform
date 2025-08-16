@@ -10,7 +10,6 @@ import {
   Home, 
   Settings, 
   Menu,
-  BarChart3,
   Users,
   Package,
   Calendar,
@@ -58,12 +57,6 @@ const menuItems = [
     icon: Menu,
     description: 'Control de tus mesas',
     
-  },
-  {
-    label: 'Facturación',
-    href: '/dashboard/facturacion',
-    icon: BarChart3,
-    description: 'Reportes y analytics'
   },
   {
     label: 'Configuración',

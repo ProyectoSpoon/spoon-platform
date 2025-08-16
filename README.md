@@ -43,6 +43,14 @@ npm run dev
 npm run build
 \\\
 
+## 🔧 Feature flags
+
+- Sistema Maestro de Mesas (frontend):
+	- Variable: `NEXT_PUBLIC_ENABLE_SISTEMA_MAESTRO` (default: false)
+	- Archivo ejemplo: `apps/web/.env.example`
+	- Uso: copiar a `.env.local` en `apps/web/` y ajustar a `true` para activar el nuevo sistema maestro en la UI.
+
+
 ## 🎯 Roadmap MVP
 1. **Land**: Menú digital gratuito
 2. **Expand**: Analytics y SaaS Premium  

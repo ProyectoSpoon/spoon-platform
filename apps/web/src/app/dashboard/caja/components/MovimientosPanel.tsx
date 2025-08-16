@@ -115,7 +115,7 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                       
                       <div className="text-xs text-[color:var(--sp-neutral-500)]">
                         ⏰ {new Date(orden.fecha_creacion).toLocaleTimeString('es-CO', { 
-                          hour: '2-digit', minute: '2-digit' 
+                          hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' 
                         })}
                       </div>
                     </div>
@@ -173,7 +173,7 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                       <div className="text-xs text-[color:var(--sp-neutral-500)] space-x-4">
                         <span>
                           ⏰ {new Date(transaccion.procesada_at).toLocaleTimeString('es-CO', { 
-                            hour: '2-digit', minute: '2-digit' 
+                            hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' 
                           })}
                         </span>
                         {transaccion.monto_cambio > 0 && (
@@ -226,7 +226,7 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                       
                       <div className="text-xs text-[color:var(--sp-neutral-500)]">
                         ⏰ {new Date(gasto.registrado_at).toLocaleTimeString('es-CO', { 
-                          hour: '2-digit', minute: '2-digit' 
+                          hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' 
                         })}
                       </div>
                     </div>

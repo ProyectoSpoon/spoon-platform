@@ -12,7 +12,7 @@ type MesaApi = {
   id?: string;
   numero: number;
   nombre?: string;
-  zona: string;
+  zona?: string; // opcional: la columna fue eliminada del esquema
   capacidad: number;
   estado: any;
   notas?: string;

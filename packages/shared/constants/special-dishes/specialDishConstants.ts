@@ -4,19 +4,27 @@
 // ========================================
 
 import { SpecialFilters, SpecialComboFilters } from '../../types/special-dishes/specialDishTypes';
+import { CATEGORIAS_MENU_CONFIG } from '../menu-dia/menuConstants';
 
 // ========================================
 // CONFIGURACIÓN DE CATEGORÍAS PARA ESPECIALES
 // (Reutilizamos la misma estructura del menú del día)
 // ========================================
 
+// Reglas de obligatoriedad específicas para especiales
+const REQUIRED_BY_ID: Record<string, boolean> = {
+  proteinas: true,
+  entradas: false,
+  principios: false,
+  acompanamientos: false,
+  bebidas: false,
+};
+
 export const CATEGORIAS_ESPECIALES_CONFIG = [
   { id: 'info', nombre: 'Información Básica', uuid: null, required: true },
-  { id: 'entradas', nombre: 'Entradas', uuid: '494fbac6-59ed-42af-af24-039298ba16b6', required: false },
-  { id: 'principios', nombre: 'Principios', uuid: 'de7f4731-3eb3-4d41-b830-d35e5125f4a3', required: false },
-  { id: 'proteinas', nombre: 'Proteínas', uuid: '299b1ba0-0678-4e0e-ba53-90e5d95e5543', required: true },
-  { id: 'acompanamientos', nombre: 'Acompañamientos', uuid: '8b0751ae-1332-409e-a710-f229be0b9758', required: false },
-  { id: 'bebidas', nombre: 'Bebidas', uuid: 'c77ffc73-b65a-4f03-adb1-810443e61799', required: false },
+  ...CATEGORIAS_MENU_CONFIG
+    .filter((c) => c.id !== 'configuracion-final')
+    .map((c) => ({ ...c, required: REQUIRED_BY_ID[c.id] ?? false })),
   { id: 'configuracion-final', nombre: 'Configuración Final', uuid: null, required: true }
 ];
 

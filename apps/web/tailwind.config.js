@@ -4,7 +4,10 @@ module.exports = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  // Monorepo shared packages (para generar clases usadas fuera de src)
+  '../../packages/shared/**/*.{js,ts,jsx,tsx,mdx}',
+  '../../packages/**/components/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {

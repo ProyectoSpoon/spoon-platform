@@ -33,11 +33,11 @@ describe('mesaValidators', () => {
       expect(result.errors).toContain('La capacidad debe estar entre 1 y 20');
     });
 
-    test('zona vacía falla', () => {
+    test('zona vacía no falla (zona opcional)', () => {
       const result = validarConfiguracionMesa(1, 'Mesa Test', '', 4);
       
-      expect(result.valid).toBe(false);
-      expect(result.errors).toContain('La zona es requerida');
+      expect(result.valid).toBe(true);
+      expect(result.errors).not.toContain('La zona es requerida');
     });
 
     test('nombre muy largo falla', () => {

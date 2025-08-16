@@ -11,9 +11,10 @@ import { useMesaState } from './core/useMesaState';
 import { useMesaActions } from './core/useMesaActions';
 import { useMesaConfig } from './core/useMesaConfig';
 import { useMesaStats } from './core/useMesaStats';
+import { useMesasMaestro } from './core/useMesasMaestro';
+import { getEstadoDisplay } from '../../utils/mesas/mesaStateUtils';
 
-// Re-exportar tipos para compatibilidad
-export type { DistribucionZonas } from './core/useMesaConfig';
+// Nota: zonas fueron eliminadas del modelo; no re-exportamos DistribucionZonas
 
 export interface UseMesasReturn {
   // Estados principales (compatibilidad con API anterior)
@@ -44,6 +45,7 @@ export interface UseMesasReturn {
 
 export const useMesas = (): UseMesasReturn => {
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const useSistemaMaestro = (process.env.NEXT_PUBLIC_ENABLE_SISTEMA_MAESTRO || '').toString() === 'true';
 
   // Obtener restaurant ID
   useEffect(() => {
@@ -60,7 +62,56 @@ export const useMesas = (): UseMesasReturn => {
     getRestaurantId();
   }, []);
 
-  // Hooks especializados
+  // Ruta maestro (feature-flag)
+  if (useSistemaMaestro) {
+    const maestro = useMesasMaestro(restaurantId);
+
+    // Adaptar a API legacy actual para no romper componentes existentes
+    const mesasCompletas = maestro.mesas.map(m => ({
+      numero: m.numero,
+      nombre: m.nombre,
+      zona: m.zona,
+      capacidad: m.capacidad_personas,
+      estado: getEstadoDisplay({ estado_mesa: m.estado_mesa, orden_activa: m.orden_activa }).estado,
+      ocupada: m.estado_mesa === 'ocupada',
+      detallesOrden: m.orden_activa ? {
+        total: m.orden_activa.total,
+        items: m.orden_activa.items,
+        comensales: m.orden_activa.comensales,
+        fechaCreacion: m.orden_activa.created_at
+      } : null,
+      created_at: m.created_at,
+      updated_at: m.updated_at
+    }));
+
+    // mesasOcupadas legacy
+    const mesasOcupadas = mesasCompletas
+      .filter(m => m.estado !== 'libre' && m.detallesOrden)
+      .reduce((acc, m) => {
+        acc[m.numero] = { numero: m.numero, total: m.detallesOrden!.total, items: m.detallesOrden!.items };
+        return acc;
+      }, {} as { [key: number]: any });
+
+    const configuracionAdaptada = maestro.configuracion
+      ? { ...maestro.configuracion, zonas: [] as string[] }
+      : { configuradas: false, totalMesas: 0, zonas: [] as string[] };
+
+    return {
+      mesasOcupadas,
+      loading: maestro.loading,
+      restaurantId,
+      mesasCompletas,
+      configuracion: configuracionAdaptada,
+      loadingConfiguracion: maestro.loading,
+      estadisticas: { totalPendiente: mesasCompletas.reduce((s, m) => s + (m.detallesOrden?.total || 0), 0) },
+      cargarMesas: maestro.actions.cargarMesas,
+      procesarCobro: async (_n: number): Promise<boolean> => true, // no-op temporal; la acción real se hará desde panel maestro
+      configurarMesasIniciales: async (total: number, distribucion?: any): Promise<boolean> => (await maestro.actions.configurarMesas({ totalMesas: total, distribucion })).success,
+      crearOrden: () => {}, reservarMesa: () => {}, activarMesa: () => {}, inactivarMesa: () => {}, eliminarOrden: () => {},
+    } as any;
+  }
+
+  // Hooks especializados (LEGACY)
   const mesaState = useMesaState(restaurantId);
   const mesaActions = useMesaActions(restaurantId, mesaState.sincronizarMesas);
   const mesaConfig = useMesaConfig(restaurantId, () => {

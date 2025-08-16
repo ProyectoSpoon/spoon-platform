@@ -21,6 +21,7 @@ export interface NuevaFactura {
 }
 
 import { createClient } from '@supabase/supabase-js';
+import { CATEGORIAS_MENU_CONFIG } from '../constants/menu-dia/menuConstants';
 
 // Verificar que las variables de entorno existan
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -609,7 +610,8 @@ export interface RestaurantMesa {
   restaurant_id: string;
   numero: number;
   nombre?: string;
-  zona: string;
+  // Zona fue eliminada de la base de datos; mantener opcional por compatibilidad
+  zona?: string;
   capacidad_personas: number;
   estado: 'libre' | 'ocupada' | 'reservada' | 'inactiva';
   notas?: string;
@@ -765,13 +767,6 @@ export const insertSpecialDishSelections = async (
     .eq('special_dish_id', specialDishId);
 
   const selections: any[] = [];
-  const CATEGORIAS_MENU_CONFIG = [
-    { id: 'entradas', nombre: 'Entradas', uuid: '494fbac6-59ed-42af-af24-039298ba16b6' },
-    { id: 'principios', nombre: 'Principios', uuid: 'de7f4731-3eb3-4d41-b830-d35e5125f4a3' },
-    { id: 'proteinas', nombre: 'Proteínas', uuid: '299b1ba0-0678-4e0e-ba53-90e5d95e5543' },
-    { id: 'acompanamientos', nombre: 'Acompañamientos', uuid: '8b0751ae-1332-409e-a710-f229be0b9758' },
-    { id: 'bebidas', nombre: 'Bebidas', uuid: 'c77ffc73-b65a-4f03-adb1-810443e61799' }
-  ];
 
   Object.entries(selectedProducts).forEach(([categoryId, products]: [string, any]) => {
     const categoryConfig = CATEGORIAS_MENU_CONFIG.find(c => c.id === categoryId);
@@ -823,13 +818,20 @@ export const generateSpecialCombinations = async (
   });
 
   const combinations: any[] = [];
-  
+
+  // Derivar nombres de categorías desde constantes compartidas para evitar hardcodes
+  const CATEGORY_NAMES: Record<string, string> = Object.fromEntries(
+    CATEGORIAS_MENU_CONFIG
+      .filter((c) => !!c.nombre)
+      .map((c) => [c.id, c.nombre as string])
+  );
+
   // Generar combinación básica (una por ahora, pero se puede expandir)
-  const entrada = productsByCategory['Entradas']?.[0];
-  const principio = productsByCategory['Principios']?.[0];
-  const proteina = productsByCategory['Proteínas']?.[0];
-  const acompanamiento = productsByCategory['Acompañamientos']?.[0];
-  const bebida = productsByCategory['Bebidas']?.[0];
+  const entrada = productsByCategory[CATEGORY_NAMES['entradas']]?.[0];
+  const principio = productsByCategory[CATEGORY_NAMES['principios']]?.[0];
+  const proteina = productsByCategory[CATEGORY_NAMES['proteinas']]?.[0];
+  const acompanamiento = productsByCategory[CATEGORY_NAMES['acompanamientos']]?.[0];
+  const bebida = productsByCategory[CATEGORY_NAMES['bebidas']]?.[0];
 
   if (proteina) {
     combinations.push({
@@ -1535,15 +1537,11 @@ export const configurarMesas = async (
       
       const mesasNuevas: any[] = [];
       
-      // Determinar zona por defecto o usar distribución
-      const zonaPorDefecto = distribucion ? Object.keys(distribucion)[0] : 'Principal';
-      
       for (let i = totalActual + 1; i <= totalMesas; i++) {
         mesasNuevas.push({
           restaurant_id: restaurantId,
           numero: i,
           nombre: `Mesa ${i}`,
-          zona: zonaPorDefecto,
           capacidad_personas: 4,
           estado: 'libre'
         });
@@ -1622,15 +1620,14 @@ export const reconfigurarMesasCompleto = async (
     const mesasNuevas: any[] = [];
     
     if (distribucion) {
-      // Con distribución por zonas
+      // Con distribución por zonas (zona removida del modelo, solo se usaba para numeración)
       let numeroActual = 1;
-      Object.entries(distribucion).forEach(([zona, cantidad]) => {
+      Object.entries(distribucion).forEach(([_, cantidad]) => {
         for (let i = 0; i < cantidad; i++) {
           mesasNuevas.push({
             restaurant_id: restaurantId,
             numero: numeroActual,
             nombre: `Mesa ${numeroActual}`,
-            zona,
             capacidad_personas: 4,
             estado: 'libre'
           });
@@ -1644,7 +1641,6 @@ export const reconfigurarMesasCompleto = async (
           restaurant_id: restaurantId,
           numero: i,
           nombre: `Mesa ${i}`,
-          zona: 'Principal',
           capacidad_personas: 4,
           estado: 'libre'
         });
@@ -1706,7 +1702,6 @@ export const crearMesa = async (mesaData: {
   restaurantId: string;
   numero: number;
   nombre?: string;
-  zona?: string;
   capacidad?: number;
 }): Promise<RestaurantMesa> => {
   try {
@@ -1718,7 +1713,6 @@ export const crearMesa = async (mesaData: {
         restaurant_id: mesaData.restaurantId,
         numero: mesaData.numero,
         nombre: mesaData.nombre || `Mesa ${mesaData.numero}`,
-        zona: mesaData.zona || 'Principal',
         capacidad_personas: mesaData.capacidad || 4,
         estado: 'libre'
       })
@@ -1772,14 +1766,15 @@ export const verificarMesasConfiguradas = async (restaurantId: string): Promise<
     
     const { data, error } = await supabase
       .from('restaurant_mesas')
-      .select('zona')
+      .select('id')
       .eq('restaurant_id', restaurantId);
 
     if (error) throw error;
 
     const configuradas = (data?.length || 0) > 0;
     const totalMesas = data?.length || 0;
-    const zonas = Array.from(new Set(data?.map(m => m.zona) || []));
+  // La columna zona fue eliminada; devolvemos vacío para compatibilidad
+  const zonas: string[] = [];
 
     
     return { configuradas, totalMesas, zonas };
@@ -1807,7 +1802,8 @@ export const getEstadoCompletoMesas = async (restaurantId: string) => {
         const estadoCompleto = mesas.map(mesa => ({
           numero: mesa.numero,
           nombre: mesa.nombre,
-          zona: mesa.zona,
+          // zona eliminada del modelo
+          zona: undefined,
           capacidad: mesa.capacidad_personas,
           estado: mesa.estado,
           ocupada: mesasOcupadas[mesa.numero] ? true : false,
@@ -1818,7 +1814,8 @@ export const getEstadoCompletoMesas = async (restaurantId: string) => {
           totalMesas: mesas.length,
           mesasLibres: estadoCompleto.filter(m => !m.ocupada).length,
           mesasOcupadas: estadoCompleto.filter(m => m.ocupada).length,
-          zonas: Array.from(new Set(mesas.map(m => m.zona)))
+          // zonas no disponibles
+          zonas: [] as string[]
         };
       }
     );
@@ -1850,7 +1847,6 @@ export const reconfigurarMesas = async (
           restaurant_id: restaurantId,
           numero: i,
           nombre: `Mesa ${i}`,
-          zona: 'Principal',
           capacidad_personas: 4,
           estado: 'libre'
         });
@@ -1950,6 +1946,28 @@ export interface TransaccionCaja {
 // ========================================
 // FUNCIONES PARA GESTIÓN DE CAJA
 // ========================================
+
+/**
+ * Devuelve los límites UTC para el inicio y fin de un día en zona America/Bogota.
+ * Nota: Colombia no usa DST (UTC-5), por lo que es seguro construir las fechas con -05:00.
+ */
+const getBogotaDayUtcBounds = (fecha?: string) => {
+  const dia = fecha || new Date().toISOString().slice(0, 10);
+  // Construimos la fecha local Bogotá y dejamos que el motor convierta a UTC
+  const start = new Date(`${dia}T00:00:00.000-05:00`);
+  const end = new Date(`${dia}T23:59:59.999-05:00`);
+  return { startUtc: start.toISOString(), endUtc: end.toISOString() };
+};
+
+/**
+ * Limites UTC para un rango [fechaInicio, fechaFin] en zona America/Bogota.
+ * Ambas fechas son YYYY-MM-DD en horario local Bogotá.
+ */
+const getBogotaRangeUtcBounds = (fechaInicio: string, fechaFin: string) => {
+  const start = new Date(`${fechaInicio}T00:00:00.000-05:00`);
+  const end = new Date(`${fechaFin}T23:59:59.999-05:00`);
+  return { startUtc: start.toISOString(), endUtc: end.toISOString() };
+};
 
 /**
  * Obtener sesión de caja activa
@@ -2200,14 +2218,15 @@ export const getTransaccionesDelDia = async (restaurantId: string, fecha?: strin
 }> => {
   try {
     const fechaBusqueda = fecha || new Date().toISOString().split('T')[0];
+    const { startUtc, endUtc } = getBogotaDayUtcBounds(fechaBusqueda);
     
     // Obtener todas las sesiones del día
     const { data: sesiones, error: errorSesiones } = await supabase
       .from('caja_sesiones')
       .select('id')
       .eq('restaurant_id', restaurantId)
-      .gte('abierta_at', `${fechaBusqueda}T00:00:00.000Z`)
-      .lt('abierta_at', `${fechaBusqueda}T23:59:59.999Z`);
+      .gte('abierta_at', startUtc)
+      .lt('abierta_at', endUtc);
 
     if (errorSesiones) throw errorSesiones;
 
@@ -2255,6 +2274,91 @@ export const getTransaccionesDelDia = async (restaurantId: string, fecha?: strin
     console.error('Error obteniendo transacciones del día:', error);
     throw error;
   }
+};
+
+/**
+ * Obtener transacciones dentro de un rango de tiempo (Bogotá) por restaurante.
+ */
+export const getTransaccionesEnRango = async (
+  restaurantId: string,
+  fechaInicio: string,
+  fechaFin: string
+): Promise<TransaccionCaja[]> => {
+  const { startUtc, endUtc } = getBogotaRangeUtcBounds(fechaInicio, fechaFin);
+  const { data, error } = await supabase
+    .from('transacciones_caja')
+    .select(`*, caja_sesiones!inner(restaurant_id)`) // join para filtrar por restaurante
+    .eq('caja_sesiones.restaurant_id', restaurantId)
+    .gte('procesada_at', startUtc)
+    .lte('procesada_at', endUtc)
+    .order('procesada_at', { ascending: false });
+  if (error) throw error;
+  return (data as any[]) as TransaccionCaja[];
+};
+
+/**
+ * Obtener gastos dentro de un rango de tiempo (Bogotá) por restaurante.
+ */
+export const getGastosEnRango = async (
+  restaurantId: string,
+  fechaInicio: string,
+  fechaFin: string
+): Promise<any[]> => {
+  const { startUtc, endUtc } = getBogotaRangeUtcBounds(fechaInicio, fechaFin);
+  const { data, error } = await supabase
+    .from('gastos_caja')
+    .select(`*, caja_sesiones!inner(restaurant_id)`) // join para filtrar por restaurante
+    .eq('caja_sesiones.restaurant_id', restaurantId)
+    .gte('registrado_at', startUtc)
+    .lte('registrado_at', endUtc)
+    .order('registrado_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
+/**
+ * Paquete combinado: transacciones y gastos en rango con métricas agregadas.
+ */
+export const getTransaccionesYGastosEnRango = async (
+  restaurantId: string,
+  fechaInicio: string,
+  fechaFin: string
+): Promise<{
+  transacciones: TransaccionCaja[];
+  gastos: any[];
+  totalVentas: number;
+  totalEfectivo: number;
+  totalTarjeta: number;
+  totalDigital: number;
+  totalGastos: number;
+  gastosPorCategoria: any;
+}> => {
+  const transacciones = await getTransaccionesEnRango(restaurantId, fechaInicio, fechaFin);
+  const gastos = await getGastosEnRango(restaurantId, fechaInicio, fechaFin);
+
+  const totalVentas = transacciones.reduce((sum, t) => sum + t.monto_total, 0);
+  const totalEfectivo = transacciones.filter(t => t.metodo_pago === 'efectivo').reduce((s, t) => s + t.monto_total, 0);
+  const totalTarjeta = transacciones.filter(t => t.metodo_pago === 'tarjeta').reduce((s, t) => s + t.monto_total, 0);
+  const totalDigital = transacciones.filter(t => t.metodo_pago === 'digital').reduce((s, t) => s + t.monto_total, 0);
+
+  const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
+  const gastosPorCategoria = {
+    proveedor: gastos.filter((g: any) => g.categoria === 'proveedor').reduce((s: number, g: any) => s + g.monto, 0),
+    servicios: gastos.filter((g: any) => g.categoria === 'servicios').reduce((s: number, g: any) => s + g.monto, 0),
+    suministros: gastos.filter((g: any) => g.categoria === 'suministros').reduce((s: number, g: any) => s + g.monto, 0),
+    otro: gastos.filter((g: any) => g.categoria === 'otro').reduce((s: number, g: any) => s + g.monto, 0)
+  };
+
+  return {
+    transacciones,
+    gastos,
+    totalVentas,
+    totalEfectivo,
+    totalTarjeta,
+    totalDigital,
+    totalGastos,
+    gastosPorCategoria
+  };
 };
 
 // ========================================
@@ -2335,14 +2439,15 @@ export const getGastosDelDia = async (
 }> => {
   try {
     const fechaBusqueda = fecha || new Date().toISOString().split('T')[0];
+    const { startUtc, endUtc } = getBogotaDayUtcBounds(fechaBusqueda);
     
     // Obtener sesiones del día
     const { data: sesiones, error: errorSesiones } = await supabase
       .from('caja_sesiones')
       .select('id')
       .eq('restaurant_id', restaurantId)
-      .gte('abierta_at', `${fechaBusqueda}T00:00:00.000Z`)
-      .lt('abierta_at', `${fechaBusqueda}T23:59:59.999Z`);
+      .gte('abierta_at', startUtc)
+      .lt('abierta_at', endUtc);
 
     if (errorSesiones) throw errorSesiones;
 
@@ -2931,6 +3036,75 @@ export const actualizarNotasMesa = async (
     
   } catch (error) {
     console.error('💥 Error actualizando notas:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualizar información básica de una mesa
+ * - Soporta cambio de número (único por restaurante), nombre y capacidad_personas, y estado
+ */
+export const actualizarMesaBasica = async (
+  restaurantId: string,
+  numeroActual: number,
+  cambios: {
+    numero?: number;
+    nombre?: string;
+    capacidad?: number;
+    estado?: 'libre' | 'ocupada' | 'reservada' | 'inactiva' | 'mantenimiento';
+  }
+): Promise<RestaurantMesa> => {
+  try {
+    // Validaciones básicas
+    if (typeof cambios.nombre === 'string' && cambios.nombre.length > 100) {
+      throw new Error('El nombre no puede superar 100 caracteres');
+    }
+    if (typeof cambios.capacidad === 'number') {
+      if (!Number.isInteger(cambios.capacidad) || cambios.capacidad < 1) {
+        throw new Error('La capacidad debe ser un entero mayor o igual a 1');
+      }
+    }
+    if (typeof cambios.numero === 'number') {
+      if (!Number.isInteger(cambios.numero) || cambios.numero < 1) {
+        throw new Error('El número de mesa debe ser un entero mayor o igual a 1');
+      }
+    }
+
+    // Si se cambia el número, verificar unicidad
+    if (typeof cambios.numero === 'number' && cambios.numero !== numeroActual) {
+      const { data: existe, error: errExiste } = await supabase
+        .from('restaurant_mesas')
+        .select('id')
+        .eq('restaurant_id', restaurantId)
+        .eq('numero', cambios.numero)
+        .maybeSingle();
+      if (errExiste && errExiste.code !== 'PGRST116') throw errExiste;
+      if (existe) {
+        throw new Error(`El número de mesa ${cambios.numero} ya está en uso`);
+      }
+    }
+
+    // Construir payload
+    const payload: any = { updated_at: new Date().toISOString() };
+    if (typeof cambios.nombre === 'string') payload.nombre = cambios.nombre.trim();
+    if (typeof cambios.capacidad === 'number') payload.capacidad_personas = cambios.capacidad;
+    if (typeof cambios.estado === 'string') payload.estado = cambios.estado;
+    if (typeof cambios.numero === 'number') payload.numero = cambios.numero;
+
+    const { data, error } = await supabase
+      .from('restaurant_mesas')
+      .update(payload)
+      .eq('restaurant_id', restaurantId)
+      .eq('numero', numeroActual)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    invalidateCache('getMesasRestaurante', restaurantId);
+    return data as RestaurantMesa;
+  } catch (error) {
+    console.error('💥 Error actualizando mesa:', error);
     throw error;
   }
 };

@@ -113,54 +113,7 @@ export default function EspecialesMainPage() {
         {renderCurrentView()}
       </div>
       
-      {/* ✅ DEBUG INFO (Solo en desarrollo) */}
-    {process.env.NODE_ENV === 'development' && (
-  <div className="mt-8 p-4 bg-[color:var(--sp-surface-elevated)] border border-[color:var(--sp-border)] rounded-lg text-xs">
-          <h4 className="font-semibold mb-2">Debug Info:</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <strong>Vista actual:</strong> {specialData.currentView}
-            </div>
-            <div>
-              <strong>Restaurant ID:</strong> {specialData.restaurantId}
-            </div>
-            <div>
-              <strong>Especiales cargados:</strong> {specialData.specialDishes.length}
-            </div>
-            <div>
-              <strong>Combinaciones:</strong> {specialData.specialCombinations.length}
-            </div>
-            <div>
-              <strong>Productos disponibles:</strong> {Object.keys(specialData.availableProducts).length} categorías
-            </div>
-            <div>
-              <strong>Cambios sin guardar:</strong> {specialData.hasUnsavedChanges ? 'Sí' : 'No'}
-            </div>
-          </div>
-          
-          {/* ✅ ACCIONES DE DEBUG */}
-          <div className="mt-4 flex gap-2">
-            <button
-              onClick={() => console.log('Special Data:', specialData)}
-              className="px-3 py-1 bg-[color:var(--sp-info-600)] text-[color:var(--sp-on-info)] text-xs rounded"
-            >
-              Log Data
-            </button>
-            <button
-              onClick={() => specialData.loadInitialData()}
-              className="px-3 py-1 bg-[color:var(--sp-success-600)] text-[color:var(--sp-on-success)] text-xs rounded"
-            >
-              Reload Data
-            </button>
-            <button
-              onClick={() => specialData.setCurrentView('list')}
-              className="px-3 py-1 bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] text-xs rounded"
-            >
-              Reset View
-            </button>
-          </div>
-        </div>
-      )}
+  {/* Debug Info eliminado */}
     </div>
   );
 }

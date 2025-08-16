@@ -4,6 +4,7 @@
  */
 
 import { Mesa, MesaEstado } from '@spoon/shared/types/mesas/stateTypes';
+import { TEXTOS_ESTADO } from '@spoon/shared/constants/mesas/mesasConstants';
 import { 
   ESTADOS_PERMITEN_ORDEN, 
   ESTADOS_DISPONIBLES, 
@@ -35,19 +36,44 @@ export const esTransicionValida = (estadoActual: MesaEstado, estadoNuevo: MesaEs
 /**
  * Obtiene el estado display para UI
  */
-export const getEstadoDisplay = (mesa: Mesa) => {
-  const config = {
-    libre: { color: 'green', texto: 'Libre', descripcion: 'Disponible para nuevos clientes' },
-    ocupada: { color: 'red', texto: 'Ocupada', descripcion: 'Mesa con orden activa' },
-  en_cocina: { color: 'yellow', texto: 'En cocina', descripcion: 'Pedido en preparación' },
-  servida: { color: 'yellow', texto: 'Servida', descripcion: 'Comida servida' },
-  por_cobrar: { color: 'yellow', texto: 'Por cobrar', descripcion: 'Cuenta solicitada' },
-    reservada: { color: 'yellow', texto: 'Reservada', descripcion: 'Mesa reservada' },
-    inactiva: { color: 'gray', texto: 'Inactiva', descripcion: 'Fuera de servicio' },
-    mantenimiento: { color: 'orange', texto: 'Mantenimiento', descripcion: 'En mantenimiento' }
+// Tipos "duck-typed" para aceptar tanto legacy como maestro
+type MesaLegacyLike = { estado?: string; detallesOrden?: { estado?: string } | null };
+type MesaMaestroLike = { estado_mesa?: 'libre'|'ocupada'|'reservada'|'inactiva'; orden_activa?: { estado_orden?: 'en_cocina'|'servida'|'por_cobrar'|'activa' } | null };
+
+/**
+ * Devuelve un estado visual unificado para UI a partir de mesas legacy o maestro.
+ * Prioriza el estado de la orden (en_cocina/servida/por_cobrar) si existe; si no, el estado de mesa.
+ */
+export const getEstadoDisplay = (mesa: Mesa | MesaLegacyLike | MesaMaestroLike):
+  { estado: MesaEstado; color: 'green'|'red'|'yellow'|'gray'|'orange'; texto: string; descripcion?: string } => {
+  // Determinar estado "display" unificado (string)
+  let estado: MesaEstado = 'libre';
+  const m = mesa as MesaMaestroLike;
+  if (m?.orden_activa?.estado_orden && ['en_cocina','servida','por_cobrar'].includes(m.orden_activa.estado_orden)) {
+    estado = m.orden_activa.estado_orden as MesaEstado;
+  } else if (m?.estado_mesa) {
+    estado = m.estado_mesa as MesaEstado;
+  } else {
+    const l = mesa as MesaLegacyLike & { estado?: MesaEstado };
+    if (l?.estado) estado = l.estado as MesaEstado;
+  }
+
+  // Mapear a color base
+  const colorMap: Record<MesaEstado, 'green'|'red'|'yellow'|'gray'|'orange'> = {
+    libre: 'green',
+    ocupada: 'red',
+    en_cocina: 'green', // usamos green como base (no hay blue en header actual)
+    servida: 'green',
+    por_cobrar: 'orange',
+    reservada: 'yellow',
+    inactiva: 'gray',
+    mantenimiento: 'yellow'
   };
-  
-  return config[mesa.estado] || config.libre;
+
+  const texto = TEXTOS_ESTADO[estado] || estado;
+  const descripcion = estado === 'libre' ? 'Disponible para nuevos clientes' : undefined;
+
+  return { estado, color: colorMap[estado], texto, descripcion };
 };
 
 /**

@@ -18,7 +18,7 @@ export interface ValidationResult {
 export const validarConfiguracionMesa = (
   numero: number,
   nombre: string,
-  zona: string,
+  zona: string | undefined,
   capacidad: number
 ): ValidationResult => {
   const errors: string[] = [];
@@ -31,9 +31,7 @@ export const validarConfiguracionMesa = (
     errors.push(`La capacidad debe estar entre ${CONFIG_MESAS.CAPACIDAD_MINIMA} y ${CONFIG_MESAS.CAPACIDAD_MAXIMA}`);
   }
   
-  if (!zona || zona.trim().length === 0) {
-    errors.push('La zona es requerida');
-  }
+  // zona ya no es requerida (columna eliminada)
   
   if (nombre && nombre.length > 50) {
     errors.push('El nombre no puede exceder 50 caracteres');

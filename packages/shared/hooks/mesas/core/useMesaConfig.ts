@@ -29,7 +29,7 @@ export interface MesaConfigHook {
   crearMesaIndividual: (
     numero: number, 
     nombre: string, 
-    zona: string, 
+    zona: string | undefined, 
     capacidad: number
   ) => Promise<ActionResult>;
 }
@@ -135,14 +135,14 @@ export const useMesaConfig = (
   const crearMesaIndividual = async (
     numero: number,
     nombre: string,
-    zona: string,
+    zona: string | undefined,
     capacidad: number
   ): Promise<ActionResult> => {
     if (!restaurantId) {
       return { success: false, error: 'Restaurant ID no disponible' };
     }
 
-    const validacion = validarConfiguracionMesa(numero, nombre, zona, capacidad);
+  const validacion = validarConfiguracionMesa(numero, nombre, zona as any, capacidad);
     if (!validacion.valid) {
       return { success: false, error: validacion.errors.join(', ') };
     }
@@ -154,7 +154,7 @@ export const useMesaConfig = (
         restaurantId,
         numero,
         nombre: nombre || undefined,
-        zona,
+        // zona eliminada del modelo
         capacidad
       });
       

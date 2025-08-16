@@ -8,15 +8,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] hover:bg-[color:var(--sp-primary-700)]",
-        destructive: "bg-[color:var(--sp-error-600)] text-[color:var(--sp-on-error)] hover:bg-[color:var(--sp-error-700)]",
-        outline: "border border-[color:var(--sp-border)] bg-[color:var(--sp-surface)] hover:bg-[color:var(--sp-neutral-50)] text-[color:var(--sp-on-surface)]",
-        secondary: "bg-[color:var(--sp-success-600)] text-[color:var(--sp-on-success)] hover:bg-[color:var(--sp-success-700)]",
-        ghost: "bg-transparent hover:bg-[color:var(--sp-neutral-50)] text-[color:var(--sp-on-surface)]",
+        default: "bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] hover:bg-[color:var(--sp-primary-700)] active:bg-[color:var(--sp-primary-800)]",
+        destructive: "bg-[color:var(--sp-error-600)] text-[color:var(--sp-on-error)] hover:bg-[color:var(--sp-error-700)] active:bg-[color:var(--sp-error-800)]",
+        outline: "border border-[color:var(--sp-border)] bg-[color:var(--sp-surface)] hover:bg-[color:var(--sp-neutral-50)] active:bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-on-surface)]",
+        secondary: "bg-[color:var(--sp-success-600)] text-[color:var(--sp-on-success)] hover:bg-[color:var(--sp-success-700)] active:bg-[color:var(--sp-success-800)]",
+        ghost: "bg-transparent hover:bg-[color:var(--sp-neutral-50)] active:bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-on-surface)]",
         link: "text-[color:var(--sp-primary-600)] underline-offset-4 hover:underline bg-transparent",
-        purple: "bg-[color:var(--sp-info-600)] text-[color:var(--sp-on-info)] hover:bg-[color:var(--sp-info-700)]",
-        blue: "bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] hover:bg-[color:var(--sp-primary-700)]",
-        green: "bg-[color:var(--sp-success-600)] text-[color:var(--sp-on-success)] hover:bg-[color:var(--sp-success-700)]",
+        purple: "bg-[color:var(--sp-info-600)] text-[color:var(--sp-on-info)] hover:bg-[color:var(--sp-info-700)] active:bg-[color:var(--sp-info-800)]",
+        blue: "bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] hover:bg-[color:var(--sp-primary-700)] active:bg-[color:var(--sp-primary-800)]",
+        green: "bg-[color:var(--sp-success-600)] text-[color:var(--sp-on-success)] hover:bg-[color:var(--sp-success-700)] active:bg-[color:var(--sp-success-800)]",
       },
       size: {
         default: "h-10 py-2 px-4",

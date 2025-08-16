@@ -4,40 +4,9 @@ import React, { useEffect, useMemo, useCallback, Dispatch, SetStateAction } from
 import { X, Check, Search, Heart, Star, AlertTriangle } from 'lucide-react';
 import { CATEGORIAS_MENU_CONFIG, CATEGORY_ICONS, DEFAULT_PROTEIN_QUANTITY } from '@spoon/shared/constants/menu-dia/menuConstants';
 import { MenuApiService } from '@spoon/shared/services/menu-dia/menuApiService';
-import { Producto, LoadingStates } from '@spoon/shared/types/menu-dia/menuTypes';
+import { Producto, LoadingStates, MenuCombinacion, MenuFilters, ComboFilters } from '@spoon/shared/types/menu-dia/menuTypes';
 
-// Definiciones de tipos locales para evitar problemas de import
-interface MenuCombinacion {
-  id: string;
-  nombre?: string;
-  descripcion?: string;
-  precio?: number;
-  disponible?: boolean;
-  productos?: Producto[];
-  entrada?: Producto;
-  principio?: Producto;
-  proteina?: Producto;
-  acompanamiento?: Producto[];
-  bebida?: Producto;
-  favorito?: boolean;
-  especial?: boolean;
-  cantidad?: number;
-  fechaCreacion?: string;
-  isEditing?: boolean;
-}
-
-interface MenuFilters {
-  favorites: boolean;
-  specials: boolean;
-  category: string;
-}
-
-interface ComboFilters {
-  favorites: boolean;
-  specials: boolean;
-  availability: 'all';
-  sortBy: 'name';
-}
+// Tipos importados desde shared para evitar duplicación
 
 interface MenuData {
   selectedProducts: { [categoryId: string]: Producto[] };
