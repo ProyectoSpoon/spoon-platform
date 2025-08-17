@@ -43,7 +43,7 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// React 18 - Mock de createRoot si es necesario
+// React 18 - Ensure React is available in test env
 global.React = require('react');
 
 // Variables de entorno necesarias para supabase en tests

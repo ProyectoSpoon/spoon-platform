@@ -170,8 +170,13 @@ export const useCaja = () => {
           return rango;
         })(),
 
-        // placeholder para gastos cuando periodo === 'hoy'; cuando no es hoy, lo trae el paquete rango
-        Promise.resolve(null)
+        // gastos del día si es 'hoy', de lo contrario null (ya viene en rango)
+        periodo === 'hoy'
+          ? executeWithRetry(
+              () => getGastosDelDia(profile.restaurant_id!, fechaFiltro),
+              ERROR_CONFIGS.DATABASE
+            )
+          : Promise.resolve(null)
       ]);
 
       // TRANSFORMAR Y COMBINAR DATOS
@@ -270,8 +275,11 @@ export const useCaja = () => {
       // Obtener datos iniciales UNA VEZ
       obtenerDatosCajaRef.current();
 
+      // Utilidad para suscribirse de forma segura y obtener un unsubscribe estable
+      const unsubscribes: Array<() => void> = [];
+
       // WEBSOCKET 1: Escuchar nuevas transacciones
-      const subscriptionTransacciones = supabase
+      const chTransacciones: any = supabase
         .channel(`transacciones-${sesionId}`)
         .on('postgres_changes', {
           event: 'INSERT',
@@ -299,11 +307,15 @@ export const useCaja = () => {
             transaccionesDelDia: [nuevaTransaccion, ...prev.transaccionesDelDia],
             balance: prev.balance + nuevaTransaccion.monto_total // Actualizar balance también
           }));
-        })
-        .subscribe();
+        });
+      const subTrans = typeof chTransacciones?.subscribe === 'function' ? chTransacciones.subscribe() : null;
+      unsubscribes.push(() => {
+        if (subTrans && typeof subTrans.unsubscribe === 'function') subTrans.unsubscribe();
+        else if (chTransacciones && typeof chTransacciones.unsubscribe === 'function') chTransacciones.unsubscribe();
+      });
 
       // WEBSOCKET 2: Escuchar nuevos gastos
-      const subscriptionGastos = supabase
+      const chGastos: any = supabase
         .channel(`gastos-${sesionId}`)
         .on('postgres_changes', {
           event: 'INSERT',
@@ -321,11 +333,15 @@ export const useCaja = () => {
             gastosTotales: prev.gastosTotales + nuevoGasto.monto,
             balance: prev.balance - nuevoGasto.monto // Restar del balance
           }));
-        })
-        .subscribe();
+        });
+      const subGastos = typeof chGastos?.subscribe === 'function' ? chGastos.subscribe() : null;
+      unsubscribes.push(() => {
+        if (subGastos && typeof subGastos.unsubscribe === 'function') subGastos.unsubscribe();
+        else if (chGastos && typeof chGastos.unsubscribe === 'function') chGastos.unsubscribe();
+      });
 
       // WEBSOCKET 3: Escuchar cambios en órdenes (cuando se pagan)
-      const subscriptionOrdenes = supabase
+      const chOrdenes: any = supabase
         .channel(`ordenes-caja-${restaurantId || 'global'}`)
         .on('postgres_changes', {
           event: 'UPDATE',
@@ -345,15 +361,19 @@ export const useCaja = () => {
               porCobrar: prev.porCobrar - payload.new.monto_total
             }));
           }
-  })
-        .subscribe();
+        });
+      const subOrdenes = typeof chOrdenes?.subscribe === 'function' ? chOrdenes.subscribe() : null;
+      unsubscribes.push(() => {
+        if (subOrdenes && typeof subOrdenes.unsubscribe === 'function') subOrdenes.unsubscribe();
+        else if (chOrdenes && typeof chOrdenes.unsubscribe === 'function') chOrdenes.unsubscribe();
+      });
 
       // Cleanup function
-    return () => {
+      return () => {
         console.log('🔌 Desconectando WebSockets');
-        subscriptionTransacciones.unsubscribe();
-        subscriptionGastos.unsubscribe();
-        subscriptionOrdenes.unsubscribe();
+        unsubscribes.forEach(u => {
+          try { u(); } catch { /* noop */ }
+        });
       };
     } else {
       console.log('⏸️ Caja cerrada: sin WebSockets activos');

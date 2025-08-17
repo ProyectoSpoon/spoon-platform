@@ -63,10 +63,11 @@ function splitEstados(estadoUi: string): { estado_mesa: EstadoMesaDb; estado_ord
     case 'ocupada':
     case 'reservada':
     case 'inactiva':
-    default:
+    default: {
       // Si no es un estado extendido, asumimos que es un estado de mesa válido o lo coercionamos a 'libre'
       const e = ['libre', 'ocupada', 'reservada', 'inactiva'].includes(estadoUi) ? (estadoUi as EstadoMesaDb) : 'libre';
       return { estado_mesa: e };
+    }
   }
 }
 

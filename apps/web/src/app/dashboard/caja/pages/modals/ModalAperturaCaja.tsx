@@ -55,7 +55,7 @@ const ModalAperturaCaja: React.FC<ModalAperturaCajaProps> = ({ isOpen, onClose, 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--sp-neutral-900)]/60">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
           <CardTitle>Abrir caja</CardTitle>

@@ -162,92 +162,92 @@ const ConfiguracionMesasPanel: React.FC<ConfiguracionMesasPanelProps> = ({
 
       {/* Área clickeable (70%) para cerrar al hacer clic fuera del panel */}
       <div
-        className="absolute inset-y-0 left-0 right-[30vw] z-10 bg-[--sp-overlay] backdrop-blur-sm"
+        className="absolute inset-y-0 left-0 right-[30vw] z-10 bg-[color:var(--sp-overlay)] backdrop-blur-sm"
         onClick={disabled ? undefined : onClose}
         aria-hidden
       />
 
       <div
-        className={`absolute right-0 top-0 z-20 h-screen w-[30vw] bg-white border-l border-gray-200 shadow-xl flex flex-col transform transition-transform duration-300 ${
+        className={`absolute right-0 top-0 z-20 h-screen w-[30vw] bg-[color:var(--sp-surface)] border-l border-[color:var(--sp-border)] shadow-xl flex flex-col transform transition-transform duration-300 ${
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Header gradiente */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-500 to-orange-600 text-white sticky top-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--sp-border)] bg-[color:var(--sp-surface-elevated)] text-[color:var(--sp-on-surface)] sticky top-0">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-md bg-white/20 text-white grid place-items-center">
+            <div className="h-8 w-8 rounded-md bg-[color:var(--sp-surface)]/20 text-[color:var(--sp-on-surface)] grid place-items-center">
               <Settings className="h-4 w-4" />
             </div>
             <div>
-              <div className="font-semibold">Configuración de Mesas</div>
-              <div className="text-xs text-orange-100">Personaliza cantidad y datos básicos</div>
+              <div className="font-semibold text-[color:var(--sp-on-surface)]">Configuración de Mesas</div>
+              <div className="text-xs text-[color:var(--sp-on-surface)]/70">Personaliza cantidad y datos básicos</div>
             </div>
           </div>
-          <button onClick={onClose} className="h-6 w-6 grid place-items-center rounded hover:bg-white/20 text-white" aria-label="Cerrar" disabled={disabled}>
+          <button onClick={onClose} className="h-6 w-6 grid place-items-center rounded hover:bg-[color:var(--sp-surface)]/20 text-[color:var(--sp-on-surface)]" aria-label="Cerrar" disabled={disabled}>
             <X className="h-4 w-4" />
           </button>
         </div>
 
           {/* Contenido */}
-          <div className="p-6 space-y-6 overflow-y-auto bg-white font-sans max-w-[900px] mx-auto">
+          <div className="p-6 space-y-6 overflow-y-auto bg-[color:var(--sp-surface)] font-sans max-w-[900px] mx-auto">
             {/* Hero */}
-            <div className="rounded-xl bg-white p-6 text-center shadow-sm">
+            <div className="rounded-xl bg-[color:var(--sp-surface-elevated)] p-6 text-center shadow-sm">
               <div className="text-[80px] leading-none mb-2">🍽️</div>
-              <div className="text-xl font-bold text-gray-900">Configuración de Mesas</div>
-              <p className="text-sm text-gray-600 mt-2">Personaliza cantidad y datos básicos</p>
+              <div className="text-xl font-bold text-[color:var(--sp-on-surface)]">Configuración de Mesas</div>
+              <p className="text-sm text-[color:var(--sp-on-surface)]/70 mt-2">Personaliza cantidad y datos básicos</p>
             </div>
 
             {/* Cantidad Total */}
-            <div className="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 shadow-sm">
-              <div className="flex items-center gap-3 text-[15px] font-semibold text-gray-800 mb-4">
+            <div className="rounded-xl border border-[color:var(--sp-border)] bg-[color:var(--sp-surface-elevated)] p-6 shadow-sm">
+              <div className="flex items-center gap-3 text-[15px] font-semibold text-[color:var(--sp-on-surface)] mb-4">
                 <span>📊</span> Cantidad Total de Mesas
               </div>
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={() => setTotalMesas((n) => (Number.isFinite(n) ? Math.max(1, (n as number) - 1) : 1))}
                   disabled={disabled}
-                  className="h-12 w-12 rounded-full border-2 border-gray-300 bg-white hover:border-blue-400 shadow-sm grid place-items-center transition"
+                  className="h-12 w-12 rounded-full border-2 border-[color:var(--sp-border)] bg-[color:var(--sp-surface)] hover:border-[color:var(--sp-focus)] shadow-sm grid place-items-center transition"
                 >
-                  <Minus className="h-5 w-5 text-gray-700" />
+                  <Minus className="h-5 w-5 text-[color:var(--sp-on-surface)]" />
                 </button>
                 <div className="flex items-baseline gap-3">
-                  <div className="text-4xl font-bold text-gray-900">{Number.isFinite(totalMesas) ? totalMesas : 0}</div>
-                  <div className="text-sm text-gray-500 font-medium">mesas</div>
+                  <div className="text-4xl font-bold text-[color:var(--sp-on-surface)]">{Number.isFinite(totalMesas) ? totalMesas : 0}</div>
+                  <div className="text-sm text-[color:var(--sp-on-surface)]/70 font-medium">mesas</div>
                 </div>
                 <button
                   onClick={() => setTotalMesas((n) => (Number.isFinite(n) ? Math.min(500, (n as number) + 1) : 1))}
                   disabled={disabled}
-                  className="h-12 w-12 rounded-full border-2 border-gray-300 bg-white hover:border-blue-400 shadow-sm grid place-items-center transition"
+                  className="h-12 w-12 rounded-full border-2 border-[color:var(--sp-border)] bg-[color:var(--sp-surface)] hover:border-[color:var(--sp-focus)] shadow-sm grid place-items-center transition"
                 >
-                  <Plus className="h-5 w-5 text-gray-700" />
+                  <Plus className="h-5 w-5 text-[color:var(--sp-on-surface)]" />
                 </button>
               </div>
-              <div className="mt-4 rounded-lg bg-blue-100 text-blue-800 text-sm text-center p-3">
+              <div className="mt-4 rounded-lg bg-[color:var(--sp-info-100)] text-[color:var(--sp-info-800)] text-sm text-center p-3">
                 Se crearán automáticamente {Number.isFinite(totalMesas) ? totalMesas : 0} mesas numeradas del 1 al {Number.isFinite(totalMesas) ? totalMesas : 0}
               </div>
-              {error && <div className="mt-2 text-[13px] text-red-600 text-center">{error}</div>}
+              {error && <div className="mt-2 text-[13px] text-[color:var(--sp-error-700)] text-center">{error}</div>}
             </div>
 
             {restaurantId && configuracionActual?.configuradas && (
-              <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div className="px-6 py-4 border-b border-gray-200 text-[15px] font-semibold text-gray-800 flex items-center gap-2">
+              <div className="rounded-xl border border-[color:var(--sp-border)] bg-[color:var(--sp-surface-elevated)] shadow-sm">
+                <div className="px-6 py-4 border-b border-[color:var(--sp-border)] text-[15px] font-semibold text-[color:var(--sp-on-surface)] flex items-center gap-2">
                   <span>⚙️</span> Configuración Individual
                 </div>
                 {/* Encabezados columnas */}
-                <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 grid grid-cols-4 gap-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <div className="px-6 py-3 bg-[color:var(--sp-surface)] border-b border-[color:var(--sp-border)] grid grid-cols-4 gap-4 text-xs font-semibold text-[color:var(--sp-on-surface)]/70 uppercase tracking-wide">
                   <div># Mesa</div>
                   <div>Capacidad</div>
                   <div>Nombre</div>
                   <div>Estado inicial</div>
                 </div>
                 {/* Filas */}
-                <div className="max-h-64 overflow-y-auto divide-y divide-gray-100">
+                <div className="max-h-64 overflow-y-auto divide-y divide-[color:var(--sp-border)]/50">
                   {Array.isArray(mesas) && mesas.length > 0 ? (
                     mesas.map((m, idx) => (
-                      <div key={m.id} className="px-6 py-4 grid grid-cols-4 gap-4 transition hover:bg-gray-50">
+                      <div key={m.id} className="px-6 py-4 grid grid-cols-4 gap-4 transition hover:bg-[color:var(--sp-surface)]">
                         {/* Col 1: Número */}
                         <div className="grid place-items-center">
-                          <div className="h-8 w-8 rounded-full bg-orange-100 text-orange-600 grid place-items-center text-sm font-bold">
+                          <div className="h-8 w-8 rounded-full bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-700)] grid place-items-center text-sm font-bold">
                             {m.numero}
                           </div>
                         </div>
@@ -261,7 +261,7 @@ const ConfiguracionMesasPanel: React.FC<ConfiguracionMesasPanelProps> = ({
                               onChangeMesa(idx, { capacidad: parseInt(e.target.value || '0', 10) });
                             }}
                             onBlur={() => guardarMesa(idx)}
-                            className="w-10 h-7 text-center text-sm rounded-md border border-gray-300 bg-white focus:border-orange-400 focus:ring-2 focus:ring-orange-300 focus:outline-none transition"
+                            className="w-10 h-7 text-center text-sm rounded-md border border-[color:var(--sp-border)] bg-[color:var(--sp-surface)] focus:ring-2 focus:ring-[color:var(--sp-focus)] focus:outline-none transition"
                           />
                         </div>
                         {/* Col 3: Nombre */}
@@ -272,7 +272,7 @@ const ConfiguracionMesasPanel: React.FC<ConfiguracionMesasPanelProps> = ({
                             value={m.nombre || ''}
                             onChange={(e) => onChangeMesa(idx, { nombre: e.target.value })}
                             onBlur={() => guardarMesa(idx)}
-                            className="h-8 w-full rounded-md border border-gray-300 bg-white px-2 text-sm focus:border-orange-400 focus:ring-2 focus:ring-orange-300 focus:outline-none transition"
+                            className="h-8 w-full rounded-md border border-[color:var(--sp-border)] bg-[color:var(--sp-surface)] px-2 text-sm focus:ring-2 focus:ring-[color:var(--sp-focus)] focus:outline-none transition"
                           />
                         </div>
                         {/* Col 4: Estado */}
@@ -285,7 +285,7 @@ const ConfiguracionMesasPanel: React.FC<ConfiguracionMesasPanelProps> = ({
                               // Guardar inmediatamente usando override para evitar condición de carrera
                               guardarMesa(idx, { estado: nuevo });
                             }}
-                            className={`h-8 w-full rounded-md border border-gray-300 bg-white px-2 text-xs cursor-pointer focus:border-orange-400 focus:ring-2 focus:ring-orange-300 focus:outline-none transition ${getEstadoColor(m.estado)}`}
+                            className={`h-8 w-full rounded-md border border-[color:var(--sp-border)] bg-[color:var(--sp-surface)] px-2 text-xs cursor-pointer focus:ring-2 focus:ring-[color:var(--sp-focus)] focus:outline-none transition ${getEstadoColor(m.estado)}`}
                           >
                             <option value="libre">● Libre</option>
                             <option value="ocupada">● Ocupada</option>
@@ -296,34 +296,34 @@ const ConfiguracionMesasPanel: React.FC<ConfiguracionMesasPanelProps> = ({
                       </div>
                     ))
                   ) : (
-                    <div className="p-6 text-sm text-gray-500">{mesas === null ? 'Cargando mesas…' : 'Sin mesas'}</div>
+                    <div className="p-6 text-sm text-[color:var(--sp-on-surface)]/70">{mesas === null ? 'Cargando mesas…' : 'Sin mesas'}</div>
                   )}
                 </div>
                 {/* Sugerencias */}
-                <div className="mx-4 my-4 rounded-md border border-orange-200 bg-orange-50 p-4 text-orange-800">
+                <div className="mx-4 my-4 rounded-md border border-[color:var(--sp-warning-200)] bg-[color:var(--sp-warning-50)] p-4 text-[color:var(--sp-warning-800)]">
                   <div className="text-sm font-medium mb-2">💡 Sugerencias para una mejor organización</div>
-                  <ul className="list-disc pl-5 text-xs space-y-1 marker:text-orange-500 text-orange-700">
+                  <ul className="list-disc pl-5 text-xs space-y-1 marker:text-[color:var(--sp-warning-500)] text-[color:var(--sp-warning-700)]">
                     <li>Usa nombres descriptivos: "Terraza 1", "VIP Entrada", "Ventana Sur"</li>
                     <li>Ajusta la capacidad según el tamaño real de cada mesa</li>
                     <li>Puedes cambiar estos datos después desde la gestión de mesas</li>
                     <li>Las mesas inactivas no aparecerán en el sistema de pedidos</li>
                   </ul>
                 </div>
-                {error && <div className="px-6 pb-4 text-[13px] text-red-600">{error}</div>}
+                {error && <div className="px-6 pb-4 text-[13px] text-[color:var(--sp-error-700)]">{error}</div>}
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="mt-auto px-6 py-4 border-t border-gray-200 bg-gray-50 sticky bottom-0">
+          <div className="mt-auto px-6 py-4 border-t border-[color:var(--sp-border)] bg-[color:var(--sp-surface-elevated)] sticky bottom-0">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs text-gray-600">
-                <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />
+              <div className="flex items-center gap-2 text-xs text-[color:var(--sp-on-surface)]/70">
+                <span className="h-2 w-2 rounded-full bg-[color:var(--sp-success-500)] inline-block" />
                 Cambios se guardan al confirmar.
               </div>
               <div className="flex justify-end gap-2">
-                <button onClick={onClose} disabled={disabled} className="h-9 px-4 rounded-md border border-gray-300 bg-white text-sm text-gray-600 hover:bg-gray-100 transition">Cancelar</button>
-                <button onClick={handleConfirmar} disabled={disabled} className="h-9 px-4 rounded-md bg-orange-500 hover:bg-orange-600 text-white inline-flex items-center gap-2 text-sm transition">
+                <button onClick={onClose} disabled={disabled} className="h-9 px-4 rounded-md border border-[color:var(--sp-border)] bg-[color:var(--sp-surface)] text-sm text-[color:var(--sp-on-surface)] hover:bg-[color:var(--sp-surface)]/80 transition">Cancelar</button>
+                <button onClick={handleConfirmar} disabled={disabled} className="h-9 px-4 rounded-md bg-[color:var(--sp-warning-600)] hover:bg-[color:var(--sp-warning-700)] text-[color:var(--sp-on-primary)] inline-flex items-center gap-2 text-sm transition">
                   <Check className="h-4 w-4" /> Guardar
                 </button>
               </div>

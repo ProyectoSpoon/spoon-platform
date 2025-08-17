@@ -1,9 +1,10 @@
+"use client";
+
 // src/app/dashboard/layout.tsx
-'use client';
 
 import React, { useEffect, useState } from 'react';
 import { preloadUserAndRestaurant } from '@spoon/shared';
-import { NotificationProvider } from 'packages/shared/Context/notification-context';
+import { NotificationProvider } from '@spoon/shared/Context/notification-context';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 

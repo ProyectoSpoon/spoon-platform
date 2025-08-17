@@ -1,7 +1,9 @@
 // packages/shared/constants/facturacion/facturaConstants.ts
 
 import { Receipt, CreditCard, Smartphone, CheckCircle, XCircle, FileText } from 'lucide-react';
-import type { EstadoFactura, MetodoPago } from '@spoon/shared/types/facturacion/facturaTypes';
+// Local minimal types to avoid cross-package coupling issues during build
+export type EstadoFactura = 'emitida' | 'anulada';
+export type MetodoPago = 'efectivo' | 'tarjeta' | 'digital';
 
 // =====================================
 // ESTADOS DE FACTURA

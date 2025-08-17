@@ -46,7 +46,6 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
             variant="ghost"
             size="sm"
             onClick={() => onTabChange('movimientos')}
-            aria-pressed={tabActiva === 'movimientos'}
       role="tab"
       aria-selected={tabActiva === 'movimientos'}
             className={
@@ -61,7 +60,6 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
             variant="ghost"
             size="sm"
             onClick={() => onTabChange('arqueo')}
-            aria-pressed={tabActiva === 'arqueo'}
       role="tab"
       aria-selected={tabActiva === 'arqueo'}
             className={

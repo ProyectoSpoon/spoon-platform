@@ -21,7 +21,7 @@ interface Mesa {
   id: string;
   numero: number;
   nombre?: string;
-  zona: string;
+  zona?: string;
   capacidad: number;
   estado: string;
   notas?: string;
@@ -140,7 +140,7 @@ const EditarMesaModal: React.FC<EditarMesaModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-[color:var(--sp-overlay)] flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-[color:var(--sp-neutral-900)]/60 flex items-center justify-center p-4 z-50">
       <div 
         className="bg-[color:var(--sp-surface-elevated)] rounded-xl shadow-2xl w-full max-w-md transform transition-all"
         onClick={(e) => e.stopPropagation()}

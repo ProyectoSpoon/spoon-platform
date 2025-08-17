@@ -108,11 +108,11 @@ const ConfiguracionMesasModal: React.FC<ConfiguracionMesasModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+    <div className="fixed inset-0 bg-[color:var(--sp-overlay)] z-50 flex items-center justify-center p-4">
+      <div className="bg-[color:var(--sp-surface)] rounded-lg shadow-xl max-w-md w-full">
         
     {/* Header Simple */}
-  <div className="bg-neutral-900 text-white p-6 flex justify-between items-center rounded-t-lg">
+  <div className="bg-[color:var(--sp-surface-elevated)] text-[color:var(--sp-on-surface)] p-6 flex justify-between items-center rounded-t-lg">
           <div>
             <h2 className="text-xl font-bold">
               {configuracionActual?.configuradas ? 'Reconfigurar Mesas' : 'Configurar Mesas'}
@@ -127,7 +127,7 @@ const ConfiguracionMesasModal: React.FC<ConfiguracionMesasModalProps> = ({
           <button
             onClick={handleClose}
             disabled={loading}
-            className="text-[color:var(--sp-neutral-0)] hover:text-[color:var(--sp-neutral-300)] disabled:opacity-50"
+            className="text-[color:var(--sp-on-surface)] hover:text-[color:var(--sp-on-surface)]/80 disabled:opacity-50"
           >
             <X className="h-6 w-6" />
           </button>
@@ -144,7 +144,7 @@ const ConfiguracionMesasModal: React.FC<ConfiguracionMesasModalProps> = ({
 
             {/* Título */}
             <div>
-              <h3 className="text-lg font-bold text-[color:var(--sp-neutral-900)] mb-2">
+              <h3 className="text-lg font-bold text-[color:var(--sp-on-surface)] mb-2">
                 ¿Cuántas mesas tiene tu restaurante?
               </h3>
               <p className="text-[color:var(--sp-neutral-600)] text-sm">
@@ -153,14 +153,14 @@ const ConfiguracionMesasModal: React.FC<ConfiguracionMesasModalProps> = ({
             </div>
 
             {/* Control de Cantidad */}
-            <div className="bg-[color:var(--sp-neutral-50)] rounded-xl p-6 space-y-4">
+            <div className="bg-[color:var(--sp-surface-elevated)] rounded-xl p-6 space-y-4">
               
               {/* Controles de cantidad */}
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={decrementarMesas}
                   disabled={totalMesas <= 1}
-                  className="w-12 h-12 rounded-full bg-[color:var(--sp-neutral-0)] border-2 border-[color:var(--sp-neutral-300)] flex items-center justify-center hover:border-[color:var(--sp-neutral-400)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-12 h-12 rounded-full bg-[color:var(--sp-surface)] border-2 border-[color:var(--sp-border)] flex items-center justify-center hover:border-[color:var(--sp-focus)] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Minus className="h-5 w-5 text-[color:var(--sp-neutral-600)]" />
                 </button>
@@ -172,7 +172,7 @@ const ConfiguracionMesasModal: React.FC<ConfiguracionMesasModalProps> = ({
                     onChange={handleInputChange}
                     min="1"
                     max="100"
-                    className="w-20 h-16 text-4xl font-bold text-center border-2 border-[color:var(--sp-neutral-300)] rounded-lg focus:border-[color:var(--sp-info-500)] focus:outline-none"
+                    className="w-20 h-16 text-4xl font-bold text-center border-2 border-[color:var(--sp-border)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-focus)] focus:outline-none"
                   />
                   <div className="text-sm text-[color:var(--sp-neutral-500)] mt-1">mesas</div>
                 </div>
@@ -180,7 +180,7 @@ const ConfiguracionMesasModal: React.FC<ConfiguracionMesasModalProps> = ({
                 <button
                   onClick={incrementarMesas}
                   disabled={totalMesas >= 100}
-                  className="w-12 h-12 rounded-full bg-[color:var(--sp-neutral-0)] border-2 border-[color:var(--sp-neutral-300)] flex items-center justify-center hover:border-[color:var(--sp-neutral-400)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-12 h-12 rounded-full bg-[color:var(--sp-surface)] border-2 border-[color:var(--sp-border)] flex items-center justify-center hover:border-[color:var(--sp-focus)] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="h-5 w-5 text-[color:var(--sp-neutral-600)]" />
                 </button>
@@ -220,7 +220,7 @@ const ConfiguracionMesasModal: React.FC<ConfiguracionMesasModalProps> = ({
         </div>
 
         {/* Footer con botones */}
-  <div className="p-6 border-t bg-[color:var(--sp-neutral-50)] rounded-b-lg">
+  <div className="p-6 border-t border-[color:var(--sp-border)] bg-[color:var(--sp-surface-elevated)] rounded-b-lg">
           <div className="flex gap-3">
             <Button
               onClick={handleClose}
