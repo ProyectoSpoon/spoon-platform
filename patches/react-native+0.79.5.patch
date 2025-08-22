@@ -1,0 +1,86 @@
+*** Begin Patch
+*** Add File: node_modules/react-native/Libraries/Core/Devtools/parseErrorStack.js
++// Safe parseErrorStack implementation without Flow/TypeScript annotations.
++// Tries to use parseHermesStack if available; otherwise falls back to stacktrace-parser.
+ +function parseErrorStack(errorStack) {
+ +  if (errorStack == null) {
+ +    return [];
+ +  }
+ +
+ +  try {
+ +    // Prefer Hermes parser if present
+ +    let parseHermes = null;
+ +    try {
+ +      // parseHermesStack may not exist in this runtime; guard require
+ +      // eslint-disable-next-line global-require
+ +      const mod = require('./parseHermesStack');
+ +      parseHermes = mod && (mod.default || mod);
+ +    } catch (e) {
+ +      parseHermes = null;
+ +    }
+ +
+ +    if (global && global.HermesInternal && parseHermes) {
+ +      try {
+ +        const hermesParsed = parseHermes(errorStack);
+ +        // hermesParsed may have .entries; try to map to simple frames if so
+ +        if (hermesParsed && Array.isArray(hermesParsed.entries)) {
+ +          const frames = [];
+ +          for (const entry of hermesParsed.entries) {
+ +            if (entry.type !== 'FRAME') continue;
+ +            const {location, functionName} = entry;
+ +            if (!location || location.type === 'NATIVE' || location.type === 'INTERNAL_BYTECODE') continue;
+ +            frames.push({
+ +              methodName: functionName,
+ +              file: location.sourceUrl,
+ +              lineNumber: location.line1Based || null,
+ +              column: location.type === 'SOURCE' ? (location.column1Based || 1) - 1 : location.virtualOffset0Based || null,
+ +            });
+ +          }
+ +          return frames;
+ +        }
+ +      } catch (e) {
+ +        // fall through to generic parser
+ +      }
+ +    }
+ +
+ +    // Generic string parser
+ +    const stacktraceParser = require('stacktrace-parser');
+ +    if (Array.isArray(errorStack)) {
+ +      return errorStack;
+ +    }
+ +    const parsed = stacktraceParser.parse(String(errorStack)).map(frame => ({
+ +      ...frame,
+ +      column: frame.column != null ? frame.column - 1 : null,
+ +    }));
+ +    return parsed;
+ +  } catch (e) {
+ +    // Last resort: return the raw string as a single frame
+ +    try {
+ +      if (typeof errorStack === 'string') {
+ +        return [
+ +          {
+ +            file: errorStack,
+ +            methodName: errorStack,
+ +            lineNumber: null,
+ +            column: null,
+ +            collapse: false,
+ +            originalStack: errorStack,
+ +            id: 0,
+ +          },
+ +        ];
+ +      }
+ +    } catch (e2) {
+ +      // noop
+ +    }
+ +    return [];
+ +  }
+ +}
+ +
+ +module.exports = parseErrorStack;
+ +// Support consumers that import the default property
+ +if (module.exports && typeof module.exports === 'function') {
+ +  module.exports.default = module.exports;
+ +}
+
+*** End Patch
+*** End Patch

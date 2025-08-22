@@ -24,6 +24,7 @@ interface MetricasCaja {
   totalEfectivo: number;
   totalTarjeta: number;
   totalDigital: number;
+  gastosDelPeriodo?: any[];
 }
 
 export const useCaja = () => {
@@ -184,7 +185,8 @@ export const useCaja = () => {
         id: mesa.id,
         tipo: 'mesa',
         identificador: `Mesa ${mesa.numero_mesa}`,
-        monto_total: mesa.monto_total,
+        // Normalizar a centavos: ordenes_mesa.monto_total suele estar en pesos
+        monto_total: Math.round((mesa.monto_total || 0) * 100),
         fecha_creacion: mesa.fecha_creacion,
         detalles: mesa.nombre_mesero ? `Mesero: ${mesa.nombre_mesero}` : undefined
       }));
@@ -193,7 +195,8 @@ export const useCaja = () => {
         id: orden.id,
         tipo: 'delivery',
         identificador: orden.customer_name,
-        monto_total: orden.total_amount,
+        // Normalizar a centavos: delivery_orders.total_amount suele estar en pesos
+        monto_total: Math.round((orden.total_amount || 0) * 100),
         fecha_creacion: orden.created_at,
         detalles: orden.customer_phone
       }));
@@ -203,14 +206,15 @@ export const useCaja = () => {
         .reduce((sum, orden) => sum + orden.monto_total, 0);
 
       // Unificar forma de métricas según la rama tomada
-      const totales = periodo === 'hoy'
+  const totales = periodo === 'hoy'
         ? {
             totalVentas: (transaccionesData as any).totalVentas,
             totalEfectivo: (transaccionesData as any).totalEfectivo,
             totalTarjeta: (transaccionesData as any).totalTarjeta,
             totalDigital: (transaccionesData as any).totalDigital,
             transacciones: (transaccionesData as any).transacciones,
-            totalGastos: (gastosData as any)?.totalGastos ?? 0
+    totalGastos: (gastosData as any)?.totalGastos ?? 0,
+    gastos: (gastosData as any)?.gastos ?? []
           }
         : {
             totalVentas: (transaccionesData as any).totalVentas,
@@ -218,7 +222,8 @@ export const useCaja = () => {
             totalTarjeta: (transaccionesData as any).totalTarjeta,
             totalDigital: (transaccionesData as any).totalDigital,
             transacciones: (transaccionesData as any).transacciones,
-            totalGastos: (transaccionesData as any).totalGastos
+    totalGastos: (transaccionesData as any).totalGastos,
+    gastos: (transaccionesData as any).gastos || []
           };
 
       const balance = sesionId 
@@ -235,8 +240,9 @@ export const useCaja = () => {
         gastosTotales: totales.totalGastos,
         transaccionesDelDia: totales.transacciones,
         totalEfectivo: totales.totalEfectivo,
-        totalTarjeta: totales.totalTarjeta,
-        totalDigital: totales.totalDigital
+  totalTarjeta: totales.totalTarjeta,
+  totalDigital: totales.totalDigital,
+  gastosDelPeriodo: totales.gastos
       });
 
       setError(null);
@@ -269,7 +275,8 @@ export const useCaja = () => {
   const restaurantId = (sesionActual as any)?.restaurant_id as string | undefined;
 
   useEffect(() => {
-    if (estadoCaja === 'abierta' && sesionId) {
+    // Activar realtime solo en vista 'hoy' para evitar desalineación en otros periodos
+    if (estadoCaja === 'abierta' && sesionId && periodo === 'hoy') {
       console.log('🔄 Configurando WebSockets para caja abierta');
       
       // Obtener datos iniciales UNA VEZ
@@ -378,7 +385,7 @@ export const useCaja = () => {
     } else {
       console.log('⏸️ Caja cerrada: sin WebSockets activos');
     }
-  }, [estadoCaja, sesionId, restaurantId]);
+  }, [estadoCaja, sesionId, restaurantId, periodo]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
 
   

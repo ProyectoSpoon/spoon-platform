@@ -15,8 +15,8 @@ interface OrdenPendiente {
 
 interface Transaccion {
   id: string;
-  tipo_orden: 'mesa' | 'delivery';
-  orden_id: string;
+  tipo_orden: 'mesa' | 'delivery' | 'directa';
+  orden_id: string | null;
   monto_total: number;
   metodo_pago: string;
   procesada_at: string;
@@ -114,8 +114,9 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                       )}
                       
                       <div className="text-xs text-[color:var(--sp-neutral-500)]">
-                        ⏰ {new Date(orden.fecha_creacion).toLocaleTimeString('es-CO', { 
-                          hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' 
+                        ⏰ {new Date(orden.fecha_creacion).toLocaleString('es-CO', { 
+                          year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', 
+                          timeZone: 'America/Bogota' 
                         })}
                       </div>
                     </div>
@@ -160,10 +161,11 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <span className="text-lg">
-                          {transaccion.tipo_orden === 'mesa' ? '🍽️' : '🚚'}
+                          {transaccion.tipo_orden === 'mesa' ? '🍽️' : transaccion.tipo_orden === 'delivery' ? '🚚' : '🧾'}
                         </span>
                         <h5 className="font-medium">
-                          {transaccion.tipo_orden} - {transaccion.orden_id.slice(-8)}
+                          {transaccion.tipo_orden}
+                          {transaccion.orden_id ? ` - ${(transaccion.orden_id as string).slice(-8)}` : ''}
                         </h5>
                         <span className="text-xs bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)] px-2 py-1 rounded-full">
                           {transaccion.metodo_pago}
@@ -172,8 +174,9 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                       
                       <div className="text-xs text-[color:var(--sp-neutral-500)] space-x-4">
                         <span>
-                          ⏰ {new Date(transaccion.procesada_at).toLocaleTimeString('es-CO', { 
-                            hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' 
+                          ⏰ {new Date(transaccion.procesada_at).toLocaleString('es-CO', { 
+                            year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', 
+                            timeZone: 'America/Bogota' 
                           })}
                         </span>
                         {transaccion.monto_cambio > 0 && (
@@ -225,8 +228,9 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                       )}
                       
                       <div className="text-xs text-[color:var(--sp-neutral-500)]">
-                        ⏰ {new Date(gasto.registrado_at).toLocaleTimeString('es-CO', { 
-                          hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' 
+                        ⏰ {new Date(gasto.registrado_at).toLocaleString('es-CO', { 
+                          year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', 
+                          timeZone: 'America/Bogota' 
                         })}
                       </div>
                     </div>
@@ -267,11 +271,11 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
             variant={subTab === tab.key ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setSubTab(tab.key)}
-            className={`${subTab === tab.key ? 'bg-[color:var(--sp-surface)] shadow-sm' : ''} relative`}
+            className={`${subTab === tab.key ? 'bg-[color:var(--sp-neutral-900)] text-white hover:bg-[color:var(--sp-neutral-900)]' : ''} relative`}
           >
             {tab.label}
             {tab.count > 0 && (
-  <span className="ml-2 bg-[color:var(--sp-info-500)] text-[color:var(--sp-on-info)] text-xs px-2 py-1 rounded-full">
+  <span className={`ml-2 text-xs px-2 py-1 rounded-full ${subTab === tab.key ? 'bg-[color:var(--sp-neutral-700)] text-white' : 'bg-[color:var(--sp-info-500)] text-[color:var(--sp-on-info)]'}`}>
                 {tab.count}
               </span>
             )}

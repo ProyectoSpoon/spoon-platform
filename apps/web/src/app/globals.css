@@ -30,11 +30,60 @@
     --sp-neutral-900: #0f172a;
   --sp-neutral-950: #020617;
 
-    /* Semantic */
-    --sp-success: #10b981;
-    --sp-warning: #f59e0b;
-    --sp-error: #ef4444;
-    --sp-info: #3b82f6;
+  /* Semantic (single tokens for quick refs) */
+  --sp-success: #10b981; /* emerald-500 */
+  --sp-warning: #f59e0b; /* amber-500 */
+  --sp-error: #ef4444;   /* red-500 */
+  --sp-info: #3b82f6;    /* blue-500 */
+
+  /* Semantic scales (used across UI components) */
+  /* Success = emerald */
+  --sp-success-50: #ecfdf5;
+  --sp-success-100: #d1fae5;
+  --sp-success-200: #a7f3d0;
+  --sp-success-300: #6ee7b7;
+  --sp-success-400: #34d399;
+  --sp-success-500: #10b981;
+  --sp-success-600: #059669;
+  --sp-success-700: #047857;
+  --sp-success-800: #065f46;
+  --sp-success-900: #064e3b;
+
+  /* Warning = amber */
+  --sp-warning-50: #fffbeb;
+  --sp-warning-100: #fef3c7;
+  --sp-warning-200: #fde68a;
+  --sp-warning-300: #fcd34d;
+  --sp-warning-400: #fbbf24;
+  --sp-warning-500: #f59e0b;
+  --sp-warning-600: #d97706;
+  --sp-warning-700: #b45309;
+  --sp-warning-800: #92400e;
+  --sp-warning-900: #78350f;
+
+  /* Error = red */
+  --sp-error-50: #fef2f2;
+  --sp-error-100: #fee2e2;
+  --sp-error-200: #fecaca;
+  --sp-error-300: #fca5a5;
+  --sp-error-400: #f87171;
+  --sp-error-500: #ef4444;
+  --sp-error-600: #dc2626;
+  --sp-error-700: #b91c1c;
+  --sp-error-800: #991b1b;
+  --sp-error-900: #7f1d1d;
+
+  /* Info = blue */
+  --sp-info-50: #eff6ff;
+  --sp-info-100: #dbeafe;
+  --sp-info-200: #bfdbfe;
+  --sp-info-300: #93c5fd;
+  --sp-info-400: #60a5fa;
+  --sp-info-500: #3b82f6;
+  --sp-info-600: #2563eb;
+  --sp-info-700: #1d4ed8;
+  --sp-info-800: #1e40af;
+  --sp-info-900: #1e3a8a;
 
   /* UI Surfaces & text tokens */
   --sp-surface: var(--sp-neutral-0);

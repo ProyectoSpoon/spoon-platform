@@ -17,11 +17,13 @@ import { EmptyStates } from '../components/EmptyState';
 
 // Modals
 import { ModalProcesarPago } from './modals/ModalProcesarPago';
+import ModalNuevaVenta from './modals/ModalNuevaVenta';
 import GastoWizardSlideOver from './modals/GastoWizardSlideOver';
 import ModalAperturaCaja from './modals/ModalAperturaCaja';
 
 // Types
 import { OrdenPendiente } from '../types/cajaTypes';
+import { supabase, getUserProfile } from '@spoon/shared/lib/supabase';
 
 type TabActiva = 'movimientos' | 'arqueo' | 'reportes';
 
@@ -56,7 +58,8 @@ export default function CajaPage() {
     pago: false,
     gasto: false,
   orden: null as OrdenPendiente | null,
-  apertura: false
+  apertura: false,
+  nuevaVenta: false
   });
 
   // Datos combinados y filtrados
@@ -77,12 +80,13 @@ export default function CajaPage() {
     return list.filter(t =>
       t.metodo_pago?.toLowerCase().includes(term) ||
       t.tipo_orden?.toLowerCase().includes(term) ||
-      t.orden_id?.toLowerCase().includes(term)
+  ((t.orden_id || '') as string).toLowerCase().includes(term)
     );
   }, [metricas.transaccionesDelDia, filtros.busqueda]);
 
   const gastosFiltrados = useMemo(() => {
-    const list = gastos || [];
+    // Si useCaja ya calculó gastos del periodo seleccionado, usarlos; de lo contrario fallback al hook de gastos (día)
+    const list = (metricas as any)?.gastosDelPeriodo?.length ? (metricas as any).gastosDelPeriodo : (gastos || []);
     const term = filtros.busqueda?.trim().toLowerCase();
     if (!term) return list;
     return list.filter((g: any) =>
@@ -90,7 +94,7 @@ export default function CajaPage() {
       g.categoria?.toLowerCase().includes(term) ||
       g.notas?.toLowerCase().includes(term)
     );
-  }, [gastos, filtros.busqueda]);
+  }, [metricas, gastos, filtros.busqueda]);
 
   // Handlers
   const handleAbrirCaja = () => {
@@ -102,9 +106,26 @@ export default function CajaPage() {
     await cerrarCaja('Cierre automático');
   };
 
-  const handleNuevaVenta = () => {
-    // Tu lógica de nueva venta
-    console.log('Nueva venta');
+  const handleNuevaVenta = async () => {
+    // Bloquear si no hay sesión abierta
+    if (estadoCaja === 'cerrada' || !sesionActual?.id) {
+  setModals(prev => ({ ...prev, apertura: true }));
+  return; // el modal de apertura guiará al usuario
+    }
+    // Verificar rol: solo cajero/admin
+    try {
+      const profile = await getUserProfile();
+      const role = (profile as any)?.role;
+  if (role !== 'cajero' && role !== 'admin' && role !== 'restaurant_owner') {
+        alert('No tienes permisos para registrar ventas');
+        return;
+      }
+    } catch {
+      // Si falla el perfil, por seguridad no permitir
+      alert('No se pudo verificar permisos del usuario');
+      return;
+    }
+    setModals(prev => ({ ...prev, nuevaVenta: true }));
   };
 
   const handleNuevoGasto = () => {
@@ -183,20 +204,20 @@ export default function CajaPage() {
               onFiltroTiempoChange={(tiempo) => {
                 setFiltros(prev => ({ ...prev, tiempo }));
                 setPeriodo(tiempo as any);
-                // si se cambia el periodo, refrescar con la fecha actual
-                refrescar();
+                // Refrescar después de que setPeriodo se aplique
+                setTimeout(() => refrescar(), 0);
               }}
               filtroFecha={filtros.fecha}
               onFiltroFechaChange={(fecha) => {
                 setFiltros(prev => ({ ...prev, fecha }));
                 setFechaFiltro(fecha);
-                refrescar();
+                setTimeout(() => refrescar(), 0);
               }}
               filtroFechaFin={filtros.fechaFin}
               onFiltroFechaFinChange={(fecha) => {
                 setFiltros(prev => ({ ...prev, fechaFin: fecha }));
                 setFechaFinFiltro(fecha);
-                refrescar();
+                setTimeout(() => refrescar(), 0);
               }}
               // soporte opcional de fecha fin para personalizado
               // el componente actual no recibe fechaFin explícita, pero dejamos el estado listo
@@ -252,12 +273,60 @@ export default function CajaPage() {
         loading={loading}
       />
 
+      {/* Modal: Nueva Venta directa */}
+      <ModalNuevaVenta
+        isOpen={modals.nuevaVenta}
+        onClose={() => setModals(prev => ({ ...prev, nuevaVenta: false }))}
+        loading={loading}
+        onConfirmar={async (venta) => {
+          try {
+            if (!sesionActual?.id) {
+              return { success: false, error: 'No hay sesión de caja abierta' };
+            }
+            const profile = await getUserProfile();
+            if (!profile?.id) {
+              return { success: false, error: 'Usuario no autenticado' };
+            }
+            const montoCambio = venta.metodoPago === 'efectivo' && (venta.montoRecibido || 0) > 0
+              ? Math.max(0, (venta.montoRecibido as number) - venta.total)
+              : 0;
+
+            // Insertar transacción directa
+      const { data, error: errIns } = await supabase
+              .from('transacciones_caja')
+              .insert({
+                caja_sesion_id: sesionActual.id,
+                orden_id: null,
+                tipo_orden: 'directa',
+                metodo_pago: venta.metodoPago,
+                monto_total: venta.total,
+                monto_recibido: venta.metodoPago === 'efectivo' ? (venta.montoRecibido || venta.total) : venta.total,
+        monto_cambio: montoCambio,
+        cajero_id: (profile as any).id
+              })
+              .select('id')
+              .single();
+
+            if (errIns) {
+              return { success: false, error: (errIns as any).message || 'Error registrando la transacción' };
+            }
+
+            // Refrescar métricas/listas (aunque hay realtime, forzamos)
+            setModals(prev => ({ ...prev, nuevaVenta: false }));
+            await refrescar();
+            return { success: true, cambio: montoCambio };
+          } catch (e: any) {
+            return { success: false, error: e?.message || 'Error inesperado' };
+          }
+        }}
+      />
+
       {/* Modal: Apertura de caja */}
       <ModalAperturaCaja
         isOpen={modals.apertura}
         onClose={() => setModals(prev => ({ ...prev, apertura: false }))}
-        onConfirmar={async (monto, notas) => {
-          const res = await abrirCaja(monto, notas);
+        onConfirmar={async (monto, notas, cajeroId) => {
+          const res = await abrirCaja(monto, notas, cajeroId);
           if (!res.success) {
             return { success: false, error: res.error } as any;
           }

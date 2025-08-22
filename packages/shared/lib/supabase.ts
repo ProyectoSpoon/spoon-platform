@@ -2219,15 +2219,13 @@ export const getTransaccionesDelDia = async (restaurantId: string, fecha?: strin
   try {
     const fechaBusqueda = fecha || new Date().toISOString().split('T')[0];
     const { startUtc, endUtc } = getBogotaDayUtcBounds(fechaBusqueda);
-    
-    // Obtener todas las sesiones del día
+    // 1) Obtener sesiones del restaurante que se solapan con el día Bogotá
     const { data: sesiones, error: errorSesiones } = await supabase
       .from('caja_sesiones')
       .select('id')
       .eq('restaurant_id', restaurantId)
-      .gte('abierta_at', startUtc)
-      .lt('abierta_at', endUtc);
-
+      .lte('abierta_at', endUtc)
+      .or(`cerrada_at.gte.${startUtc},cerrada_at.is.null`);
     if (errorSesiones) throw errorSesiones;
 
     if (!sesiones || sesiones.length === 0) {
@@ -2240,11 +2238,13 @@ export const getTransaccionesDelDia = async (restaurantId: string, fecha?: strin
       };
     }
 
-    // Obtener transacciones de todas las sesiones del día
+    // 2) Obtener transacciones de esas sesiones dentro del día
     const { data: transacciones, error: errorTransacciones } = await supabase
       .from('transacciones_caja')
       .select('*')
       .in('caja_sesion_id', sesiones.map(s => s.id))
+      .gte('procesada_at', startUtc)
+      .lt('procesada_at', endUtc)
       .order('procesada_at', { ascending: false });
 
     if (errorTransacciones) throw errorTransacciones;
@@ -2380,6 +2380,7 @@ export const crearGastoCaja = async (
   }
 ): Promise<any> => {
   try {
+  const ahoraIso = new Date().toISOString();
     const { data, error } = await supabase
       .from('gastos_caja')
       .insert({
@@ -2389,7 +2390,9 @@ export const crearGastoCaja = async (
         categoria: gastoData.categoria,
         comprobante_url: gastoData.comprobante_url,
         registrado_por: cajeroId,
-        notas: gastoData.notas
+    notas: gastoData.notas,
+    // Aseguramos timestamp de registro para filtros diarios
+    registrado_at: ahoraIso
       })
       .select()
       .single();
@@ -2440,14 +2443,13 @@ export const getGastosDelDia = async (
   try {
     const fechaBusqueda = fecha || new Date().toISOString().split('T')[0];
     const { startUtc, endUtc } = getBogotaDayUtcBounds(fechaBusqueda);
-    
-    // Obtener sesiones del día
+    // 1) Obtener sesiones del restaurante que se solapan con el día Bogotá
     const { data: sesiones, error: errorSesiones } = await supabase
       .from('caja_sesiones')
       .select('id')
       .eq('restaurant_id', restaurantId)
-      .gte('abierta_at', startUtc)
-      .lt('abierta_at', endUtc);
+      .lte('abierta_at', endUtc)
+      .or(`cerrada_at.gte.${startUtc},cerrada_at.is.null`);
 
     if (errorSesiones) throw errorSesiones;
 
@@ -2464,11 +2466,13 @@ export const getGastosDelDia = async (
       };
     }
 
-    // Obtener gastos de todas las sesiones del día
+    // 2) Obtener gastos de esas sesiones dentro del día
     const { data: gastos, error: errorGastos } = await supabase
       .from('gastos_caja')
       .select('*')
       .in('caja_sesion_id', sesiones.map(s => s.id))
+      .gte('registrado_at', startUtc)
+      .lt('registrado_at', endUtc)
       .order('registrado_at', { ascending: false });
 
     if (errorGastos) throw errorGastos;

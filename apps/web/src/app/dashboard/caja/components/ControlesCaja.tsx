@@ -55,10 +55,12 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
             Monto inicial: <span className="font-semibold">{formatearMonto(montoInicialCents)}</span>
           </div>
           <div className="text-sm text-[color:var(--sp-neutral-600)]">
-            Desde: {fechaAperturaIso ? new Date(fechaAperturaIso).toLocaleTimeString('es-CO', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            }) : '—'}
+            Desde: {fechaAperturaIso ? new Intl.DateTimeFormat('es-CO', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+              timeZone: 'America/Bogota'
+            }).format(new Date(fechaAperturaIso)) : '—'}
           </div>
         </div>
 

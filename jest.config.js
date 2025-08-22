@@ -1,3 +1,5 @@
+const isFullCoverage = process.env.CI === 'true' || process.env.JEST_FULL_COVERAGE === 'true';
+
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
@@ -14,7 +16,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/apps/web/src/$1',
   },
   // Collect coverage to enforce thresholds below
-  collectCoverage: true,
+  collectCoverage: isFullCoverage,
   coverageReporters: ['text', 'lcov', 'json', 'clover'],
   collectCoverageFrom: [
     'apps/web/src/app/dashboard/caja/hooks/useCaja.ts',
@@ -22,19 +24,21 @@ module.exports = {
     'apps/web/src/app/dashboard/caja/hooks/useGastos.ts',
     'apps/web/src/app/dashboard/caja/pages/modals/ModalProcesarPago.tsx'
   ],
-  coverageThreshold: {
-    global: {
-  statements: 72,
-  branches: 59,
-  functions: 74,
-  lines: 74
-    },
-    // Critical paths stricter thresholds
-    'apps/web/src/app/dashboard/caja/hooks/useCaja.ts': {
-      statements: 90,
-      branches: 75,
-      functions: 90,
-      lines: 90
-    }
-  }
+  coverageThreshold: isFullCoverage
+    ? {
+        global: {
+          statements: 72,
+          branches: 59,
+          functions: 74,
+          lines: 74,
+        },
+        // Critical paths stricter thresholds
+        'apps/web/src/app/dashboard/caja/hooks/useCaja.ts': {
+          statements: 90,
+          branches: 75,
+          functions: 90,
+          lines: 90,
+        },
+      }
+    : undefined,
 };
