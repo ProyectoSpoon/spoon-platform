@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Card, CardContent } from '@spoon/shared/components/ui/Card';
+import { Card as CardRaw, CardContent as CardContentRaw } from '@spoon/shared/components/ui/Card';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Card = CardRaw as any; // Cast temporal para conflictos de tipos React duplicados
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CardContent = CardContentRaw as any;
 
 // Hooks
 import { useCaja } from '../hooks/useCaja';
@@ -61,6 +65,7 @@ export default function CajaPage() {
   apertura: false,
   nuevaVenta: false
   });
+  const [mensajeErrorCierre, setMensajeErrorCierre] = useState<string | null>(null);
 
   // Datos combinados y filtrados
   const ordenesPendientes = useMemo(() => {
@@ -102,8 +107,14 @@ export default function CajaPage() {
   };
 
   const handleCerrarCaja = async () => {
-    // Tu lógica de cerrar caja
-    await cerrarCaja('Cierre automático');
+    const res = await cerrarCaja('Cierre manual');
+    if (!res.success) {
+      setMensajeErrorCierre(res.error || 'No se pudo cerrar la caja');
+      // Limpiar automáticamente después de unos segundos
+      setTimeout(() => setMensajeErrorCierre(null), 6000);
+    } else {
+      setMensajeErrorCierre(null);
+    }
   };
 
   const handleNuevaVenta = async () => {
@@ -167,7 +178,7 @@ export default function CajaPage() {
   <div className="min-h-screen bg-[color:var(--sp-neutral-50)] font-sans">
       {/* Header fijo con estado de sesión */}
   <div className="sticky top-0 z-20 bg-[color:var(--sp-surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--sp-surface)]/80 border-b border-[color:var(--sp-border)]">
-        <div className="px-5 py-4">
+        <div className="px-4 sm:px-5 py-3 sm:py-4">
           <CajaHeader
             estadoCaja={estadoCaja}
             ordenesPendientes={ordenesPendientes.length}
@@ -186,18 +197,37 @@ export default function CajaPage() {
         </div>
       </div>
 
-      {/* Layout principal con sidebar - grid 70/30 */}
-  <div className="px-5 py-5">
+      {/* Layout principal */}
+  <div className="px-4 sm:px-5 py-5 space-y-5">
+      {mensajeErrorCierre && (
+        <div className="mb-4">
+          <Card className="bg-[color:var(--sp-error-50)] border-[color:var(--sp-error-200)] rounded-lg shadow-sm">
+            <CardContent className="p-3 flex items-start space-x-2">
+              <span className="text-[color:var(--sp-error-600)] text-sm">⚠️</span>
+              <div className="text-[12px] leading-snug text-[color:var(--sp-error-700)]">
+                {mensajeErrorCierre}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       {estadoCaja === 'cerrada' ? (
-        <Card className="rounded-lg shadow-sm"><CardContent className="p-4">{EmptyStates.cajaAbierta(handleAbrirCaja)}</CardContent></Card>
+        <Card className="rounded-lg shadow-sm">
+          <CardContent className="p-4 sm:p-6">{EmptyStates.cajaAbierta(handleAbrirCaja)}</CardContent>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-10 gap-5">
-          {/* Columna principal: acciones + métricas + filtros/panel */}
-          <div className="lg:col-span-10 space-y-5">
-            <MetricasDashboard metricas={metricas} loading={loading} />
-            <MetricasAlert metricas={metricas} />
+        <div className="space-y-5">
+          {/* Métricas en carrusel horizontal móvil */}
+          <div className="-mx-4 sm:mx-0 overflow-x-auto pb-2 scrollbar-thin snap-x snap-mandatory flex gap-4 sm:block sm:overflow-visible">
+            <div className="min-w-[640px] sm:min-w-0 flex-1 snap-start sm:snap-none">
+              <MetricasDashboard metricas={metricas} loading={loading} />
+            </div>
+          </div>
+          <MetricasAlert metricas={metricas} />
 
-            <FiltrosToolbar
+          <div className="bg-[color:var(--sp-surface)] border border-[color:var(--sp-border)] rounded-lg shadow-sm">
+            <div className="p-4 sm:p-5">
+              <FiltrosToolbar
               tabActiva={tabActiva}
               onTabChange={setTabActiva}
               filtroTiempo={periodo}
@@ -226,33 +256,34 @@ export default function CajaPage() {
               onDescargar={handleDescargarReporte}
               onRefresh={refrescar}
               loading={loading}
-            />
-
-            <Card className="rounded-lg shadow-sm">
-              <CardContent className="p-4">
-                {tabActiva === 'movimientos' ? (
-                  <MovimientosPanel
-                    ordenesPendientes={ordenesPendientes}
-                    transacciones={transaccionesDelDia}
-                    gastos={gastosFiltrados}
-                    onProcesarPago={handleProcesarPago}
-                    loading={loading}
-                  />
-                ) : tabActiva === 'arqueo' ? (
-                  EmptyStates.proximamente()
-                ) : (
-                  EmptyStates.proximamente()
-                )}
-              </CardContent>
-            </Card>
+              />
+            </div>
           </div>
+
+          <Card className="rounded-lg shadow-sm">
+            <CardContent className="p-4 sm:p-5">
+              {tabActiva === 'movimientos' ? (
+                <MovimientosPanel
+                  ordenesPendientes={ordenesPendientes}
+                  transacciones={transaccionesDelDia}
+                  gastos={gastosFiltrados}
+                  onProcesarPago={handleProcesarPago}
+                  loading={loading}
+                />
+              ) : tabActiva === 'arqueo' ? (
+                EmptyStates.proximamente()
+              ) : (
+                EmptyStates.proximamente()
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
       </div>
 
       {/* Error global */}
       {error && (
-  <div className="px-5 pb-5">
+  <div className="px-4 sm:px-5 pb-5">
       <Card className="bg-[color:var(--sp-error-50)] border-[color:var(--sp-error-200)] rounded-lg shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">

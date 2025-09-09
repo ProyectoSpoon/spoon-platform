@@ -21,6 +21,7 @@ import {
   deleteSpecialCombination as _deleteSpecialCombination,
   deleteSpecialDish,
   getAvailableSpecialsToday as _getAvailableSpecialsToday,
+  updateSpecialDish,
   type SpecialDish,
   
 } from '@spoon/shared';
@@ -94,6 +95,8 @@ export const useSpecialData = () => {
   const [currentSpecialDish, setCurrentSpecialDish] = useState<SpecialDish | null>(null);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [specialDishes, setSpecialDishes] = useState<SpecialDish[]>([]);
+  // Mapa local (no persistido) de imágenes por id de especial
+  const [specialImages, setSpecialImages] = useState<Record<string, string>>({});
   const [selectedProducts, setSelectedProducts] = useState<{[categoryId: string]: Producto[]}>({});
   const [specialCombinations, setSpecialCombinations] = useState<SpecialMenuCombination[]>([]);
   const [availableProducts, setAvailableProducts] = useState<{[categoryId: string]: Producto[]}>({});
@@ -248,7 +251,9 @@ export const useSpecialData = () => {
     dishName: string,
     dishDescription: string,
     dishPrice: number,
-    selectedProducts: {[categoryId: string]: Producto[]}
+    selectedProducts: {[categoryId: string]: Producto[]},
+    imageUrl?: string,
+    imageAlt?: string
   ) => {
     if (!restaurantId) {
       showNotification('No se pudo identificar el restaurante', 'error');
@@ -262,18 +267,30 @@ export const useSpecialData = () => {
       const newDish = await createSpecialDish(restaurantId, {
         dish_name: dishName,
         dish_description: dishDescription,
-        dish_price: dishPrice
+        dish_price: dishPrice,
+        image_url: imageUrl,
+        image_alt: imageAlt
       });
 
       
 
       // 2. Agregar productos seleccionados
       await insertSpecialDishSelections(newDish.id, selectedProducts);
-      
 
-      // 3. Generar combinaciones automáticas
-      await generateSpecialCombinations(newDish.id, dishName, dishPrice);
-      
+      // 3. Calcular métricas y marcar configuración completa
+      const totalProducts = Object.values(selectedProducts).reduce((acc, arr) => acc + arr.length, 0);
+      const categoriesConfigured = Object.values(selectedProducts).filter(arr => arr.length > 0).length;
+      try {
+        await updateSpecialDish(newDish.id, {
+          total_products_selected: totalProducts as any,
+          categories_configured: categoriesConfigured as any,
+          setup_completed: true as any,
+          status: 'active' as any,
+          is_template: false as any
+        });
+      } catch (e) {
+        console.warn('No se pudo actualizar flags de especial', e);
+      }
 
       // 4. Recargar datos
       const updatedDishes = await getRestaurantSpecialDishes(restaurantId);
@@ -289,6 +306,13 @@ export const useSpecialData = () => {
       setCurrentStep(0);
       setCurrentView('list');
 
+      // Guardar imagen en memoria si existe
+      if (imageUrl) {
+        setSpecialImages(prev => ({ ...prev, [newDish.id]: imageUrl }));
+  // También inyectar en el arreglo en memoria si no vino aún desde la DB
+  setSpecialDishes(prev => prev.map(d => d.id === newDish.id ? { ...d, image_url: imageUrl } : d));
+      }
+
       showNotification(`Plato especial "${dishName}" creado exitosamente`);
       return newDish;
       
@@ -300,6 +324,102 @@ export const useSpecialData = () => {
       setLoadingStates(prev => ({ ...prev, saving: false }));
     }
   }, [restaurantId, showNotification]);
+
+  // ✅ FUNCIÓN PARA EDITAR PLATO ESPECIAL (carga selecciones y abre wizard simplificado)
+  const editSpecialDish = useCallback(async (specialDish: SpecialDish) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, loading: true }));
+      setCurrentSpecialDish(specialDish);
+      // Cargar selecciones de productos existentes
+      const selections = await _getSpecialDishSelections(specialDish.id);
+      const grouped: { [categoryId: string]: Producto[] } = {};
+      selections.forEach(sel => {
+        // Encontrar categoryId desde nombre (inverso)
+        const cfg = CATEGORIAS_MENU_CONFIG.find(c => c.nombre === sel.category_name || c.id === sel.category_name);
+        const catId = cfg?.id || sel.category_name;
+        if (!grouped[catId]) grouped[catId] = [];
+        grouped[catId].push({
+          id: sel.universal_product_id,
+            name: sel.product_name,
+          description: '',
+          category_id: catId,
+          price: 0
+        } as unknown as Producto);
+      });
+      setSelectedProducts(grouped);
+      setDishName(specialDish.dish_name || '');
+      setDishDescription(specialDish.dish_description || '');
+      setDishPrice(specialDish.dish_price || DEFAULT_SPECIAL_PRICE);
+      setHasUnsavedChanges(false);
+      setCurrentStep(0);
+      setCurrentView('wizard');
+      setIsAnimating(true);
+    } catch (error) {
+      console.error('Error preparando edición del especial', error);
+      showNotification('Error cargando datos para edición', 'error');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, loading: false }));
+    }
+  }, [showNotification]);
+
+  // ✅ FUNCIÓN PARA GUARDAR CAMBIOS DE UN ESPECIAL EXISTENTE
+  const saveEditedSpecialDish = useCallback(async (imageUrl?: string, imageAlt?: string) => {
+    if (!currentSpecialDish) return;
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+      await updateSpecialDish(currentSpecialDish.id, {
+        dish_name: dishName,
+        dish_description: dishDescription,
+        dish_price: dishPrice,
+        image_url: imageUrl ?? currentSpecialDish.image_url ?? null,
+        image_alt: imageAlt ?? currentSpecialDish.image_alt ?? null
+      });
+      await insertSpecialDishSelections(currentSpecialDish.id, selectedProducts);
+      // Recalcular métricas y marcar completo
+      const totalProductsEdit = Object.values(selectedProducts).reduce((acc, arr) => acc + arr.length, 0);
+      const categoriesConfiguredEdit = Object.values(selectedProducts).filter(arr => arr.length > 0).length;
+      try {
+        await updateSpecialDish(currentSpecialDish.id, {
+          total_products_selected: totalProductsEdit as any,
+          categories_configured: categoriesConfiguredEdit as any,
+          setup_completed: true as any,
+          status: 'active' as any,
+          is_template: false as any
+        });
+      } catch (e) {
+        console.warn('No se pudo actualizar flags de especial (edición)', e);
+      }
+      const updated = await getRestaurantSpecialDishes(restaurantId!);
+      setSpecialDishes(updated);
+      if (imageUrl) {
+        setSpecialImages(prev => ({ ...prev, [currentSpecialDish.id]: imageUrl }));
+      }
+      showNotification('Especial actualizado');
+      setCurrentView('list');
+    } catch (error) {
+      console.error('Error guardando edición', error);
+      showNotification('Error al guardar cambios', 'error');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [currentSpecialDish, dishName, dishDescription, dishPrice, selectedProducts, restaurantId, showNotification]);
+
+  // ✅ FUNCIÓN PARA OBTENER SELECCIONES AGRUPADAS (solo lectura / detalle)
+  const fetchSpecialDishSelectionsGrouped = useCallback(async (specialDishId: string) => {
+    try {
+      const selections = await _getSpecialDishSelections(specialDishId);
+      const grouped: { [categoryName: string]: string[] } = {};
+      selections.forEach(sel => {
+        const name = sel.category_name || 'Otros';
+        if (!grouped[name]) grouped[name] = [];
+        grouped[name].push(sel.product_name);
+      });
+      return grouped;
+    } catch (e) {
+      console.error('Error obteniendo selecciones para detalle', e);
+      return {} as { [categoryName: string]: string[] };
+    }
+  }, []);
 
   // ✅ FUNCIÓN PARA CARGAR COMBINACIONES DE UN PLATO ESPECIAL
   const loadSpecialCombinations = useCallback(async (specialDishId: string) => {
@@ -452,6 +572,8 @@ export const useSpecialData = () => {
     restaurantId,
     specialDishes,
     setSpecialDishes,
+  specialImages,
+  setSpecialImages,
     selectedProducts,
     setSelectedProducts,
     specialCombinations,
@@ -504,6 +626,9 @@ export const useSpecialData = () => {
     loadProductsForCategory,
     loadInitialData,
     createNewSpecialDish,
+  editSpecialDish,
+  saveEditedSpecialDish,
+  fetchSpecialDishSelectionsGrouped,
     loadSpecialCombinations,
     toggleSpecialForToday,
     deleteSpecialDishComplete,

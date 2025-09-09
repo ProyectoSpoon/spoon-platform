@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase, getUserProfile } from '@spoon/shared/lib/supabase';
+import { getEstadoDisplay } from '@spoon/shared/utils/mesas';
+import { useMesas } from '@spoon/shared/hooks/mesas';
 
 // Tipos locales mínimos para esta implementación
 export interface CajaSesion {
@@ -23,6 +25,9 @@ export const useCajaSesion = () => {
   const saneadorEjecutado = useRef(false);
   const sesionIdRef = useRef<string | null>(null);
 
+  // Hook de mesas para validar estados (solo lectura)
+  const { mesasCompletas, configuracion } = useMesas();
+
   const cerrarCaja = useCallback(async (notas?: string, opts?: { omitValidacion?: boolean }) => {
     try {
       setLoading(true);
@@ -35,6 +40,19 @@ export const useCajaSesion = () => {
       }
 
       if (!opts?.omitValidacion) {
+        // Validación previa adicional: no permitir cierre si alguna mesa está ocupada o con orden activa
+        try {
+          const mesasOcupadas = mesasCompletas.filter(m => {
+            const est = getEstadoDisplay(m).estado;
+            return ['ocupada','en_cocina','servida','por_cobrar','reservada'].includes(est);
+          });
+          if (mesasOcupadas.length > 0) {
+            throw new Error('No se puede cerrar la caja: existen mesas ocupadas o con orden activa.');
+          }
+        } catch (e:any) {
+          // Si el hook aún no cargó (mesasCompletas undefined), continuar a RPC que hará validaciones de órdenes.
+          if (e?.message?.startsWith('No se puede cerrar la caja')) throw e;
+        }
         // Paso 1: Validación por RPC
         let rpcFallo = false;
         try {

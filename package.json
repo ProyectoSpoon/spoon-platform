@@ -1,41 +1,10 @@
 {
-	"name": "spoon-platform",
-	"version": "1.0.0",
-	"private": true,
-	"workspaces": [
-		"apps/*",
-		"packages/*"
-	],
-	"scripts": {
-		"dev": "turbo run dev",
-		"build": "turbo run build",
-		"lint": "turbo run lint",
-		"clean": "turbo run clean",
-		"test:all": "jest",
-		"test": "jest",
-		"test:mesas": "jest --config jest.config.mesas.js",
-		"test:mesas:watch": "jest --config jest.config.mesas.js --watch",
-		"test:mesas:coverage": "jest --config jest.config.mesas.js --coverage",
-		"test:setup": "jest packages/shared/__tests__/setup/config.test.ts"
-	},
-	"devDependencies": {
-		"@testing-library/jest-dom": "^5.17.0",
-		"@testing-library/react": "^12.1.5",
-		"@testing-library/react-hooks": "^8.0.1",
-		"@types/jest": "^30.0.0",
-		"@types/node": "^20.0.0",
-		"jest": "^30.0.5",
-		"jest-environment-jsdom": "^30.0.5",
-		"turbo": "^1.13.0",
-		"typescript": "^5.0.0"
-	},
-	"dependencies": {
-		"@react-native/js-polyfills": "^0.81.0",
-		"@supabase/supabase-js": "^2.52.1",
-		"class-variance-authority": "^0.7.1",
-		"clsx": "^2.1.1",
-		"metro": "^0.82.5",
-		"metro-core": "^0.82.5",
-		"tailwind-merge": "^3.3.1"
-	}
+  "name": "spoon-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "apps/admin",
+    "packages/*"
+  ]
 }

@@ -3,12 +3,27 @@
 // Página principal de gestión de mesas - Layout 70/30 con panel lateral fijo (350px)
 import React, { useState } from 'react';
 import { useSetPageTitle } from '@spoon/shared/Context/page-title-context';
-import { Button } from '@spoon/shared/components/ui/Button';
-import { RefreshCw, DollarSign, Settings, AlertCircle, Plus } from 'lucide-react';
+import { Button as ButtonRaw } from '@spoon/shared/components/ui/Button';
+// Cast de iconos para evitar conflictos de tipos de React en build (entorno monorepo)
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+import * as Lucide from 'lucide-react';
+// Re-map con any para JSX mientras se estabiliza tipado global
+const RefreshCw = Lucide.RefreshCw as any;
+const DollarSign = Lucide.DollarSign as any;
+const Settings = Lucide.Settings as any;
+const AlertCircle = Lucide.AlertCircle as any;
+const Plus = Lucide.Plus as any;
 import { useMesas } from '@spoon/shared/hooks/mesas';
+import { useCajaSesion } from '../../caja/hooks/useCajaSesion';
 import MesaCard from './MesaCard';
 import MesaDetallesPanel from './MesaDetallesPanel';
-import ConfiguracionMesasPanel from '@spoon/shared/components/mesas/ConfiguracionMesasPanel';
+import ConfiguracionMesasPanelRaw from '@spoon/shared/components/mesas/ConfiguracionMesasPanel';
+// Cast para evitar problemas de múltiples versiones de React en tipado
+// (Solo a nivel de esta página; TODO: unificar @types/react en repo)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Button = ButtonRaw as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ConfiguracionMesasPanel = ConfiguracionMesasPanelRaw as any;
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 import { getEstadoDisplay } from '@spoon/shared/utils/mesas';
 
@@ -40,6 +55,8 @@ const MesasPage: React.FC = () => {
     // Funciones del sistema maestro
     configurarMesasIniciales
   } = useMesas();
+  // Estado de caja (abierta/cerrada)
+  const { estadoCaja } = useCajaSesion();
 
   // Estados locales - SIN modal, CON panel lateral
   const [mesaSeleccionada, setMesaSeleccionada] = useState<number | null>(null);
@@ -92,19 +109,25 @@ const MesasPage: React.FC = () => {
     ? estadisticas.totalPendiente
     : Object.values(mesasOcupadas).reduce((sum, mesa) => sum + mesa.total, 0);
     
-  const mesasActivas = configuracion.configuradas
-    ? mesasCompletas.filter(m => ['ocupada', 'en_cocina', 'servida', 'por_cobrar'].includes(getEstadoDisplay(m).estado)).length
-    : Object.keys(mesasOcupadas).length;
+  const mesasActivas = estadoCaja === 'cerrada'
+    ? 0
+    : (configuracion.configuradas
+      ? mesasCompletas.filter(m => ['ocupada', 'en_cocina', 'servida', 'por_cobrar'].includes(getEstadoDisplay(m).estado)).length
+      : Object.keys(mesasOcupadas).length);
 
-  const ordenesEnCocina = configuracion.configuradas
-    ? mesasCompletas.filter(m => getEstadoDisplay(m).estado === 'en_cocina').length
-    : 0;
+  const ordenesEnCocina = estadoCaja === 'cerrada'
+    ? 0
+    : (configuracion.configuradas
+      ? mesasCompletas.filter(m => getEstadoDisplay(m).estado === 'en_cocina').length
+      : 0);
 
-  const totalPorCobrar = configuracion.configuradas
-    ? mesasCompletas
-        .filter(m => getEstadoDisplay(m).estado === 'por_cobrar' && m.detallesOrden)
-        .reduce((sum, m) => sum + (m.detallesOrden?.total || 0), 0)
-    : 0;
+  const totalPorCobrar = estadoCaja === 'cerrada'
+    ? 0
+    : (configuracion.configuradas
+      ? mesasCompletas
+          .filter(m => getEstadoDisplay(m).estado === 'por_cobrar' && m.detallesOrden)
+          .reduce((sum, m) => sum + (m.detallesOrden?.total || 0), 0)
+      : 0);
 
   // ========================================
   // RENDERIZADO CONDICIONAL
@@ -193,31 +216,37 @@ const MesasPage: React.FC = () => {
           {configuracion.configuradas ? (
             <>
               {/* Grid de mesas - auto-fit */}
+              {estadoCaja === 'cerrada' && (
+                <div className="bg-[color:var(--sp-neutral-100)] border border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] rounded-lg p-4 mb-2 text-sm">
+                  Caja cerrada: no hay servicio activo. Las mesas se muestran como libres (solo mantenimiento/inactivas si existieran).
+                </div>
+              )}
               <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))] [grid-auto-rows:1fr]">
-                {mesasCompletas
-                  .map((mesa) => (
+                {mesasCompletas.map((mesa) => {
+                  const display = getEstadoDisplay(mesa);
+                  const forzarLibre = estadoCaja === 'cerrada' && !['inactiva','mantenimiento'].includes(display.estado);
+                  return (
                     <MesaCard
                       key={mesa.numero}
                       numero={mesa.numero}
-                      estado={getEstadoDisplay(mesa).estado === 'libre' ? 'vacia' : 'ocupada'}
-                      total={mesa.detallesOrden?.total}
-                      onClick={() => handleMesaClick(mesa.numero)}
-                      // Props adicionales del sistema maestro
+                      estado={forzarLibre ? 'vacia' : (display.estado === 'libre' ? 'vacia' : 'ocupada')}
+                      total={forzarLibre ? undefined : mesa.detallesOrden?.total}
+                      onClick={() => !forzarLibre && handleMesaClick(mesa.numero)}
                       nombre={mesa.nombre}
                       zona={mesa.zona}
                       capacidad={mesa.capacidad}
-                      estadoMesa={getEstadoDisplay(mesa).estado}
-                      items={mesa.detallesOrden?.items?.length}
-                      comensales={mesa.detallesOrden?.comensales}
-                      inicioAtencion={mesa.detallesOrden?.fechaCreacion}
-                      seleccionada={mesaSeleccionada === mesa.numero}
+                      estadoMesa={forzarLibre ? 'libre' : display.estado}
+                      items={forzarLibre ? undefined : mesa.detallesOrden?.items?.length}
+                      comensales={forzarLibre ? undefined : mesa.detallesOrden?.comensales}
+                      inicioAtencion={forzarLibre ? undefined : mesa.detallesOrden?.fechaCreacion}
+                      seleccionada={!forzarLibre && mesaSeleccionada === mesa.numero}
                     />
-                  ))
-                }
+                  );
+                })}
               </div>
 
               {/* Resumen */}
-              {mesasActivas > 0 && (
+              {estadoCaja === 'abierta' && mesasActivas > 0 && (
                 <div className="bg-[color:var(--sp-primary-50)] border border-[color:var(--sp-primary-200)] rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>

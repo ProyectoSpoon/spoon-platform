@@ -23,6 +23,9 @@ export interface SpecialDishData {
   setup_completed: boolean;
   created_at: string;
   updated_at: string;
+  // Campos de imagen (agregados posteriormente)
+  image_url?: string | null;
+  image_alt?: string | null;
 }
 
 export interface SpecialCombinationData {

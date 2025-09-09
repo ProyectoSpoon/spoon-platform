@@ -214,6 +214,7 @@
 
 #### **`special_dishes`** - Plantillas de Especiales
 - **Información:** `dish_name`, `dish_description`, `dish_price`
+- **Multimedia:** `image_url`, `image_alt` (imagen y texto alternativo)
 - **Estados:** `is_active`, `is_template`, `status` ('draft', etc.)
 - **Configuración:** `total_products_selected`, `categories_configured`, `setup_completed`
 

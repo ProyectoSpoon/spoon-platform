@@ -1,8 +1,0 @@
-# Copy to .env at repo root or set in CI secrets
-PGHOST=your.db.host.or.supabase.host
-PGPORT=5432
-PGDATABASE=postgres
-PGUSER=postgres
-PGPASSWORD=yourpassword
-PGSCHEMA=public
-PGSSLMODE=require

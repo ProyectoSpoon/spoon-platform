@@ -1,14 +1,32 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@spoon/shared/components/ui/Button';
-import { Input } from '@spoon/shared/components/ui/Input';
+import { Button as ButtonRaw } from '@spoon/shared/components/ui/Button';
+import { Input as InputRaw } from '@spoon/shared/components/ui/Input';
 import { METODOS_PAGO } from '../../constants/cajaConstants';
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 import type { MetodoPago } from '../../types/cajaTypes';
 import { useMenuDelDia } from '../../../domicilios/hooks/useMenuDelDia';
 import { DEFAULT_DELIVERY_FEE } from '../../../domicilios/constants/domiciliosConstants';
+import { DEFAULT_PACKAGING_FEE } from '../../../domicilios/constants/domiciliosConstants';
 import { X, Pencil, Search, ShoppingCart, Trash2 } from 'lucide-react';
+
+// Cast temporales para evitar conflicto de múltiples definiciones de React en monorepo
+// TODO: remover cuando se unifiquen versiones de react & @types/react
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Button = ButtonRaw as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Input = InputRaw as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const XIcon = X as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const PencilIcon = Pencil as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const SearchIcon = Search as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ShoppingCartIcon = ShoppingCart as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const Trash2Icon = Trash2 as any;
 
 export interface ItemSeleccionado {
   id: string;
@@ -46,13 +64,13 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
   const [isAnimating, setIsAnimating] = React.useState(false);
   const [seleccion, setSeleccion] = React.useState<Record<string, ItemSeleccionado>>({});
   const [deliveryFee, setDeliveryFee] = React.useState<number>(DEFAULT_DELIVERY_FEE);
-  const [packagingFee, setPackagingFee] = React.useState<number>(1000); // en centavos
+  const [packagingFee, setPackagingFee] = React.useState<number>(DEFAULT_PACKAGING_FEE); // 1.000 COP en centavos
   const [includeDelivery, setIncludeDelivery] = React.useState<boolean>(false);
   const [includePackaging, setIncludePackaging] = React.useState<boolean>(false);
   const [showDeliveryModal, setShowDeliveryModal] = React.useState<boolean>(false);
   const [showPackagingModal, setShowPackagingModal] = React.useState<boolean>(false);
   const [deliveryEditValue, setDeliveryEditValue] = React.useState<number>(DEFAULT_DELIVERY_FEE / 100);
-  const [packagingEditValue, setPackagingEditValue] = React.useState<number>(10);
+  const [packagingEditValue, setPackagingEditValue] = React.useState<number>(1000); // 1.000 COP en pesos
   const [metodoPago, setMetodoPago] = React.useState<MetodoPago>('efectivo');
   const [montoRecibido, setMontoRecibido] = React.useState<number>(0);
   const [errorLocal, setErrorLocal] = React.useState<string | null>(null);
@@ -64,13 +82,13 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
       setIsAnimating(true);
       setSeleccion({});
       setDeliveryFee(DEFAULT_DELIVERY_FEE);
-      setPackagingFee(1000);
+  setPackagingFee(DEFAULT_PACKAGING_FEE); // reset 1.000 COP en centavos
       setIncludeDelivery(false);
       setIncludePackaging(false);
       setShowDeliveryModal(false);
       setShowPackagingModal(false);
       setDeliveryEditValue(DEFAULT_DELIVERY_FEE / 100);
-      setPackagingEditValue(10);
+  setPackagingEditValue(1000); // reset 1.000 COP en pesos
       setMetodoPago('efectivo');
       setMontoRecibido(0);
       setErrorLocal(null);
@@ -198,7 +216,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={onClose} disabled={loading || loadingMenu}>
-            <X className="w-4 h-4" />
+            <XIcon className="w-4 h-4" />
           </Button>
         </div>
 
@@ -219,12 +237,12 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
               
               {/* Search Bar */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[color:var(--sp-neutral-400)] w-4 h-4" />
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[color:var(--sp-neutral-400)] w-4 h-4" />
                 <Input
                   type="text"
                   placeholder="Buscar plato..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                   className="pl-10 h-10"
                 />
               </div>
@@ -320,7 +338,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
             {/* Order Header */}
             <div className="p-5 border-b">
               <div className="flex items-center gap-2 mb-4">
-                <ShoppingCart className="w-4 h-4 text-[color:var(--sp-neutral-600)]" />
+                <ShoppingCartIcon className="w-4 h-4 text-[color:var(--sp-neutral-600)]" />
                 <h3 className="text-base font-semibold text-[color:var(--sp-neutral-900)]">
                   Resumen de orden
                 </h3>
@@ -359,29 +377,29 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={(e) => {
+                  onClick={(e: React.MouseEvent) => {
                     e.stopPropagation();
                     setDeliveryEditValue(deliveryFee / 100);
                     setShowDeliveryModal(true);
                   }}
                   className="text-xs"
                 >
-                  <Pencil className="w-3 h-3 mr-1" />
-                  Editar domicilio
+                  <PencilIcon className="w-3 h-3 mr-1" />
+                  Editar costo domicilio
                 </Button>
                 
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={(e) => {
+                  onClick={(e: React.MouseEvent) => {
                     e.stopPropagation();
                     setPackagingEditValue(packagingFee / 100);
                     setShowPackagingModal(true);
                   }}
                   className="text-xs"
                 >
-                  <Pencil className="w-3 h-3 mr-1" />
-                  Editar recipientes
+                  <PencilIcon className="w-3 h-3 mr-1" />
+                  Editar costo recipientes
                 </Button>
               </div>
             </div>
@@ -419,7 +437,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
                           onClick={() => eliminarItem(item.id)}
                           className="w-7 h-7 p-0 text-[color:var(--sp-error-600)] hover:text-[color:var(--sp-error-700)] hover:bg-[color:var(--sp-error-50)]"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2Icon className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
@@ -499,7 +517,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
                         type="number"
                         min={total / 100}
                         value={montoRecibido / 100}
-                        onChange={(e) => setMontoRecibido(Math.round(parseFloat(e.target.value || '0') * 100))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMontoRecibido(Math.round(parseFloat(e.target.value || '0') * 100))}
                         className="h-10 pl-8 text-right font-medium"
                         placeholder="0"
                       />
@@ -545,18 +563,20 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
           </div>
         </div>
 
-        {/* Mini modal: Editar valor de Domicilio */}
+  {/* Mini modal: Editar costo de Domicilio (formato miles) */}
         {showDeliveryModal && (
           <div className="absolute inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-[color:var(--sp-neutral-950)]/30" onClick={() => setShowDeliveryModal(false)} />
             <div className="relative bg-[color:var(--sp-surface-elevated)] border border-[color:var(--sp-neutral-200)] rounded-lg shadow-xl w-full max-w-sm p-4 mx-4">
-              <div className="text-sm font-medium mb-3">Editar valor de domicilio</div>
+              <div className="text-sm font-medium mb-3">Editar costo de domicilio</div>
               <Input
-                type="number"
-                min={0}
-                value={deliveryEditValue}
-                onChange={(e) => setDeliveryEditValue(parseFloat(e.target.value || '0'))}
-                placeholder="Valor en pesos"
+                type="text"
+                value={deliveryEditValue ? deliveryEditValue.toLocaleString('es-CO') : ''}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const raw = e.target.value.replace(/\D/g,'');
+                  setDeliveryEditValue(raw ? parseInt(raw,10) : 0);
+                }}
+                placeholder="$ 1.000"
                 className="mb-4"
               />
               <div className="flex justify-end gap-2">
@@ -574,18 +594,20 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
           </div>
         )}
 
-        {/* Mini modal: Editar valor de Recipientes */}
+  {/* Mini modal: Editar costo de Recipientes (formato miles) */}
         {showPackagingModal && (
           <div className="absolute inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-[color:var(--sp-neutral-950)]/30" onClick={() => setShowPackagingModal(false)} />
             <div className="relative bg-[color:var(--sp-surface-elevated)] border border-[color:var(--sp-neutral-200)] rounded-lg shadow-xl w-full max-w-sm p-4 mx-4">
-              <div className="text-sm font-medium mb-3">Editar valor de recipientes</div>
+              <div className="text-sm font-medium mb-3">Editar costo de recipientes</div>
               <Input
-                type="number"
-                min={0}
-                value={packagingEditValue}
-                onChange={(e) => setPackagingEditValue(parseFloat(e.target.value || '0'))}
-                placeholder="Valor en pesos"
+                type="text"
+                value={packagingEditValue ? packagingEditValue.toLocaleString('es-CO') : ''}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const raw = e.target.value.replace(/\D/g,'');
+                  setPackagingEditValue(raw ? parseInt(raw,10) : 0);
+                }}
+                placeholder="$ 1.000"
                 className="mb-4"
               />
               <div className="flex justify-end gap-2">

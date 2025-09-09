@@ -1,6 +1,16 @@
 import React from 'react';
 import { Card, CardContent } from '@spoon/shared/components/ui/Card';
 import { TrendingUp, DollarSign, Receipt, AlertCircle, ListOrdered } from 'lucide-react';
+
+// Aliases casteados para evitar conflictos de tipos (múltiples React type defs en monorepo)
+// TODO: eliminar cuando se unifique la versión de React/los types en el workspace
+const CardC = Card as any;
+const CardContentC = CardContent as any;
+const TrendingUpIcon = TrendingUp as any;
+const DollarSignIcon = DollarSign as any;
+const ReceiptIcon = Receipt as any;
+const AlertCircleIcon = AlertCircle as any;
+const ListOrderedIcon = ListOrdered as any;
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
 interface MetricasData {
@@ -71,8 +81,8 @@ const MetricCard: React.FC<{
     : icon;
 
   return (
-    <Card className={`rounded-lg shadow-sm ${classes.bg} ${classes.border} border transition-all duration-200 hover:shadow-md`}>
-      <CardContent className="p-4">
+    <CardC className={`rounded-lg shadow-sm ${classes.bg} ${classes.border} border transition-all duration-200 hover:shadow-md`}>
+      <CardContentC className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Icono */}
@@ -102,7 +112,7 @@ const MetricCard: React.FC<{
               trend === 'up' ? 'bg-[color:var(--sp-success-100)]' :
               trend === 'down' ? 'bg-[color:var(--sp-error-100)]' : 'bg-[color:var(--sp-neutral-100)]'
             }`}>
-              <TrendingUp className={`w-4 h-4 ${
+              <TrendingUpIcon className={`w-4 h-4 ${
                 trend === 'up' ? 'text-[color:var(--sp-success-600)]' :
                 trend === 'down' ? 'text-[color:var(--sp-error-600)] rotate-180' : 'text-[color:var(--sp-neutral-600)]'
               }`} />
@@ -123,8 +133,8 @@ const MetricCard: React.FC<{
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </CardContentC>
+    </CardC>
   );
 };
 
@@ -173,10 +183,10 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
 
   if (loading) {
     return (
-  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+  <div className="grid gap-4 sm:gap-6 grid-cols-1 xs:grid-cols-2 md:[grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
         {[1, 2, 3, 4].map((i) => (
-      <Card key={i} className="animate-pulse">
-            <CardContent className="p-4">
+  <CardC key={i} className="animate-pulse">
+    <CardContentC className="p-4">
               <div className="flex items-center space-x-4">
         <div className="w-12 h-12 bg-[color:var(--sp-neutral-200)] rounded-lg"></div>
                 <div className="space-y-2">
@@ -184,18 +194,18 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
       <div className="h-8 bg-[color:var(--sp-neutral-200)] rounded w-32"></div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </CardContentC>
+          </CardC>
         ))}
       </div>
     );
   }
 
   return (
-  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+  <div className="grid gap-4 sm:gap-6 grid-cols-1 xs:grid-cols-2 md:[grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
       {/* Balance */}
       <MetricCard
-        icon={<TrendingUp />}
+  icon={<TrendingUpIcon />}
         label="Balance"
         value={metricas.balance}
         subtitle="Ingresos - Egresos del día"
@@ -205,7 +215,7 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
 
       {/* Ventas Totales */}
       <MetricCard
-        icon={<DollarSign />}
+  icon={<DollarSignIcon />}
         label="Ventas totales"
         value={metricas.ventasTotales}
         subtitle={`${metricas.transaccionesDelDia.length} transacciones`}
@@ -216,7 +226,7 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
 
       {/* Gastos Totales */}
       <MetricCard
-        icon={<Receipt />}
+  icon={<ReceiptIcon />}
         label="Gastos totales"
         value={metricas.gastosTotales}
         subtitle={metricas.gastosTotales > 0 ? "Egresos del día" : "Sin gastos registrados"}
@@ -226,7 +236,7 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
 
       {/* Órdenes (KPI) */}
       <MetricCard
-        icon={<ListOrdered />}
+  icon={<ListOrderedIcon />}
         label="Órdenes"
         value={metricas.transaccionesDelDia.length}
         subtitle="Cantidad de órdenes del día"
@@ -261,10 +271,10 @@ export const MetricasAlert: React.FC<{
   if (alerts.length === 0) return null;
 
   return (
-    <Card className="bg-[color:var(--sp-warning-50)] border-[color:var(--sp-warning-200)] border">
-      <CardContent className="p-4">
+    <CardC className="bg-[color:var(--sp-warning-50)] border-[color:var(--sp-warning-200)] border">
+      <CardContentC className="p-4">
         <div className="flex items-start space-x-3">
-          <AlertCircle className="w-5 h-5 text-[color:var(--sp-warning-600)] mt-0.5" />
+          <AlertCircleIcon className="w-5 h-5 text-[color:var(--sp-warning-600)] mt-0.5" />
           <div>
             <h4 className="font-medium text-[color:var(--sp-warning-800)] mb-1">
               Atención requerida
@@ -276,7 +286,7 @@ export const MetricasAlert: React.FC<{
             </ul>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </CardContentC>
+    </CardC>
   );
 };

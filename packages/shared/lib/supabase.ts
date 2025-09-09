@@ -553,6 +553,8 @@ export interface SpecialDish {
   setup_completed: boolean;
   created_at: string;
   updated_at: string;
+  image_url?: string | null;
+  image_alt?: string | null;
 }
 
 export interface SpecialDishSelection {
@@ -659,26 +661,51 @@ export const getAvailableSpecialsToday = async (restaurantId: string) => {
  * Crear un nuevo plato especial
  */
 export const createSpecialDish = async (
-  restaurantId: string, 
+  restaurantId: string,
   dishData: {
     dish_name: string;
     dish_description?: string;
     dish_price: number;
+    image_url?: string | null;
+    image_alt?: string | null;
   }
 ): Promise<SpecialDish> => {
-  const { data, error } = await supabase
-    .from('special_dishes')
-    .insert({
-      restaurant_id: restaurantId,
-      dish_name: dishData.dish_name,
-      dish_description: dishData.dish_description,
-      dish_price: dishData.dish_price,
-      is_template: true,
-      status: 'draft'
-    })
-    .select()
-    .single();
-
+  let data: any; let error: any;
+  try {
+    const result = await supabase
+      .from('special_dishes')
+      .insert({
+        restaurant_id: restaurantId,
+        dish_name: dishData.dish_name,
+        dish_description: dishData.dish_description,
+        dish_price: dishData.dish_price,
+        is_template: true,
+        status: 'draft',
+        image_url: dishData.image_url || null,
+        image_alt: dishData.image_alt || null
+      })
+      .select()
+      .single();
+    data = result.data; error = result.error;
+    if (error && /image_url|image_alt/i.test(error.message)) {
+      // Fallback sin columnas nuevas (DB aún no migrada)
+      const legacy = await supabase
+        .from('special_dishes')
+        .insert({
+          restaurant_id: restaurantId,
+          dish_name: dishData.dish_name,
+          dish_description: dishData.dish_description,
+          dish_price: dishData.dish_price,
+          is_template: true,
+          status: 'draft'
+        })
+        .select()
+        .single();
+      data = legacy.data; error = legacy.error;
+    }
+  } catch (e:any) {
+    throw e;
+  }
   if (error) throw error;
   // invalidar caches relacionados
   invalidateCache('getRestaurantSpecialDishes', restaurantId);
@@ -694,22 +721,54 @@ export const updateSpecialDish = async (
   specialDishId: string, 
   updates: Partial<SpecialDish>
 ): Promise<SpecialDish> => {
-  const { data, error } = await supabase
-    .from('special_dishes')
-    .update({
-      ...updates,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', specialDishId)
-    .select()
-    .single();
-
+  let data: any; let error: any;
+  const payload = { ...updates, updated_at: new Date().toISOString() } as any;
+  try {
+    const result = await supabase
+      .from('special_dishes')
+      .update(payload)
+      .eq('id', specialDishId)
+      .select()
+      .single();
+    data = result.data; error = result.error;
+    if (error && /image_url|image_alt/i.test(error.message)) {
+      // Retirar claves desconocidas y reintentar
+      delete payload.image_url; delete payload.image_alt;
+      const legacy = await supabase
+        .from('special_dishes')
+        .update(payload)
+        .eq('id', specialDishId)
+        .select()
+        .single();
+      data = legacy.data; error = legacy.error;
+    }
+  } catch (e:any) {
+    throw e;
+  }
   if (error) throw error;
   // invalidaciones amplias (no tenemos restaurantId aquí)
   invalidateCache('getRestaurantSpecialDishes');
   invalidateCache('getAvailableSpecialsToday');
   invalidateCache('getSpecialsStatusToday');
   return data;
+};
+
+// ==============================
+// SUBIDA DE IMAGEN PARA ESPECIALES
+// ==============================
+export const uploadSpecialDishImage = async (file: File | Blob): Promise<string> => {
+  const bucket = 'special-dishes';
+  const originalName = (file as any).name || 'image';
+  const ext = originalName.includes('.') ? originalName.split('.').pop()!.toLowerCase().replace(/[^a-z0-9]/g,'') : 'jpg';
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage.from(bucket).upload(path, file, {
+    upsert: true,
+    cacheControl: '3600'
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  if (!data?.publicUrl) throw new Error('No se pudo obtener URL pública');
+  return data.publicUrl;
 };
 
 /**

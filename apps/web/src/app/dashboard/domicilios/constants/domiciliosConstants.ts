@@ -67,7 +67,10 @@ export const DOMICILIARIO_ICONS = {
 } as const;
 
 // ✅ CONFIGURACIONES DE NEGOCIO
-export const DEFAULT_DELIVERY_FEE = 3000; // .000 COP
+// Tarifa default de domicilio en centavos (1000 COP)
+export const DEFAULT_DELIVERY_FEE = 100000; // 1.000 COP
+// Tarifa default de recipientes (packaging) en centavos (1000 COP)
+export const DEFAULT_PACKAGING_FEE = 100000; // 1.000 COP
 export const DEFAULT_ESTIMATED_TIME = 30; // 30 minutos
 export const MAX_DELIVERY_DISTANCE = 10; // 10 cuadras
 

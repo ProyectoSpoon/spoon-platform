@@ -5,8 +5,8 @@
 
 // ✅ Páginas principales
 export { default as SpecialesPage } from './SpecialesPage';
-export { default as SpecialesWizardPage } from './SpecialesWizardPage';
-export { default as EspecialesCombinationsPage } from './EspecialesCombinationsPage';
+// Reemplazado por SpecialDishWizard
+export { default as SpecialDishWizard } from '../components/SpecialDishWizard';
 
 // ✅ Componentes (cuando los creemos)
 // export { default as SpecialDishCard } from './components/SpecialDishCard';

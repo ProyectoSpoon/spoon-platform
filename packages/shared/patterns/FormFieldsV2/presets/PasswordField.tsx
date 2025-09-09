@@ -38,10 +38,17 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
             aria-invalid={props['aria-invalid']}
             aria-describedby={props['aria-describedby']}
             required={required}
-            placeholder="••••••••"
+            // Usar un placeholder descriptivo para evitar confusión cuando se muestra como texto
+            placeholder={label || 'Contraseña'}
             className="pr-10"
           />
-          <button type="button" onClick={() => setShow((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--sp-neutral-400)]">
+          <button
+            type="button"
+            onClick={() => setShow((s) => !s)}
+            aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            aria-pressed={show}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--sp-neutral-400)]"
+          >
             {show ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>

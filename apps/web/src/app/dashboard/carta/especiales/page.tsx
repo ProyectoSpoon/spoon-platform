@@ -8,8 +8,7 @@
 import React from 'react';
 import { useSpecialData } from '@spoon/shared/hooks/special-dishes/useSpecialData';
 import SpecialesPage from './pages/SpecialesPage';
-import SpecialesWizardPage from './pages/SpecialesWizardPage';
-import EspecialesCombinationsPage from './pages/EspecialesCombinationsPage';
+import SpecialDishWizard from './components/SpecialDishWizard';
 
 // Nota: Usamos imports estáticos para mayor estabilidad en desarrollo.
 
@@ -55,22 +54,45 @@ export default function EspecialesMainPage() {
   // ✅ ROUTING INTERNO BASADO EN VISTA ACTUAL
   const renderCurrentView = () => {
     switch (specialData.currentView) {
-      case 'creation':
-      case 'wizard':
+      case 'creation': // legacy alias
+      case 'wizard': {
+        const isEditing = !!specialData.currentSpecialDish;
+        const existingSpecial = isEditing && specialData.currentSpecialDish ? {
+          id: specialData.currentSpecialDish.id,
+          name: specialData.dishName,
+          description: specialData.dishDescription,
+          price: specialData.dishPrice,
+          selectedProducts: specialData.selectedProducts,
+          image: specialData.currentSpecialDish.image_url || specialData.specialImages?.[specialData.currentSpecialDish.id],
+          imageAlt: specialData.currentSpecialDish.image_alt || ''
+        } : null;
         return (
-          <SpecialesWizardPage
-            specialData={specialData}
+          <SpecialDishWizard
+            isOpen={true}
+            existingSpecial={existingSpecial}
+            loadProductsForCategory={specialData.loadProductsForCategory}
+            availableProducts={specialData.availableProducts}
+            loadingProducts={specialData.loadingProducts}
             onClose={() => specialData.setCurrentView('list')}
+            onComplete={async (data) => {
+              if (isEditing) {
+                // Actualizar estados del hook antes de guardar
+                // (hook ya tiene dishName etc, pero aseguramos sincronía)
+                await specialData.saveEditedSpecialDish(data.image, data.imageAlt);
+              } else {
+                await specialData.createNewSpecialDish(
+                  data.name,
+                  data.description,
+                  data.price,
+                  data.selectedProducts,
+                  data.image,
+                  data.imageAlt
+                );
+              }
+            }}
           />
         );
-        
-      case 'combinations':
-        return (
-          <EspecialesCombinationsPage
-            specialData={specialData}
-            onBack={() => specialData.setCurrentView('list')}
-          />
-        );
+      }
         
       case 'list':
       default:
@@ -99,12 +121,7 @@ export default function EspecialesMainPage() {
             </div>
             <div className="text-sm text-[color:var(--sp-on-surface-variant)]">Activos Hoy</div>
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-[color:var(--sp-info-700)]">
-              {specialData.specialCombinations.length}
-            </div>
-            <div className="text-sm text-[color:var(--sp-on-surface-variant)]">Combinaciones</div>
-          </div>
+          {/* Combinaciones eliminadas para Especiales (plato único) */}
         </div>
       </div>
 
