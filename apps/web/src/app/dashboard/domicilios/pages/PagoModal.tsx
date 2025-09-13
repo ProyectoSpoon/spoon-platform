@@ -4,6 +4,10 @@ import React, { useState } from 'react';
 import { X, DollarSign } from 'lucide-react';
 import { RegistrarPago } from '../types/domiciliosTypes';
 
+// Type casting para componentes de lucide-react
+const XCast = X as any;
+const DollarSignCast = DollarSign as any;
+
 interface PagoModalProps {
   pedidoId: string;
   onSubmit: (data: RegistrarPago) => void;
@@ -31,7 +35,7 @@ export default function PagoModal({ pedidoId, onSubmit, onClose, loading }: Pago
         <div className="flex items-center justify-between p-6 border-b border-[color:var(--sp-neutral-200)] bg-[--sp-surface]">
           <div>
             <h3 className="heading-section text-[color:var(--sp-neutral-900)] flex items-center">
-              <DollarSign className="w-5 h-5 mr-2 text-[color:var(--sp-success-600)]" />
+              <DollarSignCast className="w-5 h-5 mr-2 text-[color:var(--sp-success-600)]" />
               Registrar Pago
             </h3>
             <p className="text-sm text-[color:var(--sp-neutral-600)] mt-1">
@@ -43,7 +47,7 @@ export default function PagoModal({ pedidoId, onSubmit, onClose, loading }: Pago
             className="p-2 hover:bg-[color:var(--sp-neutral-200)] rounded-lg transition-colors"
             disabled={loading}
           >
-            <X className="w-5 h-5" />
+            <XCast className="w-5 h-5" />
           </button>
         </div>
 

@@ -5,14 +5,17 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
-import ActionBar, { ActionBarProps } from '@spoon/shared/components/ui/ActionBar';
+import ActionBarRaw, { ActionBarProps } from '@spoon/shared/components/ui/ActionBar';
+const ActionBar = ActionBarRaw as any;
 import { getEstadoDisplay } from '@spoon/shared/utils/mesas';
+import CrearOrdenWizardRaw from '@spoon/shared/components/mesas/CrearOrdenWizard';
+const CrearOrdenWizard = CrearOrdenWizardRaw as any;
 
 // Interfaces
 interface Mesa {
-  id: string;
+  id?: string; // opcional: algunas ramas no proveen id interno
   numero: number;
   nombre?: string;
   zona?: string;
@@ -34,37 +37,74 @@ interface Mesa {
 interface MesaDetallesPanelProps {
   mesa: Mesa | null;
   onClose: () => void;
+  restaurantId: string;
+  onCobrar?: (numeroMesa: number) => Promise<boolean> | boolean;
+  cajaAbierta?: boolean;
 }
 
 const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
   mesa,
-  onClose
+  onClose,
+  restaurantId,
+  onCobrar,
+  cajaAbierta = true
 }) => {
   // Debug: Log mejorado
+  const lastMesaRef = useRef<Mesa | null>(null);
   useEffect(() => {
-    console.log('=== MESA DETALLES CORREGIDO ===');
-    console.log('mesa recibida:', mesa);
-    console.log('tipo:', typeof mesa);
-    if (mesa) {
-      console.log('✅ Mesa válida:', {
+    // Evitar spam por StrictMode (doble render) y re-renders donde la mesa no cambió
+    if (lastMesaRef.current === mesa) return;
+    lastMesaRef.current = mesa;
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[MesaDetallesPanel] cambio de mesa =>', mesa ? {
         id: mesa.id,
         numero: mesa.numero,
         estado: mesa.estado,
-        zona: mesa.zona,
-        capacidad: mesa.capacidad
-      });
-    } else {
-      console.log('❌ Mesa es null o undefined');
+        items: mesa.detallesOrden?.items?.length || 0,
+        total: mesa.detallesOrden?.total || 0
+      } : 'null');
     }
-    console.log('==============================');
   }, [mesa]);
 
   // Estados locales
   const [wizardAbierto, setWizardAbierto] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [errorItems, setErrorItems] = useState<string | null>(null);
+  const [procesandoItem, setProcesandoItem] = useState<string | null>(null);
+  const [agregandoItems, setAgregandoItems] = useState(false);
+  const [localItems, setLocalItems] = useState<any[]>([]);
+  const [cobrando, setCobrando] = useState(false);
+  const [mensajeCobro, setMensajeCobro] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
+
+  // Sincronizar items locales cuando cambia la mesa o la orden
+  useEffect(() => {
+    if (mesa?.detallesOrden?.items) {
+      // Clonar para edición local
+      setLocalItems(JSON.parse(JSON.stringify(mesa.detallesOrden.items)));
+    } else {
+      setLocalItems([]);
+    }
+  }, [mesa?.detallesOrden?.id, mesa?.detallesOrden?.items]);
+
+  const actualizarItemLocal = (itemId: string, nuevaCantidad: number) => {
+    setLocalItems(prev => prev.map(it => it.id === itemId ? { ...it, cantidad: nuevaCantidad, precio_total: (it.precio_unitario || it.precioUnitario || 0) * nuevaCantidad } : it));
+  };
+  const eliminarItemLocal = (itemId: string) => {
+    setLocalItems(prev => prev.filter(it => it.id !== itemId));
+  };
+  const calcularTotalLocal = () => {
+    if (localItems.length === 0) return 0;
+    return localItems.reduce((sum, it) => {
+      const unit = it.precio_unitario ?? it.precioUnitario ?? 0;
+      const cant = it.cantidad ?? 1;
+      return sum + unit * cant;
+    }, 0);
+  };
   // Edición básica movida al ConfiguracionMesasPanel
 
   const formatCurrency = (value: number) => formatCurrencyCOP(value || 0);
-  const estadoDisplay = mesa ? getEstadoDisplay(mesa) : null;
+  // getEstadoDisplay espera un objeto con id obligatorio; casteamos porque en algunas ramas no lo tenemos
+  const estadoDisplay = mesa ? getEstadoDisplay(mesa as any) : null;
   
   // Mapear color lógico a tokens del sistema de diseño
   const colorToClasses = (tone: 'green'|'red'|'yellow'|'gray'|'orange') => {
@@ -109,10 +149,30 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
   };
 
   // Funciones de manejo
-  const handleEditarOrden = () => {
-    if (!mesa) return;
-    console.log('Editando mesa:', mesa.numero);
-    alert('🔧 FUNCIONALIDAD EN DESARROLLO\n\nPróximamente: Modal/página de edición completa');
+  const handleCobrar = async () => {
+    if (!mesa || !onCobrar || cobrando) return;
+    setMensajeCobro(null);
+    if (!cajaAbierta) {
+      setMensajeCobro({ tipo: 'error', texto: 'La caja está cerrada' });
+      return;
+    }
+    const total = mesa.detallesOrden?.total || calcularTotalLocal();
+    const confirmar = typeof window !== 'undefined' ? window.confirm(`Confirmar cobro de Mesa ${mesa.numero} por ${formatCurrency(total)}?`) : true;
+    if (!confirmar) return;
+    try {
+      setCobrando(true);
+      const ok = await onCobrar(mesa.numero);
+      if (ok) {
+        setMensajeCobro({ tipo: 'ok', texto: 'Cobro procesado ✔️' });
+      } else {
+        setMensajeCobro({ tipo: 'error', texto: 'No se pudo procesar el cobro' });
+      }
+    } catch (e) {
+      console.error(e);
+      setMensajeCobro({ tipo: 'error', texto: 'Error inesperado' });
+    } finally {
+      setCobrando(false);
+    }
   };
 
   const handleAccion = (accion: string) => {
@@ -161,18 +221,13 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
             </p>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-[color:var(--sp-neutral-100)] rounded-lg transition-colors"
-        >
-          ✕
-        </button>
+  {/* Botón cerrar eliminado según solicitud */}
       </div>
 
   {/* Contenido */}
   <div className="flex-1 p-6 overflow-y-auto">
     {/* Orden actual */}
-    {mesa.detallesOrden && (
+  {mesa.detallesOrden && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="heading-section text-[color:var(--sp-neutral-900)]">Orden actual</h3>
@@ -182,29 +237,63 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
                 </div>
               )}
             </div>
-  {Array.isArray(mesa.detallesOrden.items) && mesa.detallesOrden.items.length > 0 ? (
+  {Array.isArray(localItems) && localItems.length > 0 ? (
       <div className="divide-y divide-[color:var(--sp-border)] rounded-lg border border-[color:var(--sp-border)] bg-[color:var(--sp-surface-elevated)]">
-        {mesa.detallesOrden.items.map((it: any, idx: number) => {
+        {localItems.map((it: any, idx: number) => {
                   const nombre = it?.nombre || it?.name || it?.titulo || 'Item';
                   const cantidad = it?.cantidad ?? it?.qty ?? it?.quantity ?? 1;
-                  const unit = it?.precio ?? it?.price ?? it?.unit_price ?? 0;
-                  const subtotal = it?.subtotal ?? it?.total ?? (unit * cantidad);
+                  const unit = it?.precio_unitario ?? it?.precioUnitario ?? it?.precio ?? it?.price ?? it?.unit_price ?? 0;
+                  const subtotal = it?.precio_total ?? it?.precioTotal ?? it?.subtotal ?? it?.total ?? (unit * cantidad);
                   const obs = it?.observaciones || it?.nota || it?.notes;
+                  const itemId = it?.id;
                   return (
-                    <div key={idx} className="flex items-center justify-between p-3">
-                      <div className="min-w-0">
+                    <div key={idx} className="flex items-center justify-between p-3 gap-3">
+                      <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-[color:var(--sp-neutral-900)] truncate">{nombre}</div>
                         <div className="text-xs text-[color:var(--sp-neutral-500)]">x{cantidad}{obs ? ` • - ${obs}` : ''}</div>
                       </div>
-                      <div className="text-sm font-semibold text-[color:var(--sp-neutral-900)]">{formatCurrency(subtotal)}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-semibold text-[color:var(--sp-neutral-900)]">{formatCurrency(subtotal)}</div>
+                        {/* Controles edición */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            disabled={procesandoItem === itemId || cantidad <= 1}
+                            onClick={async () => {
+                              if (!itemId) return; setProcesandoItem(itemId); setErrorItems(null);
+                              const nueva = cantidad - 1;
+                              actualizarItemLocal(itemId, nueva);
+                              try { const { actualizarCantidadItemOrden } = await import('@spoon/shared/lib/supabase'); await actualizarCantidadItemOrden(itemId, nueva); } catch(e){ setErrorItems('No se pudo actualizar'); actualizarItemLocal(itemId, cantidad); } finally { setProcesandoItem(null); }
+                            }}
+                            className="px-2 py-1 text-xs rounded bg-[color:var(--sp-neutral-100)] disabled:opacity-40"
+                          >-</button>
+                          <span className="text-xs w-6 text-center">{cantidad}</span>
+                          <button
+                            disabled={procesandoItem === itemId}
+                            onClick={async () => { if (!itemId) return; setProcesandoItem(itemId); setErrorItems(null); const nueva = cantidad + 1; actualizarItemLocal(itemId, nueva); try { const { actualizarCantidadItemOrden } = await import('@spoon/shared/lib/supabase'); await actualizarCantidadItemOrden(itemId, nueva); } catch(e){ setErrorItems('No se pudo actualizar'); actualizarItemLocal(itemId, cantidad); } finally { setProcesandoItem(null);} }}
+                            className="px-2 py-1 text-xs rounded bg-[color:var(--sp-neutral-100)] disabled:opacity-40"
+                          >+</button>
+                          <button
+                            disabled={procesandoItem === itemId}
+                            onClick={async () => { if (!itemId) return; if(!confirm('Eliminar item?')) return; setProcesandoItem(itemId); setErrorItems(null); const backup = [...localItems]; eliminarItemLocal(itemId); try { const { eliminarItemOrden } = await import('@spoon/shared/lib/supabase'); await eliminarItemOrden(itemId); } catch(e){ setErrorItems('No se pudo eliminar'); setLocalItems(backup); } finally { setProcesandoItem(null);} }}
+                            className="px-2 py-1 text-xs rounded bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-600)] disabled:opacity-40"
+                          >×</button>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
                 <div className="flex items-center justify-between p-3 bg-[color:var(--sp-neutral-50)]">
                   <div className="text-sm font-medium text-[color:var(--sp-neutral-700)]">Total</div>
                   <div className="text-base font-semibold text-[color:var(--sp-neutral-900)]">
-          {formatCurrency(mesa.detallesOrden.total || 0)}
+          {formatCurrency(calcularTotalLocal())}
                   </div>
+                </div>
+                <div className="p-3 flex gap-2 justify-between">
+                  <button
+                      onClick={() => setWizardAbierto(true)}
+                    className="flex-1 px-3 py-2 text-xs rounded bg-[color:var(--sp-success-600)] text-[color:var(--sp-on-success)]"
+                  >Agregar productos</button>
+                  {errorItems && <span className="text-[10px] text-[color:var(--sp-error-600)]">{errorItems}</span>}
                 </div>
               </div>
             ) : (
@@ -272,24 +361,24 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
         let primary: ActionBarProps['primary'] = { label: 'Acción', onClick: () => {}, color: 'emerald' };
         let secondary: ActionBarProps['secondary'] = { label: 'Cerrar', onClick: onClose, variant: 'outline' };
 
-        switch (mesa.estado) {
+    switch (mesa.estado) {
           case 'libre':
             primary = { label: 'Sentar clientes', onClick: () => handleAccion('Ocupar'), color: 'blue' };
             break;
           case 'ocupada':
-            primary = { label: 'Tomar comanda', onClick: handleEditarOrden, color: 'emerald' };
+      primary = { label: cobrando ? 'Cobrando...' : 'Cobrar', onClick: handleCobrar, color: 'emerald', disabled: !cajaAbierta || cobrando || !(mesa.detallesOrden?.items?.length) } as any;
             secondary = { ...secondary, className: 'hidden sm:block' };
             break;
           case 'en_cocina':
-            primary = { label: 'Marcar servida', onClick: () => handleAccion('Servida'), color: 'emerald' };
-            secondary = { label: 'Editar orden', onClick: handleEditarOrden, variant: 'default', className: 'bg-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-800)] text-[color:var(--sp-on-surface-inverted)]' };
+      primary = { label: 'Marcar servida', onClick: () => handleAccion('Servida'), color: 'emerald' };
+      secondary = { label: cobrando ? 'Cobrando...' : 'Cobrar', onClick: handleCobrar, variant: 'default', className: 'bg-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-800)] text-[color:var(--sp-on-surface-inverted)]', disabled: !cajaAbierta || cobrando || !(mesa.detallesOrden?.items?.length) } as any;
             break;
           case 'servida':
-            primary = { label: 'Solicitar cuenta', onClick: () => handleAccion('Solicitar Cuenta'), color: 'indigo' };
-            secondary = { label: 'Editar orden', onClick: handleEditarOrden, variant: 'default', className: 'bg-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-800)] text-[color:var(--sp-on-surface-inverted)]' };
+      primary = { label: 'Solicitar cuenta', onClick: () => handleAccion('Solicitar Cuenta'), color: 'indigo' };
+      secondary = { label: cobrando ? 'Cobrando...' : 'Cobrar', onClick: handleCobrar, variant: 'default', className: 'bg-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-800)] text-[color:var(--sp-on-surface-inverted)]', disabled: !cajaAbierta || cobrando || !(mesa.detallesOrden?.items?.length) } as any;
             break;
           case 'por_cobrar':
-            primary = { label: 'Procesar pago', onClick: () => handleAccion('Cobrar'), color: 'emerald' }; // verde oscuro #059669
+      primary = { label: cobrando ? 'Cobrando...' : 'Procesar pago', onClick: handleCobrar, color: 'emerald', disabled: !cajaAbierta || cobrando || !(mesa.detallesOrden?.items?.length) } as any; // verde oscuro #059669
             secondary = { label: 'Liberar mesa', onClick: () => handleAccion('Liberar'), variant: 'default', className: 'bg-amber-500 hover:bg-amber-600 text-[color:var(--sp-on-warning)]' }; // naranja #f59e0b
             break;
           case 'reservada':
@@ -316,11 +405,66 @@ const MesaDetallesPanel: React.FC<MesaDetallesPanelProps> = ({
                 )}
               </div>
             ) : null}
+            {mensajeCobro && (
+              <div className={`mt-2 text-xs px-2 py-1 rounded ${mensajeCobro.tipo === 'ok' ? 'bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-700)]' : 'bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-700)]'}`}>
+                {mensajeCobro.texto}
+                {!cajaAbierta && ' (Caja cerrada)'}
+              </div>
+            )}
+            {!mensajeCobro && !cajaAbierta && (
+              <div className="mt-2 text-xs px-2 py-1 rounded bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-700)]">
+                Abre la caja para poder cobrar
+              </div>
+            )}
           </ActionBar>
         );
       })()}
+      {/* Wizard para agregar productos a orden existente */}
+      {wizardAbierto && mesa?.detallesOrden?.id && (
+        <CrearOrdenWizard
+          isOpen={wizardAbierto}
+          onClose={() => setWizardAbierto(false)}
+          onCrearOrden={async (items: { combinacionId: string; nombre: string; precio: number; cantidad: number; tipo: 'menu_dia' | 'especial'; }[]) => {
+            if (!mesa?.detallesOrden?.id) return false;
+            try {
+              setAgregandoItems(true);
+              const { agregarItemsAOrden } = await import('@spoon/shared/lib/supabase');
+              await agregarItemsAOrden(mesa.detallesOrden.id, items.map(i => ({
+                combinacionId: i.combinacionId,
+                tipoItem: i.tipo,
+                cantidad: i.cantidad,
+                precioUnitario: i.precio,
+                observacionesItem: undefined
+              })));
+              // Optimista: añadir a localItems (sin IDs reales nuevos)
+              setLocalItems(prev => ([
+                ...prev,
+                ...items.map(it => ({
+                  id: `tmp-${Date.now()}-${Math.random()}`,
+                  nombre: it.nombre,
+                  cantidad: it.cantidad,
+                  precio_unitario: it.precio,
+                  precio_total: it.precio * it.cantidad
+                }))
+              ]));
+              return true;
+            } catch (e) {
+              console.error('Error agregando items', e);
+              setErrorItems('No se pudieron agregar items');
+              return false;
+            } finally {
+              setAgregandoItems(false);
+              setWizardAbierto(false);
+            }
+          }}
+          restaurantId={restaurantId}
+          mesaNumero={mesa.numero}
+          loading={agregandoItems}
+        />
+      )}
     </div>
   );
 };
 
 export default MesaDetallesPanel;
+

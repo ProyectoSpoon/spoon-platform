@@ -17,6 +17,9 @@
         "name": "next"
       }
     ],
+  // Evita que TypeScript cargue tipos globales implícitos como 'jest' o 'aria-query' en la app
+  // (los tests usan su propio tsconfig.jest.json con esos tipos)
+  "types": ["node"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
@@ -31,5 +34,10 @@
     "**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**"
+  ]
 }

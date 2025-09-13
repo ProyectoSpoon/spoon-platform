@@ -2,9 +2,14 @@
 
 // src/app/dashboard/layout.tsx
 
-import React, { useEffect, useState } from 'react';
-import { preloadUserAndRestaurant } from '@spoon/shared';
+import React, { useEffect, useState, useRef } from 'react';
+import { preloadUserAndRestaurant, supabase } from '@spoon/shared';
 import { NotificationProvider } from '@spoon/shared/Context/notification-context';
+import { useRouter } from 'next/navigation';
+
+// Type casting to fix React version conflicts in monorepo
+const NotificationProviderComponent = NotificationProvider as any;
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -19,6 +24,13 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+
+// Type casting to fix React version conflicts in monorepo
+const ChevronLeftIcon = ChevronLeft as any;
+const ChevronRightIcon = ChevronRight as any;
+const BellIcon = Bell as any;
+const LogOutIcon = LogOut as any;
+const LinkComponent = Link as any;
 
 // ✅ ITEMS DEL MENÚ PRINCIPAL
 const menuItems = [
@@ -69,7 +81,7 @@ const menuItems = [
 ];
 
 // ✅ COMPONENTE DE BARRA LATERAL
-function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+function Sidebar({ collapsed, onToggle, onSignOut }: { collapsed: boolean; onToggle: () => void; onSignOut: () => void }) {
   const pathname = usePathname();
 
   return (
@@ -97,9 +109,9 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
             className="p-1.5 rounded-md hover:bg-[color:var(--sp-neutral-100)] transition-colors"
           >
             {collapsed ? (
-              <ChevronRight className="h-4 w-4 text-[color:var(--sp-neutral-600)]" />
+              <ChevronRightIcon className="h-4 w-4 text-[color:var(--sp-neutral-600)]" />
             ) : (
-              <ChevronLeft className="h-4 w-4 text-[color:var(--sp-neutral-600)]" />
+              <ChevronLeftIcon className="h-4 w-4 text-[color:var(--sp-neutral-600)]" />
             )}
           </button>
         </div>
@@ -109,10 +121,10 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
       <nav className="flex-1 p-4 space-y-1">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
-          const Icon = item.icon;
+          const IconComponent = item.icon as any;
           
           return (
-            <Link
+            <LinkComponent
               prefetch={false}
               key={item.href}
               href={item.href}
@@ -122,7 +134,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
                   : 'text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-50)] hover:text-[color:var(--sp-neutral-900)]'
               }`}
             >
-              <Icon className={`h-5 w-5 flex-shrink-0 ${
+              <IconComponent className={`h-5 w-5 flex-shrink-0 ${
                 isActive ? 'text-[color:var(--sp-primary-600)]' : 'text-[color:var(--sp-neutral-500)] group-hover:text-[color:var(--sp-neutral-700)]'
               }`} />
               
@@ -145,7 +157,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
                   </div>
                 </>
               )}
-            </Link>
+            </LinkComponent>
           );
         })}
       </nav>
@@ -155,7 +167,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
         {!collapsed && (
           <div className="mb-3 p-3 bg-[color:var(--sp-info-50)] rounded-lg">
             <div className="flex items-center gap-2 mb-1">
-              <Bell className="h-4 w-4 text-[color:var(--sp-info-600)]" />
+              <BellIcon className="h-4 w-4 text-[color:var(--sp-info-600)]" />
               <span className="text-sm font-medium text-[color:var(--sp-info-900)]">Recordatorio</span>
             </div>
             <p className="text-xs text-[color:var(--sp-info-700)]">
@@ -164,10 +176,13 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           </div>
         )}
         
-        <button className={`w-full flex items-center gap-3 px-3 py-2 text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-50)] rounded-lg transition-colors ${
-          collapsed ? 'justify-center' : ''
-        }`}>
-          <LogOut className="h-5 w-5 text-[color:var(--sp-neutral-500)]" />
+        <button
+          onClick={onSignOut}
+          className={`w-full flex items-center gap-3 px-3 py-2 text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-50)] rounded-lg transition-colors ${
+            collapsed ? 'justify-center' : ''
+          }`}
+        >
+          <LogOutIcon className="h-5 w-5 text-[color:var(--sp-neutral-500)]" />
           {!collapsed && <span className="text-sm">Cerrar Sesión</span>}
         </button>
       </div>
@@ -188,7 +203,7 @@ function Header() {
         <div className="flex items-center gap-4">
           {/* Notificaciones */}
           <button className="relative p-2 text-[color:var(--sp-neutral-600)] hover:text-[color:var(--sp-neutral-900)] hover:bg-[color:var(--sp-neutral-100)] rounded-lg transition-colors">
-            <Bell className="h-5 w-5" />
+            <BellIcon className="h-5 w-5" />
             <span className="absolute -top-1 -right-1 h-3 w-3 bg-[color:var(--sp-error-500)] rounded-full"></span>
           </button>
           
@@ -215,19 +230,100 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [authStatus, setAuthStatus] = useState<'checking' | 'authorized' | 'unauthorized'>('checking');
+  const router = useRouter();
+  const redirectedRef = useRef(false);
+
+  // Sign out helper
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      if (!redirectedRef.current) {
+        redirectedRef.current = true;
+        router.replace('/auth');
+      }
+    }
+  };
 
   // Precalentar datos de usuario/restaurante para evitar llamadas repetidas
   useEffect(() => {
     preloadUserAndRestaurant();
   }, []);
 
+  // Global auth/session guard
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        if (!session || !session.user || !session.user.id) {
+          setAuthStatus('unauthorized');
+          if (!redirectedRef.current) {
+            redirectedRef.current = true;
+            router.replace('/auth');
+          }
+        } else {
+          setAuthStatus('authorized');
+        }
+      } catch {
+        if (!redirectedRef.current) {
+          redirectedRef.current = true;
+          router.replace('/auth');
+        }
+        setAuthStatus('unauthorized');
+      }
+    })();
+
+    // Subscribe to auth state changes (logout / token expiry)
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session || !session.user) {
+        setAuthStatus('unauthorized');
+        if (!redirectedRef.current) {
+          redirectedRef.current = true;
+          router.replace('/auth');
+        }
+      } else {
+        setAuthStatus('authorized');
+      }
+    });
+
+    // Proactive expiry check every 30s
+    const interval = setInterval(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.user) {
+        setAuthStatus('unauthorized');
+        if (!redirectedRef.current) {
+          redirectedRef.current = true;
+          router.replace('/auth');
+        }
+      }
+    }, 30_000);
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+      clearInterval(interval);
+    };
+  }, [router]);
+
+  if (authStatus === 'checking') {
+    return (
+      <div className="h-screen flex items-center justify-center text-sm text-[color:var(--sp-neutral-600)]">
+        Verificando sesión...
+      </div>
+    );
+  }
+
   return (
-    <NotificationProvider>
+    <NotificationProviderComponent>
   <div className="h-screen flex overflow-hidden bg-[color:var(--sp-neutral-50)]">
         {/* Barra lateral */}
         <Sidebar 
           collapsed={sidebarCollapsed} 
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+          onSignOut={handleSignOut}
         />
         {/* Contenido principal */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -241,6 +337,6 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
-    </NotificationProvider>
+    </NotificationProviderComponent>
   );
 }

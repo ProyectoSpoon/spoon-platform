@@ -14,6 +14,14 @@ import {
   toast 
 } from '@spoon/shared';
 
+// Type casting to resolve React version conflicts
+const ButtonComponent = Button as any;
+const CardComponent = Card as any;
+const CardContentComponent = CardContent as any;
+const CardHeaderComponent = CardHeader as any;
+const CardTitleComponent = CardTitle as any;
+const InputComponent = Input as any;
+
 interface RestaurantInfo {
   name: string;
   description: string;
@@ -245,16 +253,16 @@ export default function InformacionGeneralPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Header */}
-  <Card>
-          <CardHeader>
+  <CardComponent>
+          <CardHeaderComponent>
             <div className="flex items-center justify-between mb-4">
-              <Button 
+              <ButtonComponent 
                 variant="outline" 
                 onClick={handleBack}
                 className="flex items-center gap-2"
               >
                 ← Volver
-              </Button>
+              </ButtonComponent>
               
               <div className="text-center flex-1">
     <span className="text-sm text-[color:var(--sp-neutral-500)] font-medium">Paso 1 de 4</span>
@@ -263,9 +271,9 @@ export default function InformacionGeneralPage() {
               <div className="w-20"></div>
             </div>
             
-            <CardTitle>
+            <CardTitleComponent>
               Información General
-            </CardTitle>
+            </CardTitleComponent>
       <p className="text-[color:var(--sp-neutral-600)]">
               Empecemos con los datos básicos de tu restaurante
             </p>
@@ -274,16 +282,16 @@ export default function InformacionGeneralPage() {
                 👤 {userInfo.email} • {restaurantId ? `Editando restaurante` : 'Nuevo restaurante'}
               </p>
             )}
-          </CardHeader>
-        </Card>
+          </CardHeaderComponent>
+        </CardComponent>
 
         {/* Formulario principal con jerarquía visual */}
-    <Card>
-          <CardContent>
+    <CardComponent>
+          <CardContentComponent>
             <div className="space-y-8">
               {/* Nombre del restaurante */}
       <div className="pb-2 border-b border-[color:var(--sp-neutral-200)]">
-                <Input
+                <InputComponent
                   label="Nombre del Restaurante *"
                   name="name"
                   value={formData.name}
@@ -301,7 +309,7 @@ export default function InformacionGeneralPage() {
               {/* Contacto */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2 pb-2 border-b border-[color:var(--sp-neutral-200)]">
                 <div>
-                  <Input
+                  <InputComponent
                     label={`Teléfono del Restaurante * ${isPhonePreFilled ? '(Pre-llenado)' : ''}`}
                     name="phone"
                     type="tel"
@@ -322,7 +330,7 @@ export default function InformacionGeneralPage() {
                 </div>
 
                 <div>
-                  <Input
+                  <InputComponent
                     label={`Email del Restaurante * ${isEmailPreFilled ? '(Pre-llenado)' : ''}`}
                     name="email"
                     type="email"
@@ -393,23 +401,23 @@ export default function InformacionGeneralPage() {
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </CardContentComponent>
+        </CardComponent>
 
         {/* Botones de navegación mejorados */}
-        <Card>
-          <CardContent>
+        <CardComponent>
+          <CardContentComponent>
             <div className="flex justify-between items-center">
-              <Button 
+              <ButtonComponent 
                 variant="outline" 
                 onClick={handleBack}
                 className="flex items-center gap-2"
                 disabled={saving}
               >
                 ← Configuración
-              </Button>
+              </ButtonComponent>
               
-      <Button
+      <ButtonComponent
                 onClick={handleSave}
                 disabled={saving || !isFormValid}
                 loading={saving}
@@ -426,7 +434,7 @@ export default function InformacionGeneralPage() {
                 ) : (
                   'Completa los campos obligatorios'
                 )}
-              </Button>
+              </ButtonComponent>
             </div>
             {!isFormValid && (
               <div className="mt-3 p-3 bg-[color:var(--sp-warning-50)] border border-[color:var(--sp-warning-200)] rounded-lg">
@@ -440,12 +448,12 @@ export default function InformacionGeneralPage() {
                 </ul>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </CardContentComponent>
+        </CardComponent>
 
         {/* Progreso visual mejorado */}
-        <Card className="bg-[color:var(--sp-info-50)] border-[color:var(--sp-info-200)]">
-          <CardContent>
+        <CardComponent className="bg-[color:var(--sp-info-50)] border-[color:var(--sp-info-200)]">
+          <CardContentComponent>
             <div className="flex items-center gap-3">
               <svg className="w-8 h-8 text-[color:var(--sp-info-600)]" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.84L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.84l-7-3z"/>
@@ -464,9 +472,11 @@ export default function InformacionGeneralPage() {
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </CardContentComponent>
+        </CardComponent>
       </div>
     </div>
   );
 }
+
+

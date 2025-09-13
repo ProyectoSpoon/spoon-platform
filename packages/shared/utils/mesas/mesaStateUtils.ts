@@ -58,6 +58,13 @@ export const getEstadoDisplay = (mesa: Mesa | MesaLegacyLike | MesaMaestroLike):
     if (l?.estado) estado = l.estado as MesaEstado;
   }
 
+  // Ajuste: si hay una orden_activa (aunque su estado_orden sea 'activa' o undefined) y la mesa figura 'libre', la consideramos 'ocupada'
+  const ordenActivaGenerica = (mesa as any)?.orden_activa;
+  const estadoOrden = ordenActivaGenerica?.estado_orden;
+  if (estado === 'libre' && ordenActivaGenerica && (!estadoOrden || estadoOrden === 'activa')) {
+    estado = 'ocupada';
+  }
+
   // Mapear a color base
   const colorMap: Record<MesaEstado, 'green'|'red'|'yellow'|'gray'|'orange'> = {
     libre: 'green',

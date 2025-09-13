@@ -5,7 +5,6 @@ import React, { useState } from 'react';
 import { useSetPageTitle } from '@spoon/shared/Context/page-title-context';
 import { Button as ButtonRaw } from '@spoon/shared/components/ui/Button';
 // Cast de iconos para evitar conflictos de tipos de React en build (entorno monorepo)
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 import * as Lucide from 'lucide-react';
 // Re-map con any para JSX mientras se estabiliza tipado global
 const RefreshCw = Lucide.RefreshCw as any;
@@ -17,12 +16,13 @@ import { useMesas } from '@spoon/shared/hooks/mesas';
 import { useCajaSesion } from '../../caja/hooks/useCajaSesion';
 import MesaCard from './MesaCard';
 import MesaDetallesPanel from './MesaDetallesPanel';
+// Cast similar a otros componentes para evitar conflictos de tipos por múltiples React
+import CrearOrdenWizardRaw from '@spoon/shared/components/mesas/CrearOrdenWizard';
+const CrearOrdenWizard = CrearOrdenWizardRaw as any;
 import ConfiguracionMesasPanelRaw from '@spoon/shared/components/mesas/ConfiguracionMesasPanel';
 // Cast para evitar problemas de múltiples versiones de React en tipado
 // (Solo a nivel de esta página; TODO: unificar @types/react en repo)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Button = ButtonRaw as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ConfiguracionMesasPanel = ConfiguracionMesasPanelRaw as any;
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 import { getEstadoDisplay } from '@spoon/shared/utils/mesas';
@@ -52,8 +52,10 @@ const MesasPage: React.FC = () => {
     cargarMesas,
     procesarCobro,
     
-    // Funciones del sistema maestro
-    configurarMesasIniciales
+  // Funciones del sistema maestro
+  configurarMesasIniciales,
+  // Acciones adicionales
+  crearOrden
   } = useMesas();
   // Estado de caja (abierta/cerrada)
   const { estadoCaja } = useCajaSesion();
@@ -61,6 +63,21 @@ const MesasPage: React.FC = () => {
   // Estados locales - SIN modal, CON panel lateral
   const [mesaSeleccionada, setMesaSeleccionada] = useState<number | null>(null);
   const [modalConfiguracion, setModalConfiguracion] = useState(false);
+  // Wizard para crear orden (ocupar mesa)
+  const [wizardMesaNumero, setWizardMesaNumero] = useState<number | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [creandoMesa, setCreandoMesa] = useState(false);
+  const [errorCrear, setErrorCrear] = useState<string | null>(null);
+  // Estado para recibo post-cobro
+  const [reciboVisible, setReciboVisible] = useState(false);
+  const [reciboData, setReciboData] = useState<null | {
+    mesaNumero: number;
+    fecha: string;
+    items: { nombre: string; cantidad: number; precioUnitario: number; subtotal: number }[];
+    total: number;
+  persistido?: boolean;
+  persistError?: string;
+  }>(null);
 
   // ========================================
   // FUNCIONES DE INTERACCIÓN
@@ -68,16 +85,120 @@ const MesasPage: React.FC = () => {
 
   // Manejar click en mesa - ADMINISTRADOR: TODAS LAS MESAS
   const handleMesaClick = (numero: number) => {
-    // Como administrador, puedes hacer click en cualquier mesa
+    // Buscar la mesa en estructura completa
+    const mesa = mesasCompletas.find(m => m.numero === numero);
+    const displayEstado = mesa ? getEstadoDisplay(mesa).estado : (mesasOcupadas[numero] ? 'ocupada' : 'libre');
+    const hasOrdenActiva = !!mesa?.detallesOrden && (
+      (mesa.detallesOrden.items?.length ?? 0) > 0 || (mesa.detallesOrden.total ?? 0) > 0
+    );
+
+    // Caso especial: hay orden pero estado reporta libre -> tratar como ocupada (abrir detalles)
+    if (displayEstado === 'libre' && hasOrdenActiva) {
+      setMesaSeleccionada(numero);
+      return;
+    }
+
+    // Si realmente está libre (sin orden) -> abrir wizard
+    if (displayEstado === 'libre') {
+      setWizardMesaNumero(numero);
+      setWizardOpen(true);
+      return;
+    }
+
+    // Estados ocupada / en_cocina / servida / por_cobrar / reservada etc.
     setMesaSeleccionada(numero);
-    console.log('🎯 Mesa seleccionada:', numero, '- Estado:', mesasOcupadas[numero] ? 'ocupada' : 'vacía');
+  };
+
+  // Crear orden a partir de items seleccionados en wizard
+  const handleCrearOrdenWizard = async (items: { combinacionId: string; nombre: string; precio: number; cantidad: number; tipo: 'menu_dia' | 'especial'; }[]): Promise<boolean> => {
+    setErrorCrear(null);
+    if (estadoCaja !== 'abierta') {
+      setErrorCrear('La caja está cerrada. Abre la caja antes de crear una orden.');
+      return false;
+    }
+    if (!restaurantId || !wizardMesaNumero) {
+      setErrorCrear('Contexto incompleto para crear la orden.');
+      return false;
+    }
+    try {
+      setCreandoMesa(true);
+      // Mapear items al formato esperado por crearOrden
+      const payloadItems = items.map(it => ({
+        tipo: it.tipo,
+        cantidad: it.cantidad,
+        precioUnitario: it.precio,
+        combinacionId: it.tipo === 'menu_dia' ? it.combinacionId : undefined,
+        combinacionEspecialId: it.tipo === 'especial' ? it.combinacionId : undefined
+      }));
+  // Usamos crearOrden expuesto por hook local (ya instanciado arriba)
+  const actionResult = await (crearOrden as any)?.({
+        numeroMesa: wizardMesaNumero,
+        mesero: 'Sistema',
+        items: payloadItems
+      });
+      if (actionResult?.success) {
+        // Refrescar mesas
+        await cargarMesas();
+        setWizardOpen(false);
+        setMesaSeleccionada(wizardMesaNumero); // abrir panel detalles ya ocupada
+        return true;
+      }
+      setErrorCrear(actionResult?.error || 'No se pudo crear la orden');
+      return false;
+    } catch (e) {
+      console.error('Error creando orden desde wizard:', e);
+      setErrorCrear(e instanceof Error ? e.message : 'Error desconocido');
+      return false;
+    } finally {
+      setCreandoMesa(false);
+    }
   };
 
   // Manejar cobro de mesa
   const handleCobrarMesa = async (numero: number) => {
+    // Capturar datos antes de cobrar (orden actual)
+    const mesaAntes = mesasCompletas.find(m => m.numero === numero);
+    if (mesaAntes?.detallesOrden) {
+      const items = (mesaAntes.detallesOrden.items || []).map((it: any) => {
+        const cantidad = it.cantidad ?? 1;
+        const unit = it.precio_unitario ?? it.precioUnitario ?? (it.precio_total && cantidad ? it.precio_total / cantidad : 0);
+        const subtotal = (it.precio_total) ?? (unit * cantidad);
+        return {
+          nombre: it.nombre || it.name || 'Item',
+          cantidad,
+          precioUnitario: unit,
+          subtotal
+        };
+      });
+  const total = items.reduce((s: number, i: { subtotal: number }) => s + i.subtotal, 0);
+      setReciboData({ mesaNumero: numero, fecha: new Date().toLocaleString(), items, total });
+    }
     const success = await procesarCobro(numero);
     if (success) {
-      setMesaSeleccionada(null); // Cerrar panel después del cobro
+      // Intentar registrar cobro histórico
+      if (reciboData) {
+        try {
+          const { registrarCobroMesa } = await import('@spoon/shared/lib/supabase');
+          const result = await registrarCobroMesa({
+            restaurantId: restaurantId || '',
+            mesaNumero: numero,
+            total: reciboData.total,
+            items: reciboData.items,
+            metodo: 'efectivo'
+          });
+          setReciboData(prev => prev ? { ...prev, persistido: result.success && result.logged } : prev);
+        } catch (e) {
+          console.warn('No se pudo registrar cobro histórico', e);
+          setReciboData(prev => prev ? { ...prev, persistido: false, persistError: (e as Error)?.message } : prev);
+        }
+      }
+      // Refrescar mesas y mostrar modal
+      await cargarMesas();
+      setMesaSeleccionada(null);
+      setReciboVisible(true);
+    } else {
+      // Si falló, limpiar recibo provisional
+      setReciboData(null);
     }
     return success;
   };
@@ -224,18 +345,21 @@ const MesasPage: React.FC = () => {
               <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))] [grid-auto-rows:1fr]">
                 {mesasCompletas.map((mesa) => {
                   const display = getEstadoDisplay(mesa);
-                  const forzarLibre = estadoCaja === 'cerrada' && !['inactiva','mantenimiento'].includes(display.estado);
+                  const hasOrdenActiva = !!mesa.detallesOrden && ((mesa.detallesOrden.items?.length ?? 0) > 0 || (mesa.detallesOrden.total ?? 0) > 0);
+                  // Si el display dice libre pero hay orden, forzamos ocupada visual
+                  const estadoVisualAjustado = (display.estado === 'libre' && hasOrdenActiva) ? 'ocupada' : display.estado;
+                  const forzarLibre = estadoCaja === 'cerrada' && !['inactiva','mantenimiento'].includes(estadoVisualAjustado);
                   return (
                     <MesaCard
                       key={mesa.numero}
                       numero={mesa.numero}
-                      estado={forzarLibre ? 'vacia' : (display.estado === 'libre' ? 'vacia' : 'ocupada')}
+                      estado={forzarLibre ? 'vacia' : (estadoVisualAjustado === 'libre' ? 'vacia' : 'ocupada')}
                       total={forzarLibre ? undefined : mesa.detallesOrden?.total}
                       onClick={() => !forzarLibre && handleMesaClick(mesa.numero)}
                       nombre={mesa.nombre}
                       zona={mesa.zona}
                       capacidad={mesa.capacidad}
-                      estadoMesa={forzarLibre ? 'libre' : display.estado}
+                      estadoMesa={forzarLibre ? 'libre' : estadoVisualAjustado}
                       items={forzarLibre ? undefined : mesa.detallesOrden?.items?.length}
                       comensales={forzarLibre ? undefined : mesa.detallesOrden?.comensales}
                       inicioAtencion={forzarLibre ? undefined : mesa.detallesOrden?.fechaCreacion}
@@ -291,8 +415,17 @@ const MesasPage: React.FC = () => {
         {/* Panel derecho fijo 350px */}
         <div className="bg-[color:var(--sp-surface-elevated)] border border-[color:var(--sp-border)] rounded-lg lg:rounded-none lg:border-0 lg:border-l lg:border-[color:var(--sp-border)] lg:bg-[color:var(--sp-surface-elevated)] min-h-[400px] order-2 md:order-1 lg:order-2">
           <MesaDetallesPanel
-            mesa={mesasCompletas.find(m => m.numero === mesaSeleccionada) || null}
+            mesa={
+              mesaSeleccionada == null
+                ? null
+                : mesasCompletas.length === 0
+                  ? null
+                  : mesasCompletas.find(m => m.numero === mesaSeleccionada) || null
+            }
             onClose={handleCerrarPanel}
+            restaurantId={restaurantId || ''}
+            onCobrar={handleCobrarMesa}
+            cajaAbierta={estadoCaja === 'abierta'}
           />
         </div>
       </div>
@@ -306,9 +439,78 @@ const MesasPage: React.FC = () => {
   configuracionActual={configuracion}
   restaurantId={restaurantId || undefined}
       />
+
+      {/* Wizard creación de orden (ocupar mesa) */}
+      <CrearOrdenWizard
+        isOpen={wizardOpen}
+        onClose={() => { if (!creandoMesa) { setWizardOpen(false); setWizardMesaNumero(null);} }}
+        onCrearOrden={handleCrearOrdenWizard}
+        restaurantId={restaurantId || ''}
+        mesaNumero={wizardMesaNumero || 0}
+        loading={creandoMesa}
+      />
+      {wizardOpen && errorCrear && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-lg bg-[color:var(--sp-error-600)] text-[color:var(--sp-on-error)] shadow-lg text-sm">
+          {errorCrear}
+        </div>
+      )}
+      {reciboVisible && reciboData && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[color:color-mix(in_srgb,black_40%,transparent)] p-4">
+          <div className="w-full max-w-md bg-[color:var(--sp-surface-elevated)] border border-[color:var(--sp-border)] rounded-lg shadow-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-[color:var(--sp-border)] flex items-center justify-between">
+              <h3 className="heading-section">Recibo Mesa {reciboData.mesaNumero}</h3>
+              <button onClick={() => { setReciboVisible(false); setReciboData(null); }} className="text-sm px-2 py-1 rounded hover:bg-[color:var(--sp-neutral-100)]">✕</button>
+            </div>
+            <div className="p-5 space-y-3 max-h-[60vh] overflow-y-auto text-sm">
+              <div className="flex justify-between text-[color:var(--sp-neutral-600)]">
+                <span>Fecha</span><span>{reciboData.fecha}</span>
+              </div>
+              <div className="flex justify-between text-[color:var(--sp-neutral-600)] text-xs">
+                <span>Registro</span>
+                {reciboData.persistido === undefined ? (
+                  <span className="italic">(memoria)</span>
+                ) : reciboData.persistido ? (
+                  <span className="text-[color:var(--sp-success-600)]">guardado</span>
+                ) : (
+                  <span className="text-[color:var(--sp-warning-600)]">no guardado{reciboData.persistError ? '*' : ''}</span>
+                )}
+              </div>
+              <div className="border-t border-[color:var(--sp-border)] pt-2">
+                {reciboData.items.map((it, idx) => (
+                  <div key={idx} className="flex justify-between py-1">
+                    <div className="pr-2 truncate">
+                      <span className="font-medium text-[color:var(--sp-neutral-800)]">{it.nombre}</span>
+                      <span className="text-[color:var(--sp-neutral-500)]"> × {it.cantidad}</span>
+                    </div>
+                    <div className="text-right tabular-nums">
+                      <div className="text-[color:var(--sp-neutral-600)]">{Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(it.precioUnitario)}</div>
+                      <div className="text-[color:var(--sp-neutral-900)] font-semibold">{Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(it.subtotal)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between items-center border-t border-[color:var(--sp-border)] pt-3 mt-2 font-semibold text-[color:var(--sp-neutral-900)]">
+                <span>Total</span>
+                <span>{Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(reciboData.total)}</span>
+              </div>
+            </div>
+            <div className="px-5 py-4 bg-[color:var(--sp-neutral-50)] flex gap-2">
+              <button
+                onClick={() => { window.print(); }}
+                className="flex-1 px-3 py-2 rounded bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] text-sm hover:bg-[color:var(--sp-primary-700)]"
+              >Imprimir</button>
+              <button
+                onClick={() => { setReciboVisible(false); setReciboData(null); }}
+                className="px-3 py-2 rounded bg-[color:var(--sp-neutral-200)] text-[color:var(--sp-neutral-800)] text-sm hover:bg-[color:var(--sp-neutral-300)]"
+              >Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default MesasPage;
+
 

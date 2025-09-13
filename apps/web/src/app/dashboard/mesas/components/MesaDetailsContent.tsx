@@ -17,6 +17,14 @@ import { Mesa } from '@spoon/shared/types/mesas';
 import { formatearMoneda, formatearTiempoOcupacion } from '@spoon/shared/utils/mesas';
 import { calcularTiempoOcupacion } from '@spoon/shared/utils/mesas';
 
+// Type casting para componentes de lucide-react
+const AlertCircleCast = AlertCircle as any;
+const CalendarCast = Calendar as any;
+const ChefHatCast = ChefHat as any;
+const ReceiptCast = Receipt as any;
+const ClockCast = Clock as any;
+const SparklesCast = Sparkles as any;
+
 interface MesaDetailsContentProps {
   mesa: Mesa;
   loading?: boolean;
@@ -46,7 +54,7 @@ export const MesaDetailsContent: React.FC<MesaDetailsContentProps> = ({
       return (
         <div className="p-6 text-center">
           <div className="w-16 h-16 bg-[color:var(--sp-success-100)] rounded-full flex items-center justify-center mx-auto mb-4">
-            <ChefHat className="h-8 w-8 text-[color:var(--sp-success-600)]" />
+            <ChefHatCast className="h-8 w-8 text-[color:var(--sp-success-600)]" />
           </div>
           <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-2">Mesa Disponible</h3>
           <p className="text-sm text-[color:var(--sp-neutral-600)] mb-6">
@@ -71,7 +79,7 @@ export const MesaDetailsContent: React.FC<MesaDetailsContentProps> = ({
           {tiempoOcupacion && (
             <div className="bg-[color:var(--sp-primary-50)] border border-[color:var(--sp-primary-200)] rounded-lg p-3">
               <div className="flex items-center gap-2 text-[color:var(--sp-primary-800)]">
-                <Clock className="h-4 w-4" />
+                <ClockCast className="h-4 w-4" />
                 <span className="text-sm font-medium">
                   Tiempo ocupada: {formatearTiempoOcupacion(tiempoOcupacion)}
                 </span>
@@ -81,7 +89,7 @@ export const MesaDetailsContent: React.FC<MesaDetailsContentProps> = ({
 
           <div>
             <h3 className="font-bold text-[color:var(--sp-neutral-700)] mb-3 flex items-center gap-2 text-sm">
-              <Receipt className="h-4 w-4" />
+              <ReceiptCast className="h-4 w-4" />
               Productos consumidos:
             </h3>
             
@@ -117,7 +125,7 @@ export const MesaDetailsContent: React.FC<MesaDetailsContentProps> = ({
                 ))
               ) : (
                 <div className="text-center py-6 text-[color:var(--sp-neutral-500)]">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2 text-[color:var(--sp-neutral-300)]" />
+                  <AlertCircleCast className="h-8 w-8 mx-auto mb-2 text-[color:var(--sp-neutral-300)]" />
                   <p className="text-sm">No hay productos registrados</p>
                 </div>
               )}
@@ -148,7 +156,7 @@ export const MesaDetailsContent: React.FC<MesaDetailsContentProps> = ({
     case 'reservada':
       return (
         <div className="p-6 text-center">
-          <Calendar className="h-16 w-16 mx-auto mb-4 text-[color:var(--sp-warning-500)]" />
+          <CalendarCast className="h-16 w-16 mx-auto mb-4 text-[color:var(--sp-warning-500)]" />
           <h3 className="heading-section text-[color:var(--sp-neutral-700)] mb-2">Mesa Reservada</h3>
           <p className="text-sm text-[color:var(--sp-neutral-500)] mb-6">
             Esta mesa tiene una reservación activa
@@ -166,7 +174,7 @@ export const MesaDetailsContent: React.FC<MesaDetailsContentProps> = ({
     case 'inactiva':
       return (
         <div className="p-6 text-center">
-          <AlertCircle className="h-16 w-16 mx-auto mb-4 text-[color:var(--sp-neutral-400)]" />
+          <AlertCircleCast className="h-16 w-16 mx-auto mb-4 text-[color:var(--sp-neutral-400)]" />
           <h3 className="heading-section text-[color:var(--sp-neutral-700)] mb-2">Mesa Inactiva</h3>
           <p className="text-sm text-[color:var(--sp-neutral-500)] mb-6">
             Esta mesa está fuera de servicio temporalmente
@@ -185,7 +193,7 @@ export const MesaDetailsContent: React.FC<MesaDetailsContentProps> = ({
       return (
         <div className="p-6 text-center">
           <div className="w-16 h-16 bg-[color:var(--sp-warning-100)] rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="h-8 w-8 text-[color:var(--sp-warning-600)]" />
+            <AlertCircleCast className="h-8 w-8 text-[color:var(--sp-warning-600)]" />
           </div>
           <h3 className="heading-section text-[color:var(--sp-neutral-700)] mb-2">Mesa en Mantenimiento</h3>
           <p className="text-sm text-[color:var(--sp-neutral-500)] mb-6">
@@ -204,7 +212,7 @@ export const MesaDetailsContent: React.FC<MesaDetailsContentProps> = ({
     default:
       return (
         <div className="p-6 text-center">
-          <AlertCircle className="h-12 w-12 mx-auto mb-4 text-[color:var(--sp-neutral-300)]" />
+          <AlertCircleCast className="h-12 w-12 mx-auto mb-4 text-[color:var(--sp-neutral-300)]" />
           <h3 className="heading-section text-[color:var(--sp-neutral-700)] mb-2">
             Estado desconocido
           </h3>

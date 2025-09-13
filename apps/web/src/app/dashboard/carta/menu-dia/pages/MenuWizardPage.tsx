@@ -2,6 +2,14 @@
 
 import React, { useEffect, useMemo, useCallback, Dispatch, SetStateAction } from 'react';
 import { X, Check, Search, Heart, Star, AlertTriangle } from 'lucide-react';
+
+// Type casting para componentes de lucide-react
+const XComponent = X as any;
+const CheckComponent = Check as any;
+const SearchComponent = Search as any;
+const HeartComponent = Heart as any;
+const StarComponent = Star as any;
+const AlertTriangleComponent = AlertTriangle as any;
 import { CATEGORIAS_MENU_CONFIG, CATEGORY_ICONS, DEFAULT_PROTEIN_QUANTITY } from '@spoon/shared/constants/menu-dia/menuConstants';
 import { MenuApiService } from '@spoon/shared/services/menu-dia/menuApiService';
 import { Producto, LoadingStates, MenuCombinacion, MenuFilters, ComboFilters } from '@spoon/shared/types/menu-dia/menuTypes';
@@ -252,7 +260,7 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
               onClick={onClose}
               className="p-2 rounded-lg transition-colors hover:bg-[color:var(--sp-neutral-100)]"
             >
-              <X className="w-5 h-5" />
+              <XComponent className="w-5 h-5" />
             </button>
           </div>
 
@@ -260,7 +268,7 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
           {!isLastStep && currentCategory && (
             <div className="p-4 border-b bg-[color:var(--sp-surface)]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[color:var(--sp-neutral-400)] w-4 h-4" />
+                <SearchComponent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[color:var(--sp-neutral-400)] w-4 h-4" />
                 <input
                   type="text"
                   placeholder={`Buscar ${currentCategory.nombre.toLowerCase()}...`}
@@ -318,10 +326,10 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
                             {/* Indicadores derecha */}
                             <div className="flex items-center gap-2 shrink-0">
                               {producto.is_favorite && (
-                                <Heart className="h-3 w-3 text-[color:var(--sp-error-600)] fill-current" />
+                                <HeartComponent className="h-3 w-3 text-[color:var(--sp-error-600)] fill-current" />
                               )}
                               {producto.is_special && (
-                                <Star className="h-3 w-3 text-[color:var(--sp-warning-600)] fill-current" />
+                                <StarComponent className="h-3 w-3 text-[color:var(--sp-warning-600)] fill-current" />
                               )}
                               {/* Indicador de selección: círculo relleno + check visible */}
                               <div
@@ -332,7 +340,7 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
                                     : 'border-[color:var(--sp-neutral-300)] bg-[color:var(--sp-surface)] text-[color:var(--sp-neutral-400)]'}
                                 `}
                               >
-                                {isSelected && <Check className="h-3 w-3 stroke-current" />}
+                                {isSelected && <CheckComponent className="h-3 w-3 stroke-current" />}
                               </div>
                             </div>
                           </div>
@@ -447,7 +455,7 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
                       </div>
                     ) : (
                       <div className="text-center py-4">
-                        <AlertTriangle className="h-8 w-8 text-[color:var(--sp-warning-500)] mx-auto mb-2" />
+                        <AlertTriangleComponent className="h-8 w-8 text-[color:var(--sp-warning-500)] mx-auto mb-2" />
                         <p className="text-sm text-[color:var(--sp-neutral-600)]">
                           No hay proteínas seleccionadas. Regresa al paso anterior para seleccionar proteínas.
                         </p>
@@ -492,7 +500,7 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
                     if (totalCombinaciones === 0) {
                       return (
                         <div className="text-center py-4">
-                          <AlertTriangle className="h-8 w-8 text-[color:var(--sp-error-500)] mx-auto mb-2" />
+                          <AlertTriangleComponent className="h-8 w-8 text-[color:var(--sp-error-500)] mx-auto mb-2" />
                           <p className="text-sm text-[color:var(--sp-error-600)]">
                             ⚠️ Necesitas seleccionar al menos 1 principio y 1 proteína para generar combinaciones.
                           </p>

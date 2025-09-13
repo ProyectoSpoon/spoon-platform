@@ -6,6 +6,16 @@ import { FormCard } from '@spoon/shared';
 import toast from 'react-hot-toast';
 import { RestaurantService } from '@spoon/shared/services/restaurant';
 
+// Type casting para componentes de lucide-react y @spoon/shared
+const LoaderCast = Loader as any;
+const SaveCast = Save as any;
+const UploadCast = Upload as any;
+const Trash2Cast = Trash2 as any;
+const PencilCast = Pencil as any;
+const ButtonCast = Button as any;
+const InlineEditButtonCast = InlineEditButton as any;
+const FormCardCast = FormCard as any;
+
 interface ImageUrls {
   logo_url: string;
   cover_image_url: string;
@@ -78,18 +88,18 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-  <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-[color:var(--sp-primary-600)]" />
+  <LoaderCast className="h-8 w-8 animate-spin mx-auto mb-4 text-[color:var(--sp-primary-600)]" />
   <p className="text-[color:var(--sp-neutral-600)]">Cargando imágenes...</p>
       </div>
     );
   }
 
   return (
-  <FormCard readOnly={readOnly} onToggleEdit={onToggleEdit} hideHeaderEdit>
+  <FormCardCast readOnly={readOnly} onToggleEdit={onToggleEdit} hideHeaderEdit>
         {/* Acción editar en línea */}
         {onToggleEdit && (
           <div className="flex justify-end mb-3">
-            <InlineEditButton onClick={onToggleEdit} editing={!readOnly} label="Editar imágenes" />
+            <InlineEditButtonCast onClick={onToggleEdit} editing={!readOnly} label="Editar imágenes" />
           </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -102,20 +112,20 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
                 <img src={imageUrls.logo_url} alt="Logo actual" className="mx-auto h-32 w-32 object-cover rounded-lg" />
         <p className="text-sm text-[color:var(--sp-neutral-600)]">Logo actual</p>
                 {!readOnly && (
-                  <Button variant="outline" size="sm" onClick={() => setImageUrls(prev => ({ ...prev, logo_url: '' }))}>
+                  <ButtonCast variant="outline" size="sm" onClick={() => setImageUrls(prev => ({ ...prev, logo_url: '' }))}>
                     Remover logo
-                  </Button>
+                  </ButtonCast>
                 )}
               </div>
             ) : (
               <div className="space-y-2">
-        <Upload className="h-12 w-12 text-[color:var(--sp-neutral-400)] mx-auto" />
+        <UploadCast className="h-12 w-12 text-[color:var(--sp-neutral-400)] mx-auto" />
         <p className="text-sm text-[color:var(--sp-neutral-600)]">
                   Arrastra una imagen aquí o
                   {!readOnly && (
-                    <Button type="button" variant="link" onClick={() => logoInputRef.current?.click()}>
+                    <ButtonCast type="button" variant="link" onClick={() => logoInputRef.current?.click()}>
                       selecciona un archivo
-                    </Button>
+                    </ButtonCast>
                   )}
                 </p>
         <p className="text-xs text-[color:var(--sp-neutral-500)]">PNG, JPG hasta 2MB</p>
@@ -140,20 +150,20 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
                 <img src={imageUrls.cover_image_url} alt="Portada actual" className="mx-auto h-32 w-full object-cover rounded-lg" />
         <p className="text-sm text-[color:var(--sp-neutral-600)]">Portada actual</p>
                 {!readOnly && (
-                  <Button variant="outline" size="sm" onClick={() => setImageUrls(prev => ({ ...prev, cover_image_url: '' }))}>
+                  <ButtonCast variant="outline" size="sm" onClick={() => setImageUrls(prev => ({ ...prev, cover_image_url: '' }))}>
                     Remover portada
-                  </Button>
+                  </ButtonCast>
                 )}
               </div>
             ) : (
               <div className="space-y-2">
-        <Upload className="h-12 w-12 text-[color:var(--sp-neutral-400)] mx-auto" />
+        <UploadCast className="h-12 w-12 text-[color:var(--sp-neutral-400)] mx-auto" />
         <p className="text-sm text-[color:var(--sp-neutral-600)]">
                   Arrastra una imagen aquí o
                   {!readOnly && (
-                    <Button type="button" variant="link" onClick={() => coverInputRef.current?.click()}>
+                    <ButtonCast type="button" variant="link" onClick={() => coverInputRef.current?.click()}>
                       selecciona un archivo
-                    </Button>
+                    </ButtonCast>
                   )}
                 </p>
         <p className="text-xs text-[color:var(--sp-neutral-500)]">PNG, JPG hasta 5MB</p>
@@ -172,17 +182,17 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
         </div>
         {showSave && (
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button onClick={handleSave} disabled={readOnly || saving} size="sm">
-              {saving ? <Loader className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <ButtonCast onClick={handleSave} disabled={readOnly || saving} size="sm">
+              {saving ? <LoaderCast className="h-4 w-4 animate-spin" /> : <SaveCast className="h-4 w-4" />}
               {saving ? 'Guardando...' : 'Guardar Imágenes'}
-            </Button>
+            </ButtonCast>
             {onCancel && (
-              <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+              <ButtonCast type="button" variant="outline" size="sm" onClick={onCancel}>
                 Cancelar
-              </Button>
+              </ButtonCast>
             )}
           </div>
         )}
-  </FormCard>
+  </FormCardCast>
   );
 }

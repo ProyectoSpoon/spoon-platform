@@ -3,12 +3,16 @@ export interface CajaSesion {
   id: string;
   restaurant_id: string;
   cajero_id: string;
-  monto_inicial: number; // En centavos
+  monto_inicial: number; // En pesos
   estado: 'abierta' | 'cerrada';
   abierta_at: string;
   cerrada_at?: string;
   notas_apertura?: string;
   notas_cierre?: string;
+  // Nuevos campos de la migración
+  saldo_final_calculado?: number; // En pesos - calculado automáticamente
+  saldo_final_reportado?: number; // En pesos - reportado por cajero
+  diferencia_caja?: number; // En pesos - diferencia automática (reportado - calculado)
 }
 
 export interface TransaccionCaja {
@@ -17,7 +21,7 @@ export interface TransaccionCaja {
   orden_id: string;
   tipo_orden: 'mesa' | 'delivery' | 'directa';
   metodo_pago: 'efectivo' | 'tarjeta' | 'digital';
-  monto_total: number; // En centavos
+  monto_total: number; // En pesos
   monto_recibido?: number;
   monto_cambio: number;
   procesada_at: string;
@@ -41,7 +45,7 @@ export interface GastoCaja {
   id: string;
   caja_sesion_id: string;
   concepto: string;
-  monto: number; // En centavos
+  monto: number; // En pesos
   categoria: 'proveedor' | 'servicios' | 'suministros' | 'otro';
   comprobante_url?: string;
   registrado_por: string;

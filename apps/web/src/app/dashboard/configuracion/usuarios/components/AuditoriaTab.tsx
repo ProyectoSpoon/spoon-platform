@@ -3,6 +3,20 @@ import { FileText, Download, Calendar, User, Activity, Shield, UserPlus, UserX, 
 import { Button, SelectV2 as Select, Input } from '@spoon/shared';
 import { UsuariosService, type CambioAuditoria } from '@spoon/shared/services/usuarios';
 
+// Type casting para componentes de lucide-react y @spoon/shared
+const FileTextCast = FileText as any;
+const DownloadCast = Download as any;
+const CalendarCast = Calendar as any;
+const UserCast = User as any;
+const ActivityCast = Activity as any;
+const ShieldCast = Shield as any;
+const UserPlusCast = UserPlus as any;
+const UserXCast = UserX as any;
+const SettingsCast = Settings as any;
+const ButtonCast = Button as any;
+const SelectCast = Select as any;
+const InputCast = Input as any;
+
 interface AuditoriaTabProps {
   onNotification: (notification: any) => void;
 }
@@ -124,17 +138,17 @@ export const AuditoriaTab: React.FC<AuditoriaTabProps> = ({ onNotification }) =>
   const getIconoPorTipo = (tipo: string) => {
     switch (tipo) {
       case 'usuario_creado':
-        return <UserPlus className="h-4 w-4 text-[color:var(--sp-success-600)]" />;
+        return <UserPlusCast className="h-4 w-4 text-[color:var(--sp-success-600)]" />;
       case 'usuario_activado':
-        return <User className="h-4 w-4 text-[color:var(--sp-success-600)]" />;
+        return <UserCast className="h-4 w-4 text-[color:var(--sp-success-600)]" />;
       case 'usuario_desactivado':
-        return <UserX className="h-4 w-4 text-[color:var(--sp-error-600)]" />;
+        return <UserXCast className="h-4 w-4 text-[color:var(--sp-error-600)]" />;
       case 'rol_asignado':
-        return <Shield className="h-4 w-4 text-[color:var(--sp-info-600)]" />;
+        return <ShieldCast className="h-4 w-4 text-[color:var(--sp-info-600)]" />;
       case 'permiso_modificado':
-        return <Settings className="h-4 w-4 text-[color:var(--sp-warning-600)]" />;
+        return <SettingsCast className="h-4 w-4 text-[color:var(--sp-warning-600)]" />;
       default:
-        return <Activity className="h-4 w-4 text-[color:var(--sp-neutral-600)]" />;
+        return <ActivityCast className="h-4 w-4 text-[color:var(--sp-neutral-600)]" />;
     }
   };
 
@@ -187,21 +201,21 @@ export const AuditoriaTab: React.FC<AuditoriaTabProps> = ({ onNotification }) =>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-lg font-semibold text-[color:var(--sp-neutral-900)] flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+            <FileTextCast className="h-5 w-5" />
             Historial de Cambios
           </h2>
           <p className="text-sm text-[color:var(--sp-neutral-600)]">
             Registro completo de todas las modificaciones realizadas
           </p>
         </div>
-        <Button
+        <ButtonCast
           onClick={exportarAuditoria}
           disabled={exportando}
           className="flex items-center gap-2"
         >
-          <Download className="h-4 w-4" />
+          <DownloadCast className="h-4 w-4" />
           {exportando ? 'Exportando...' : 'Exportar'}
-        </Button>
+        </ButtonCast>
       </div>
 
       {/* Filtros */}
@@ -221,17 +235,17 @@ export const AuditoriaTab: React.FC<AuditoriaTabProps> = ({ onNotification }) =>
             onChange={(e) => { setPage(1); setEndDate(e.target.value); }}
             className="border border-[color:var(--sp-neutral-300)] rounded-md px-2 py-1 text-sm bg-[color:var(--sp-surface)]"
           />
-          <Button onClick={() => { setPage(1); cargarHistorial(); }} className="ml-2">Aplicar</Button>
+          <ButtonCast onClick={() => { setPage(1); cargarHistorial(); }} className="ml-2">Aplicar</ButtonCast>
           {(startDate || endDate) && (
-            <Button variant="secondary" onClick={() => { setStartDate(''); setEndDate(''); setPage(1); }}>
+            <ButtonCast variant="secondary" onClick={() => { setStartDate(''); setEndDate(''); setPage(1); }}>
               Limpiar
-            </Button>
+            </ButtonCast>
           )}
         </div>
         <div className="md:w-64">
-          <Select
+          <SelectCast
             value={filtroTipo}
-            onChange={(e) => setFiltroTipo(e.target.value)}
+            onChange={(e: any) => setFiltroTipo(e.target.value)}
             placeholder="Filtrar por tipo"
           >
             <option value="todos">Todos los tipos</option>
@@ -240,13 +254,13 @@ export const AuditoriaTab: React.FC<AuditoriaTabProps> = ({ onNotification }) =>
             <option value="usuario_desactivado">Usuario desactivado</option>
             <option value="rol_asignado">Rol asignado</option>
             <option value="permiso_modificado">Permiso modificado</option>
-          </Select>
+          </SelectCast>
         </div>
         <div className="flex-1">
-          <Input
+          <InputCast
             placeholder="🔍 Buscar en el historial..."
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={(e: any) => setBusqueda(e.target.value)}
           />
         </div>
       </div>
@@ -290,7 +304,7 @@ export const AuditoriaTab: React.FC<AuditoriaTabProps> = ({ onNotification }) =>
           </div>
         ) : cambiosFiltrados.length === 0 ? (
           <div className="text-center py-12 text-[color:var(--sp-neutral-500)]">
-            <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <FileTextCast className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No se encontraron cambios con los filtros aplicados</p>
           </div>
         ) : (
@@ -321,15 +335,15 @@ export const AuditoriaTab: React.FC<AuditoriaTabProps> = ({ onNotification }) =>
                     
                     <div className="flex items-center gap-4 text-xs text-[color:var(--sp-neutral-500)]">
                       <div className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
+                        <UserCast className="h-3 w-3" />
                         <span>Usuario: {cambio.usuario}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
+                        <CalendarCast className="h-3 w-3" />
                         <span>{formatearFecha(cambio.fecha)}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Activity className="h-3 w-3" />
+                        <ActivityCast className="h-3 w-3" />
                         <span>Por: {cambio.realizado_por}</span>
                       </div>
                     </div>
@@ -347,8 +361,8 @@ export const AuditoriaTab: React.FC<AuditoriaTabProps> = ({ onNotification }) =>
           Mostrando {cambios.length > 0 ? (page - 1) * pageSize + 1 : 0}–{(page - 1) * pageSize + cambios.length} de {total}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</Button>
-          <Button variant="secondary" disabled={(page * pageSize) >= total} onClick={() => setPage((p) => p + 1)}>Siguiente</Button>
+          <ButtonCast variant="secondary" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</ButtonCast>
+          <ButtonCast variant="secondary" disabled={(page * pageSize) >= total} onClick={() => setPage((p) => p + 1)}>Siguiente</ButtonCast>
         </div>
       </div>
 

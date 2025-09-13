@@ -4,12 +4,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, TrendingUp, DollarSign, Clock, AlertCircle } from 'lucide-react';
 
+// Type casting for React type conflicts
+const CalendarComponent = Calendar as any;
+const TrendingUpComponent = TrendingUp as any;
+const DollarSignComponent = DollarSign as any;
+const ClockComponent = Clock as any;
+const AlertCircleComponent = AlertCircle as any;
+
 // Importar funciones de supabase
 import { getReportesVentas, getUserProfile } from '@spoon/shared/lib/supabase';
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
 // Usar helper compartido de moneda
-const formatearMonto = (centavos: number): string => formatCurrencyCOP(centavos);
+const formatearMonto = (pesos: number): string => formatCurrencyCOP(pesos);
 
 interface EstadisticasReporte {
   totalVentas: number;
@@ -111,7 +118,7 @@ export function ReportesAvanzados() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center bg-[color:var(--sp-error-50)] p-6 rounded-lg border border-[color:var(--sp-error-200)]">
-          <AlertCircle className="w-8 h-8 text-[color:var(--sp-error-600)] mx-auto mb-2" />
+          <AlertCircleComponent className="w-8 h-8 text-[color:var(--sp-error-600)] mx-auto mb-2" />
           <p className="text-[color:var(--sp-error-800)] font-medium mb-2">Error cargando reportes</p>
           <p className="text-[color:var(--sp-error-600)] text-sm">{error}</p>
           <button 
@@ -141,7 +148,7 @@ export function ReportesAvanzados() {
       {/* Filtros de período */}
   <div className="bg-[color:var(--sp-surface-elevated)] p-4 rounded-lg border">
         <h3 className="font-semibold mb-3 flex items-center gap-2">
-          <Calendar className="w-4 h-4" />
+          <CalendarComponent className="w-4 h-4" />
           Período de Análisis
         </h3>
         <div className="grid grid-cols-2 gap-4">
@@ -172,7 +179,7 @@ export function ReportesAvanzados() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-[color:var(--sp-surface-elevated)] p-4 rounded-lg border">
               <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="w-5 h-5 text-[color:var(--sp-success-600)]" />
+                <DollarSignComponent className="w-5 h-5 text-[color:var(--sp-success-600)]" />
                 <h4 className="font-semibold">Ventas Totales</h4>
               </div>
               <p className="value-number text-[color:var(--sp-success-600)]">
@@ -185,7 +192,7 @@ export function ReportesAvanzados() {
             
             <div className="bg-[color:var(--sp-surface-elevated)] p-4 rounded-lg border">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-5 h-5 text-[color:var(--sp-info-600)]" />
+                <TrendingUpComponent className="w-5 h-5 text-[color:var(--sp-info-600)]" />
                 <h4 className="font-semibold">Promedio por Venta</h4>
               </div>
               <p className="value-number text-[color:var(--sp-info-600)]">
@@ -199,7 +206,7 @@ export function ReportesAvanzados() {
             
             <div className="bg-[color:var(--sp-surface-elevated)] p-4 rounded-lg border">
               <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-5 h-5 text-[color:var(--sp-primary-600)]" />
+                <ClockComponent className="w-5 h-5 text-[color:var(--sp-primary-600)]" />
                 <h4 className="font-semibold">Hora Pico</h4>
               </div>
               <p className="value-number text-[color:var(--sp-primary-600)]">
@@ -276,7 +283,7 @@ export function ReportesAvanzados() {
         </>
       ) : (
   <div className="text-center py-12 bg-[color:var(--sp-surface-elevated)] rounded-lg border">
-          <Calendar className="w-12 h-12 text-[color:var(--sp-neutral-400)] mx-auto mb-3" />
+          <CalendarComponent className="w-12 h-12 text-[color:var(--sp-neutral-400)] mx-auto mb-3" />
           <p className="text-[color:var(--sp-neutral-600)] mb-2">No hay datos para el período seleccionado</p>
           <p className="text-sm text-[color:var(--sp-neutral-500)]">
             Selecciona un rango de fechas con transacciones registradas

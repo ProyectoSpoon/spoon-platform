@@ -6,6 +6,16 @@ import { FormCard } from '@spoon/shared';
 import toast from 'react-hot-toast';
 import { getUserRestaurant, updateRestaurant } from '@spoon/shared';
 
+// Type casting para componentes de lucide-react y @spoon/shared
+const LoaderCast = Loader as any;
+const PlusCast = Plus as any;
+const Trash2Cast = Trash2 as any;
+const SaveCast = Save as any;
+const PencilCast = Pencil as any;
+const ButtonCast = Button as any;
+const InlineEditButtonCast = InlineEditButton as any;
+const FormCardCast = FormCard as any;
+
 // Tipos para horarios
 interface Turno {
   horaApertura: string;
@@ -174,7 +184,7 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Loader className="h-8 w-8 animate-spin mx-auto mb-4 text-[color:var(--sp-primary-600)]" />
+          <LoaderCast className="h-8 w-8 animate-spin mx-auto mb-4 text-[color:var(--sp-primary-600)]" />
           <p className="text-[color:var(--sp-neutral-600)]">Cargando horarios...</p>
         </div>
       </div>
@@ -184,7 +194,7 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
   const horarioDiaActual = horarios[diaSeleccionado];
 
   return (
-  <FormCard readOnly={readOnly} onToggleEdit={onToggleEdit} hideHeaderEdit contentClassName="space-y-6">
+  <FormCardCast readOnly={readOnly} onToggleEdit={onToggleEdit} hideHeaderEdit contentClassName="space-y-6">
       {/* Tabs de días + acción editar */}
   <div className="bg-[color:var(--sp-neutral-50)] p-4 rounded-lg">
         <div className="flex items-center justify-between gap-2">
@@ -206,7 +216,7 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
           </div>
           {/* Icono editar alineado al nivel de los días (visible siempre; deshabilitado en modo edición) */}
           {onToggleEdit && (
-            <InlineEditButton onClick={onToggleEdit} editing={!readOnly} label="Editar horarios" />
+            <InlineEditButtonCast onClick={onToggleEdit} editing={!readOnly} label="Editar horarios" />
           )}
         </div>
       </div>
@@ -248,7 +258,7 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
                       <span className="text-[color:var(--sp-error-600)]">Cerrado</span>
                     )}
                   </div>
-                  <InlineEditButton
+                  <InlineEditButtonCast
                     onClick={() => setDiaSeleccionado(dia)}
                     disabled={readOnly}
                     className="h-8 w-8 border-[color:var(--sp-primary-200)] text-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-50)]"
@@ -314,7 +324,7 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
                             onClick={() => eliminarTurno(diaSeleccionado, indice)}
                             className="text-[color:var(--sp-error-600)] hover:text-[color:var(--sp-error-800)] text-sm flex items-center gap-1"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Trash2Cast className="w-3 h-3" />
                             Eliminar
                           </button>
                         )}
@@ -362,7 +372,7 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
                     }`}
                     disabled={readOnly || horarioDiaActual.turnos.length >= 3}
                   >
-                    <Plus className="w-4 h-4" />
+                    <PlusCast className="w-4 h-4" />
                     {horarioDiaActual.turnos.length >= 3 
                       ? 'Máximo 3 turnos por día'
                       : 'Agregar turno'
@@ -401,26 +411,26 @@ export default function HorariosForm({ readOnly = false, showSave = true, onCanc
       {/* Botón de guardar */}
       {showSave && (
         <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button onClick={guardarHorarios} disabled={readOnly || guardando || !tieneHorariosConfigurados()} size="sm">
+          <ButtonCast onClick={guardarHorarios} disabled={readOnly || guardando || !tieneHorariosConfigurados()} size="sm">
             {guardando ? (
               <>
-                <Loader className="w-4 h-4 animate-spin" />
+                <LoaderCast className="w-4 h-4 animate-spin" />
                 Guardando...
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
+                <SaveCast className="w-4 h-4" />
                 {tieneHorariosConfigurados() ? 'Guardar Horarios' : 'Configura horarios primero'}
               </>
             )}
-          </Button>
+          </ButtonCast>
           {onCancel && (
-            <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+            <ButtonCast type="button" variant="outline" size="sm" onClick={onCancel}>
               Cancelar
-            </Button>
+            </ButtonCast>
           )}
         </div>
       )}
-  </FormCard>
+  </FormCardCast>
   );
 }

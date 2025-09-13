@@ -37,6 +37,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // CLIENTE PRINCIPAL DE SUPABASE
 // ========================================
 
+// Cliente adicional con Service Role para operaciones administrativas
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+export const supabaseAdmin = supabaseServiceKey ? 
+  createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }) : null;
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     // Configurar para persistir sesión en localStorage
@@ -50,6 +61,76 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     schema: 'public'
   }
 });
+
+// ========================================
+// INSTRUMENTACIÓN / WRAPPERS DE SEGURIDAD AUTH
+// ========================================
+
+let __lastAccessToken: string | null = null;
+// Escuchar cambios de auth para guardar último token (debug)
+try {
+  supabase.auth.onAuthStateChange((_event, session) => {
+    __lastAccessToken = session?.access_token || null;
+  });
+} catch { /* no-op en SSR */ }
+
+/**
+ * Forzar verificación de sesión antes de consultas. Intenta refresh si hay refresh_token.
+ * Devuelve la sesión final (o null si no hay). Loggea advertencia si no hay token.
+ */
+export async function ensureSession(options?: { silent?: boolean }) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) return session;
+    // Intentar refresh proactivo (solo navegador)
+    if (typeof window !== 'undefined') {
+      try {
+        const { data } = await supabase.auth.refreshSession();
+        if (data.session?.access_token) return data.session;
+      } catch {/* ignore */}
+    }
+    if (!options?.silent) {
+      // eslint-disable-next-line no-console
+      console.warn('[auth][ensureSession] Sin sesión JWT activa. Las políticas RLS verán auth.uid() = null.');
+    }
+    return null;
+  } catch (e) {
+    if (!options?.silent) {
+      // eslint-disable-next-line no-console
+      console.warn('[auth][ensureSession] Error obteniendo sesión', e);
+    }
+    return null;
+  }
+}
+
+/**
+ * Wrapper seguro para supabase.from(table) que garantiza un intento de obtener/refresh sesión
+ * antes de ejecutar la query, para mitigar llamadas con auth.uid() = null.
+ */
+export async function safeFrom(table: string) {
+  const session = await ensureSession({ silent: true });
+  if (!session) {
+    // eslint-disable-next-line no-console
+    console.warn(`[auth][safeFrom] Ejecutando consulta a '${table}' sin JWT activo (auth.uid() será null).`);
+  }
+  return supabase.from(table);
+}
+
+// Helper de depuración accesible en consola
+if (typeof window !== 'undefined') {
+  (window as any).debugSupabaseAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    // eslint-disable-next-line no-console
+    console.log('[debugSupabaseAuth]', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      expiresAt: session?.expires_at,
+      tokenShort: session?.access_token ? session.access_token.slice(0, 24) + '…' : null,
+      lastAccessTokenShort: __lastAccessToken ? __lastAccessToken.slice(0,24)+'…' : null
+    });
+    return session;
+  };
+}
 
 // ========================================
 // UTILIDAD: CACHÉ EN MEMORIA + DEDUP DE PROMESAS
@@ -296,14 +377,18 @@ export const getUserRestaurant = async (): Promise<Restaurant | null> => {
         .from('restaurants')
         .select('*')
         .eq('owner_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if ((error as any).code === 'PGRST116') {
-          __restaurantCache = { value: null, ts: Date.now() };
-          return null; // No encontrado
-        }
-        throw error;
+        console.error('Error al obtener restaurante:', error);
+        __restaurantCache = { value: null, ts: Date.now() };
+        return null;
+      }
+
+      // Si no hay restaurante, data será null (no es error)
+      if (!data) {
+        __restaurantCache = { value: null, ts: Date.now() };
+        return null;
       }
 
       __restaurantCache = { value: data, ts: Date.now() };
@@ -351,7 +436,8 @@ export const signUpUser = async (userData: {
       last_name: userData.last_name,
       email: userData.email,
       phone: userData.phone,
-      role: 'restaurant_owner'
+      role: 'restaurant_owner',
+      is_active: true
     })
     .select()
     .single();
@@ -1111,6 +1197,7 @@ export const getMesasEstado = async (restaurantId: string) => {
             items_orden_mesa (
               id,
               cantidad,
+              precio_unitario,
               precio_total,
               tipo_item,
               combinacion_id,
@@ -1164,12 +1251,21 @@ export const getMesasEstado = async (restaurantId: string) => {
         } else if (item.tipo_item === 'especial' && item.generated_special_combinations) {
           nombreProducto = item.generated_special_combinations.combination_name;
         }
+        const cantidad = item.cantidad || 1;
+        const precioTotal = item.precio_total || 0;
+        const precioUnitario = item.precio_unitario != null
+          ? item.precio_unitario
+          : (cantidad > 0 ? precioTotal / cantidad : precioTotal);
 
         acc[mesa].items.push({
           id: item.id,
           nombre: nombreProducto,
-          cantidad: item.cantidad,
-          precio: item.precio_total
+          cantidad,
+          precio_unitario: precioUnitario,
+          precio_total: precioTotal,
+          tipo_item: item.tipo_item,
+          combinacion_id: item.combinacion_id,
+          combinacion_especial_id: item.combinacion_especial_id
         });
       });
 
@@ -1356,6 +1452,122 @@ export const cobrarMesa = async (restaurantId: string, mesaNumero: number) => {
   }
 };
 
+/**
+ * Cobrar mesa registrando transacción en caja si existe sesión activa.
+ * Fallback a cobrarMesa simple si no hay sesión.
+ */
+export const cobrarMesaConTransaccion = async (
+  restaurantId: string,
+  mesaNumero: number,
+  metodo: 'efectivo' | 'tarjeta' | 'digital' = 'efectivo',
+  montoRecibido?: number
+) => {
+  try {
+    // Obtener sesión activa
+    const sesion = await getSesionCajaActiva(restaurantId);
+    if (!sesion) {
+      // Sin sesión, cobrar “plano”
+      await cobrarMesa(restaurantId, mesaNumero);
+      return { success: true, viaTransaccion: false };
+    }
+
+    // Necesitamos total de la mesa antes de marcar pagada
+    const detalles = await getDetallesMesa(restaurantId, mesaNumero);
+  const total = Number(detalles.total) || 0;
+
+    // Crear transacción usando procesarPagoOrden para mantener consistencia
+    // Creamos una orden “virtual” referenciando la primera orden activa si existe
+    // Buscar orden activa real
+    const { data: ordenActiva } = await supabase
+      .from('ordenes_mesa')
+      .select('id')
+      .eq('restaurant_id', restaurantId)
+      .eq('numero_mesa', mesaNumero)
+      .eq('estado', 'activa')
+      .maybeSingle();
+
+    if (!ordenActiva) {
+      // Si no hay orden activa (race condition), sólo marcar pagada (no transacción)
+      await cobrarMesa(restaurantId, mesaNumero);
+      return { success: true, viaTransaccion: false };
+    }
+
+  // Reusar lógica de procesarPagoOrden (definida más arriba)
+  await procesarPagoOrden(
+      sesion.id,
+      sesion.cajero_id,
+      ordenActiva.id,
+      'mesa',
+      metodo,
+      total,
+      montoRecibido
+    );
+  console.log('[cobrarMesaConTransaccion] Transacción registrada mesa', mesaNumero, 'total', total, 'metodo', metodo);
+  // Invalidar caches para reflejar cambios en UI y métricas
+  invalidateCache('getMesasRestaurante', restaurantId);
+  invalidateCache('getMesasEstado', restaurantId);
+  invalidateCache('getDetallesMesa', `${restaurantId}:${mesaNumero}`);
+  invalidateCache('getEstadoCompletoMesas', restaurantId);
+  invalidateCache('getTransaccionesDelDia', restaurantId);
+  invalidateCache('getTransaccionesSesion', sesion.id);
+  // Warm cache inmediata para ingresos (ventas) del día
+  try {
+    await getTransaccionesDelDia(restaurantId);
+  } catch (warmErr) {
+    console.warn('No se pudo recalentar cache de transacciones del día:', warmErr);
+  }
+    return { success: true, viaTransaccion: true };
+  } catch (e) {
+    console.error('Error en cobrarMesaConTransaccion, fallback a cobrarMesa simple:', e);
+    try {
+      await cobrarMesa(restaurantId, mesaNumero);
+      return { success: true, viaTransaccion: false };
+    } catch (e2) {
+      console.error('Fallo también el fallback cobrarMesa:', e2);
+      throw e2;
+    }
+  }
+};
+
+/**
+ * Registrar cobro (histórico) sin alterar lógica existente de cierre de orden.
+ * Crea un registro en tabla 'cobros_mesa' (debes crearla si no existe) con breakdown básico.
+ */
+export const registrarCobroMesa = async (params: {
+  restaurantId: string;
+  mesaNumero: number;
+  total: number;
+  items: { nombre: string; cantidad: number; precioUnitario: number; subtotal: number }[];
+  metodo?: string;
+  referencia?: string;
+}) => {
+  try {
+    const { restaurantId, mesaNumero, total, items, metodo = 'efectivo', referencia } = params;
+
+    // Intento de inserción; si la tabla no existe, log y salir silencioso
+    const { error } = await supabase
+      .from('cobros_mesa')
+      .insert({
+        restaurant_id: restaurantId,
+        numero_mesa: mesaNumero,
+        total,
+        items_json: items,
+        metodo_pago: metodo,
+        referencia,
+        created_at: new Date().toISOString()
+      });
+    if (error) {
+      // No rompemos el flujo principal de cobro
+      console.warn('⚠️ No se pudo registrar cobro (cobros_mesa):', error.message);
+      return { success: false, logged: false };
+    }
+    return { success: true, logged: true };
+  } catch (e) {
+    console.warn('⚠️ Error registrando cobro:', e);
+    return { success: false, logged: false };
+  }
+};
+
 // ========================================
 // FUNCIONES ADICIONALES PARA ÓRDENES DE MESA
 // ========================================
@@ -1408,8 +1620,13 @@ export const crearOrdenMesa = async (ordenData: {
       .single();
     
     if (mesa) {
-      await updateEstadoMesa(mesa.id, 'ocupada');
-      
+      try {
+        await updateEstadoMesa(mesa.id, 'ocupada', ordenData.restaurantId);
+      } catch (e) {
+        console.warn('⚠️ No se pudo actualizar estado de la mesa a ocupada (continuando)', e);
+      }
+    } else {
+      console.warn('⚠️ No se encontró mesa para actualizar a ocupada tras crear orden', ordenData.numeroMesa);
     }
 
     // 2. Agregar los items
@@ -1487,6 +1704,46 @@ export const agregarItemsAOrden = async (
   return { success: true };
   } catch (error) {
     console.error('💥 Error en agregarItemsAOrden:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualizar cantidad de un item existente de una orden
+ */
+export const actualizarCantidadItemOrden = async (
+  itemId: string,
+  nuevaCantidad: number
+) => {
+  try {
+    if (nuevaCantidad < 1) throw new Error('Cantidad debe ser >= 1');
+    const { error } = await supabase
+      .from('items_orden_mesa')
+  .update({ cantidad: nuevaCantidad })
+      .eq('id', itemId);
+    if (error) throw error;
+    invalidateCache('getEstadoCompletoMesas');
+    return { success: true };
+  } catch (error) {
+    console.error('💥 Error en actualizarCantidadItemOrden:', error);
+    throw error;
+  }
+};
+
+/**
+ * Eliminar un item de una orden
+ */
+export const eliminarItemOrden = async (itemId: string) => {
+  try {
+    const { error } = await supabase
+      .from('items_orden_mesa')
+      .delete()
+      .eq('id', itemId);
+    if (error) throw error;
+    invalidateCache('getEstadoCompletoMesas');
+    return { success: true };
+  } catch (error) {
+    console.error('💥 Error en eliminarItemOrden:', error);
     throw error;
   }
 };
@@ -1727,27 +1984,32 @@ export const reconfigurarMesasCompleto = async (
  * Actualizar estado de una mesa específica
  */
 export const updateEstadoMesa = async (
-  mesaId: string, 
-  nuevoEstado: 'libre' | 'ocupada' | 'reservada' | 'inactiva'
+  mesaId: string,
+  nuevoEstado: 'libre' | 'ocupada' | 'reservada' | 'inactiva',
+  restaurantId?: string
 ): Promise<RestaurantMesa> => {
   try {
     
     
-    const { data, error } = await supabase
+    let query = supabase
       .from('restaurant_mesas')
-      .update({ 
+      .update({
         estado: nuevoEstado,
         updated_at: new Date().toISOString()
       })
-      .eq('id', mesaId)
-      .select()
-      .single();
+      .eq('id', mesaId);
+
+    if (restaurantId) {
+      query = query.eq('restaurant_id', restaurantId);
+    }
+
+    const { data, error } = await query.select().single();
 
     if (error) throw error;
     
   // Invalidar por restaurant_id si se conoce (no lo tenemos aquí); invalidación amplia
   invalidateCache('getMesasRestaurante');
-  return data;
+  return data as RestaurantMesa;
   } catch (error) {
     console.error('💥 Error en updateEstadoMesa:', error);
     throw error;
@@ -1964,13 +2226,15 @@ export const limpiarConfiguracionMesas = async (restaurantId: string): Promise<v
 
 // ========================================
 // INTERFACES PARA SISTEMA DE CAJA
+// Unidades: Interfaces DB-facing usan CENTAVOS para montos persistidos/agregados.
+// La UI/APP trabaja en PESOS y convierte según necesidad.
 // ========================================
 
 export interface CajaSesion {
   id: string;
   restaurant_id: string;
   cajero_id: string;
-  monto_inicial: number; // En centavos
+  monto_inicial: number; // Centavos (persistencia)
   estado: 'abierta' | 'cerrada';
   abierta_at: string;
   cerrada_at?: string;
@@ -1984,15 +2248,13 @@ export interface TransaccionCaja {
   orden_id: string;
   tipo_orden: 'mesa' | 'delivery' | 'directa';
   metodo_pago: 'efectivo' | 'tarjeta' | 'digital';
-  monto_total: number; // En centavos
+  monto_total: number; // Centavos (persistencia)
   monto_recibido?: number;
   monto_cambio: number;
   procesada_at: string;
   cajero_id: string;
-  
-  // AGREGAR ESTAS PROPIEDADES:
-  restaurant_id?: string; // Agregada para compatibilidad
-  caja_sesiones?: {        // Para joins con sesiones
+  // Para joins con sesiones (cuando se haga select con inner join)
+  caja_sesiones?: {
     restaurant_id: string;
     cajero: {
       first_name: string;
@@ -2026,6 +2288,157 @@ const getBogotaRangeUtcBounds = (fechaInicio: string, fechaFin: string) => {
   const start = new Date(`${fechaInicio}T00:00:00.000-05:00`);
   const end = new Date(`${fechaFin}T23:59:59.999-05:00`);
   return { startUtc: start.toISOString(), endUtc: end.toISOString() };
+};
+
+// Fecha actual (YYYY-MM-DD) según zona Bogotá evitando usar toISOString directo (que da día UTC)
+const getTodayBogotaDateString = (): string => {
+  const now = new Date();
+  // Bogotá UTC-5: restar 5 horas para obtener día local antes de cortar
+  const bogota = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+  return bogota.toISOString().slice(0, 10);
+};
+
+/**
+ * Obtener cierres de caja recientes (sesiones cerradas) con agregados básicos.
+ * MVP: últimos N (default 30) ordenados por cierre más reciente.
+ * NOTA: optimizable con vista materializada o tabla resumen a futuro.
+ */
+type CierreCajaResumen = {
+  id: string;
+  abierta_at: string;
+  cerrada_at: string;
+  cajero_id: string;
+  monto_inicial: number;
+  saldo_final_reportado?: number | null; // opcional (puede no existir en schema actual)
+  total_ventas_centavos: number;
+  total_efectivo_centavos: number;
+  total_gastos_centavos: number;
+};
+
+export const getCierresCajaRecientes = async (
+  restaurantId: string,
+  limite = 30
+): Promise<CierreCajaResumen[]> => {
+  // 1. Sesiones cerradas recientes
+  const { data: sesiones, error: errSes } = await supabase
+    .from('caja_sesiones')
+    // usamos * para soportar futura columna saldo_final_reportado sin modificar código
+    .select('*')
+    .eq('restaurant_id', restaurantId)
+    .eq('estado', 'cerrada')
+    .not('cerrada_at', 'is', null)
+    .order('cerrada_at', { ascending: false })
+    .limit(limite);
+  if (errSes) throw errSes;
+  if (!sesiones || !sesiones.length) return [] as CierreCajaResumen[];
+
+  const ids = sesiones.map(s => s.id);
+
+  // 2. Transacciones agrupadas
+  const { data: agregTrans, error: errTrans } = await supabase
+    .from('transacciones_caja')
+    .select('caja_sesion_id, monto_total, metodo_pago')
+    .in('caja_sesion_id', ids);
+  if (errTrans) throw errTrans;
+
+  // 3. Gastos agrupados
+  const { data: agregGastos, error: errG } = await supabase
+    .from('gastos_caja')
+    .select('caja_sesion_id, monto')
+    .in('caja_sesion_id', ids);
+  if (errG) throw errG;
+
+  const transPorSesion: Record<string, { total: number; efectivo: number }> = {};
+  (agregTrans || []).forEach(t => {
+    const sid = (t as any).caja_sesion_id;
+    if (!transPorSesion[sid]) transPorSesion[sid] = { total: 0, efectivo: 0 };
+    const monto = (t as any).monto_total || 0;
+    transPorSesion[sid].total += monto;
+    if ((t as any).metodo_pago === 'efectivo') transPorSesion[sid].efectivo += monto;
+  });
+
+  const gastosPorSesion: Record<string, number> = {};
+  (agregGastos || []).forEach(g => {
+    const sid = (g as any).caja_sesion_id;
+    const monto = (g as any).monto || 0;
+    gastosPorSesion[sid] = (gastosPorSesion[sid] || 0) + monto;
+  });
+
+  return (sesiones as any[]).map((s: any) => ({
+    id: String(s.id),
+    abierta_at: String(s.abierta_at),
+    cerrada_at: String(s.cerrada_at),
+    cajero_id: String(s.cajero_id),
+    monto_inicial: Number(s.monto_inicial),
+  saldo_final_reportado: s.saldo_final_reportado == null ? null : Number(s.saldo_final_reportado),
+    total_ventas_centavos: transPorSesion[s.id]?.total || 0,
+    total_efectivo_centavos: transPorSesion[s.id]?.efectivo || 0,
+    total_gastos_centavos: gastosPorSesion[s.id] || 0
+  })) as CierreCajaResumen[];
+};
+
+/**
+ * Detalle de un cierre (sesión de caja cerrada) con agregados básicos.
+ * No incluye todavía diferencia real (faltan campos de saldo final reportado en schema actual).
+ */
+export const getCierreCajaDetalle = async (sesionId: string): Promise<{
+  sesion: any;
+  transacciones: any[];
+  gastos: any[];
+  agregados: {
+    total_ventas_centavos: number;
+    total_efectivo_centavos: number;
+    total_tarjeta_centavos: number;
+    total_digital_centavos: number;
+    total_gastos_centavos: number;
+    efectivo_teorico_centavos: number; // monto_inicial + efectivo - gastos
+  };
+}> => {
+  // 1. Sesión
+  const { data: sesion, error: errS } = await supabase
+    .from('caja_sesiones')
+    .select('*')
+    .eq('id', sesionId)
+    .maybeSingle();
+  if (errS) throw errS;
+  if (!sesion) throw new Error('Sesión no encontrada');
+
+  // 2. Transacciones de la sesión
+  const { data: transacciones, error: errT } = await supabase
+    .from('transacciones_caja')
+    .select('*')
+    .eq('caja_sesion_id', sesionId)
+    .order('procesada_at', { ascending: false });
+  if (errT) throw errT;
+
+  // 3. Gastos de la sesión
+  const { data: gastos, error: errG } = await supabase
+    .from('gastos_caja')
+    .select('*')
+    .eq('caja_sesion_id', sesionId)
+    .order('registrado_at', { ascending: false });
+  if (errG) throw errG;
+
+  const totalVentas = (transacciones || []).reduce((s, t: any) => s + (t.monto_total || 0), 0);
+  const totalEfectivo = (transacciones || []).filter(t => t.metodo_pago === 'efectivo').reduce((s, t: any) => s + (t.monto_total || 0), 0);
+  const totalTarjeta = (transacciones || []).filter(t => t.metodo_pago === 'tarjeta').reduce((s, t: any) => s + (t.monto_total || 0), 0);
+  const totalDigital = (transacciones || []).filter(t => t.metodo_pago === 'digital').reduce((s, t: any) => s + (t.monto_total || 0), 0);
+  const totalGastos = (gastos || []).reduce((s, g: any) => s + (g.monto || 0), 0);
+  const efectivoTeorico = (sesion.monto_inicial || 0) + totalEfectivo - totalGastos;
+
+  return {
+    sesion,
+    transacciones: transacciones || [],
+    gastos: gastos || [],
+    agregados: {
+      total_ventas_centavos: totalVentas,
+      total_efectivo_centavos: totalEfectivo,
+      total_tarjeta_centavos: totalTarjeta,
+      total_digital_centavos: totalDigital,
+      total_gastos_centavos: totalGastos,
+      efectivo_teorico_centavos: efectivoTeorico
+    }
+  };
 };
 
 /**
@@ -2215,12 +2628,32 @@ export const procesarPagoOrden = async (
         monto_total: montoTotal,
         monto_recibido: montoRecibido || montoTotal,
         monto_cambio: montoCambio,
-        cajero_id: cajeroId
+  cajero_id: cajeroId,
+  // Campo de timestamp usado por reportes diarios
+  procesada_at: new Date().toISOString()
       })
       .select()
       .single();
 
     if (errorTransaccion) throw errorTransaccion;
+
+    // DEBUG: verificación RLS / visibilidad inmediata
+    try {
+      const { data: txCheck, error: txCheckError } = await supabase
+        .from('transacciones_caja')
+        .select('id, caja_sesion_id, procesada_at, monto_total, metodo_pago')
+        .eq('id', transaccion.id)
+        .maybeSingle();
+      if (txCheckError) {
+        console.warn('[transacciones_caja][debug] Relectura post-insert falló:', txCheckError.message);
+      } else if (!txCheck) {
+        console.warn('[transacciones_caja][debug] Relectura devolvió null (posible RLS):', transaccion.id);
+      } else {
+        console.log('[transacciones_caja][debug] Insert visible:', txCheck);
+      }
+    } catch (dbgErr) {
+      console.warn('[transacciones_caja][debug] Error verificación post-insert:', dbgErr);
+    }
 
     // 2. Actualizar orden como pagada
     const tabla = tipoOrden === 'mesa' ? 'ordenes_mesa' : 'delivery_orders';
@@ -2276,16 +2709,20 @@ export const getTransaccionesDelDia = async (restaurantId: string, fecha?: strin
   totalDigital: number;
 }> => {
   try {
-    const fechaBusqueda = fecha || new Date().toISOString().split('T')[0];
-    const { startUtc, endUtc } = getBogotaDayUtcBounds(fechaBusqueda);
+  const fechaBusqueda = fecha || getTodayBogotaDateString();
+  const { startUtc, endUtc } = getBogotaDayUtcBounds(fechaBusqueda);
+  // Log unificado para rango Bogotá
+  console.log('[getTransaccionesDelDia][debug] fecha', fechaBusqueda, 'startUtc', startUtc, 'endUtc', endUtc);
+  console.log('[getTransaccionesDelDia][debug] fecha', fechaBusqueda, 'startUtc', startUtc, 'endUtc', endUtc);
     // 1) Obtener sesiones del restaurante que se solapan con el día Bogotá
-    const { data: sesiones, error: errorSesiones } = await supabase
+  const { data: sesiones, error: errorSesiones } = await supabase
       .from('caja_sesiones')
       .select('id')
       .eq('restaurant_id', restaurantId)
       .lte('abierta_at', endUtc)
       .or(`cerrada_at.gte.${startUtc},cerrada_at.is.null`);
     if (errorSesiones) throw errorSesiones;
+  console.log('[getTransaccionesDelDia][debug] sesiones candidatas', sesiones?.map(s=>s.id));
 
     if (!sesiones || sesiones.length === 0) {
       return {
@@ -2307,6 +2744,7 @@ export const getTransaccionesDelDia = async (restaurantId: string, fecha?: strin
       .order('procesada_at', { ascending: false });
 
     if (errorTransacciones) throw errorTransacciones;
+  console.log('[getTransaccionesDelDia][debug] transacciones recuperadas', (transacciones||[]).length, 'primer elemento', transacciones && transacciones[0]);
 
     const transaccionesDelDia = transacciones || [];
     
@@ -2500,7 +2938,7 @@ export const getGastosDelDia = async (
   };
 }> => {
   try {
-    const fechaBusqueda = fecha || new Date().toISOString().split('T')[0];
+  const fechaBusqueda = fecha || getTodayBogotaDateString();
     const { startUtc, endUtc } = getBogotaDayUtcBounds(fechaBusqueda);
     // 1) Obtener sesiones del restaurante que se solapan con el día Bogotá
     const { data: sesiones, error: errorSesiones } = await supabase
@@ -2513,6 +2951,7 @@ export const getGastosDelDia = async (
     if (errorSesiones) throw errorSesiones;
 
     if (!sesiones || sesiones.length === 0) {
+      console.log('[getGastosDelDia][debug] sin sesiones para rango');
       return {
         gastos: [],
         totalGastos: 0,
@@ -2534,7 +2973,8 @@ export const getGastosDelDia = async (
       .lt('registrado_at', endUtc)
       .order('registrado_at', { ascending: false });
 
-    if (errorGastos) throw errorGastos;
+  if (errorGastos) throw errorGastos;
+  console.log('[getGastosDelDia][debug] gastos recuperados', (gastos||[]).length);
 
     const gastosDelDia = gastos || [];
     
@@ -2791,13 +3231,13 @@ export async function getProximoNumeroFactura(restaurantId: string) {
   return { data, error };
 }
 
-// Formatear monto
-export function formatearMonto(centavos: number): string {
+// Formatear monto (en PESOS)
+export function formatearMonto(pesos: number): string {
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
     minimumFractionDigits: 0
-  }).format(centavos / 100);
+  }).format(pesos);
 }
 
 // ========================================

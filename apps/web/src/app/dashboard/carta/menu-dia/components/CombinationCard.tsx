@@ -4,6 +4,15 @@ import React from 'react';
 import { MenuCombinacion, LoadingStates } from '@spoon/shared/types/menu-dia/menuTypes';
 import { Heart, Star, Edit3, RefreshCw, Check, X, Trash2 } from 'lucide-react';
 
+// Type casting for React type conflicts
+const HeartComponent = Heart as any;
+const StarComponent = Star as any;
+const Edit3Component = Edit3 as any;
+const RefreshCwComponent = RefreshCw as any;
+const CheckComponent = Check as any;
+const XComponent = X as any;
+const Trash2Component = Trash2 as any;
+
 interface Props {
   combo: MenuCombinacion;
   index: number;
@@ -57,7 +66,7 @@ export default function CombinationCard({
                 combo.favorito ? 'text-[color:var(--sp-error-600)]' : 'text-[color:var(--sp-neutral-400)]'
               }`}
             >
-              <Heart className={`h-4 w-4 ${combo.favorito ? 'fill-current' : ''}`} />
+              <HeartComponent className={`h-4 w-4 ${combo.favorito ? 'fill-current' : ''}`} />
             </button>
             <button
               onClick={() => onToggleSpecial(combo.id)}
@@ -65,7 +74,7 @@ export default function CombinationCard({
                 combo.especial ? 'text-[color:var(--sp-warning-600)]' : 'text-[color:var(--sp-neutral-400)]'
               }`}
             >
-              <Star className={`h-4 w-4 ${combo.especial ? 'fill-current' : ''}`} />
+              <StarComponent className={`h-4 w-4 ${combo.especial ? 'fill-current' : ''}`} />
             </button>
           </div>
         </div>
@@ -137,16 +146,16 @@ export default function CombinationCard({
                   className="p-1 text-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-100)] rounded transition-colors disabled:opacity-50"
                 >
                   {loadingStates.updating === combo.id ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <RefreshCwComponent className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Check className="w-4 h-4" />
+                    <CheckComponent className="w-4 h-4" />
                   )}
                 </button>
                 <button
                   onClick={() => onCancel(combo.id)}
                   className="p-1 text-[color:var(--sp-neutral-600)] hover:bg-[color:var(--sp-neutral-100)] rounded transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <XComponent className="w-4 h-4" />
                 </button>
               </>
             ) : (
@@ -155,13 +164,13 @@ export default function CombinationCard({
                   onClick={() => onEdit(combo.id)}
                   className="p-1 text-[color:var(--sp-info-600)] hover:bg-[color:var(--sp-info-100)] rounded transition-colors"
                 >
-                  <Edit3 className="w-4 h-4" />
+                  <Edit3Component className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => onAskDelete(combo.id)}
                   className="p-1 text-[color:var(--sp-error-600)] hover:bg-[color:var(--sp-error-100)] rounded transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2Component className="w-4 h-4" />
                 </button>
               </>
             )}
@@ -171,3 +180,4 @@ export default function CombinationCard({
     </div>
   );
 }
+

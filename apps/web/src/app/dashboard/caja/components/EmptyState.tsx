@@ -2,6 +2,11 @@ import React from 'react';
 import { Button } from '@spoon/shared/components/ui/Button';
 import { Card, CardContent } from '@spoon/shared/components/ui/Card';
 
+// Type casting for React type conflicts
+const ButtonComponent = Button as any;
+const CardComponent = Card as any;
+const CardContentComponent = CardContent as any;
+
 interface EmptyStateProps {
   icon: string;
   title: string;
@@ -31,14 +36,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       {actions.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {actions.map((action, index) => (
-            <Button
+            <ButtonComponent
               key={index}
               variant={action.variant || 'outline'}
               onClick={action.onClick}
               disabled={action.disabled}
             >
               {action.label}
-            </Button>
+            </ButtonComponent>
           ))}
         </div>
       )}

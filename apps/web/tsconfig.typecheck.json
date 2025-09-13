@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+  "@spoon/shared": ["./src/types/shared-shims.d.ts"],
+  "@spoon/shared/*": ["./src/types/shared-shims.d.ts"],
+  "packages/*": ["./src/types/shared-shims.d.ts"]
+    }
+  },
+  "exclude": [
+    "../../packages/**"
+  ]
+}

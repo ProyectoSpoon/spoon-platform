@@ -60,20 +60,18 @@ export const useMenuDelDia = () => {
         .eq('restaurant_id', restaurantId)
         .eq('menu_date', fechaHoy)
         .eq('status', 'active')
-        .single();
+        .maybeSingle(); // evita 406 cuando no hay fila
 
-      if (menuError) {
-        if (menuError.code === 'PGRST116') {
-          // No hay menú para hoy
-          setEstado(prev => ({
-            ...prev,
-            menu: null,
-            loading: false,
-            error: 'No hay menú configurado para hoy'
-          }));
-          return;
-        }
-        throw menuError;
+      if (menuError) throw menuError;
+
+      if (!menuData) {
+        setEstado(prev => ({
+          ...prev,
+          menu: null,
+          loading: false,
+          error: 'No hay menú configurado para hoy'
+        }));
+        return;
       }
 
       // Cargar combinaciones del menú

@@ -2,6 +2,15 @@
 
 import React from 'react';
 import { Plus, Save, RefreshCw, Download, Trash2, Eye, AlertTriangle } from 'lucide-react';
+
+// Type casting for React type conflicts
+const PlusComponent = Plus as any;
+const SaveComponent = Save as any;
+const RefreshCwComponent = RefreshCw as any;
+const DownloadComponent = Download as any;
+const Trash2Component = Trash2 as any;
+const EyeComponent = Eye as any;
+const AlertTriangleComponent = AlertTriangle as any;
 import { CATEGORIAS_MENU_CONFIG, CATEGORY_ICONS } from '@spoon/shared/constants/menu-dia/menuConstants';
 import { Producto, LoadingStates } from '@spoon/shared/types/menu-dia/menuTypes';
 
@@ -107,7 +116,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
               </p>
               {hasUnsavedChanges && (
                 <div className="mt-2 flex items-center gap-2 text-[color:var(--sp-warning-600)] text-sm">
-                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTriangleComponent className="h-4 w-4" />
                   Hay cambios sin guardar
                 </div>
               )}
@@ -120,9 +129,9 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
                 className="flex items-center px-4 py-2 bg-[color:var(--sp-success-600)] text-[--sp-on-success] rounded-lg hover:bg-[color:var(--sp-success-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loadingStates.saving ? (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  <RefreshCwComponent className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
-                  <Save className="w-4 h-4 mr-2" />
+                  <SaveComponent className="w-4 h-4 mr-2" />
                 )}
                 {loadingStates.saving ? 'Guardando...' : 'Guardar'}
               </button>
@@ -131,7 +140,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
                 onClick={handleExportMenu}
                 className="flex items-center px-4 py-2 border border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] rounded-lg hover:bg-[color:var(--sp-neutral-50)] transition-colors"
               >
-                <Download className="w-4 h-4 mr-2" />
+                <DownloadComponent className="w-4 h-4 mr-2" />
                 Exportar
               </button>
               
@@ -139,7 +148,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
                 onClick={onOpenWizard}
                 className="flex items-center px-4 py-2 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] rounded-lg hover:bg-[color:var(--sp-primary-700)] transition-colors"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <PlusComponent className="w-4 h-4 mr-2" />
                 Editar Menú
               </button>
             </div>
@@ -200,13 +209,13 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center gap-3">
                             <button className="text-[color:var(--sp-info-600)] hover:text-[color:var(--sp-info-900)] transition-colors">
-                              <Eye className="h-4 w-4" />
+                              <EyeComponent className="h-4 w-4" />
                             </button>
                             <button 
                               onClick={() => handleRemoveProduct(categoryId, producto.id)}
                               className="text-[color:var(--sp-error-600)] hover:text-[color:var(--sp-error-900)] transition-colors"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2Component className="h-4 w-4" />
                             </button>
                           </div>
                         </td>
@@ -223,7 +232,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
   <div className="bg-[--sp-surface] rounded-lg shadow-sm p-12">
           <div className="text-center">
             <div className="w-24 h-24 bg-[color:var(--sp-primary-100)] rounded-full flex items-center justify-center mx-auto mb-6">
-              <Plus className="w-12 h-12 text-[color:var(--sp-primary-600)]" />
+              <PlusComponent className="w-12 h-12 text-[color:var(--sp-primary-600)]" />
             </div>
             <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-4">
               No hay productos seleccionados
@@ -259,4 +268,5 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
     </div>
   );
 }
+
 

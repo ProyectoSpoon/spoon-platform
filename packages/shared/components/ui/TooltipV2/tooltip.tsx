@@ -23,7 +23,7 @@ export const TooltipV2: React.FC<TooltipV2Props> = ({ content, children, placeme
 
   return (
     <span className="relative inline-block" onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide}>
-      {React.cloneElement(children, {
+      {React.cloneElement(children as any, {
         'aria-describedby': open ? id : undefined
       })}
       {open && (

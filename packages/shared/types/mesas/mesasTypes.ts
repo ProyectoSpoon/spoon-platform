@@ -9,5 +9,5 @@ export * from './stateTypes';
 export * from './actionTypes';
 
 // Exports específicos para compatibilidad
-export type { Mesa, MesaEstado, OrdenActiva } from './stateTypes';
+export type { Mesa, MesaEstado } from './stateTypes';
 export type { CrearOrdenData, ItemOrdenInput, ReservarMesaParams, MantenimientoMesaParams, ActionResult } from './actionTypes';

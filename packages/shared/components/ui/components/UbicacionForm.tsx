@@ -1,29 +1,11 @@
-import React from 'react';
-import { Input, Button } from '@spoon/shared';
+'use client';
+
+import React, { useEffect, useRef } from 'react';
+import { InputV2, ButtonV2, SelectV2, SpinnerV2, AlertV2 } from '@spoon/shared';
 import { FormCard } from '@spoon/shared';
 import { InlineEditButton } from '@spoon/shared';
+import { useGeographicData, type Country, type Department, type City } from '../../../hooks/useGeographicData';
 
-interface Country {
-  id: string;
-  name: string;
-  code: string;
-  phone_code: string;
-}
-interface Department {
-  id: string;
-  name: string;
-  code: string;
-  country_id: string;
-}
-interface City {
-  id: string;
-  name: string;
-  department_id: string;
-  latitude: number;
-  longitude: number;
-  is_capital: boolean;
-  population?: number;
-}
 interface UbicacionData {
   address: string;
   country_id: string;
@@ -32,125 +14,206 @@ interface UbicacionData {
   latitude?: number;
   longitude?: number;
 }
+
 interface UbicacionFormProps {
   formData: UbicacionData;
   onChange: (field: keyof UbicacionData, value: string | number) => void;
   onSubmit: () => void;
   saving: boolean;
-  countries: Country[];
-  departments: Department[];
-  cities: City[];
-  loadingGeoData?: boolean;
   readOnly?: boolean;
   showSave?: boolean;
   onCancel?: () => void;
   onToggleEdit?: () => void;
 }
 
-export const UbicacionForm: React.FC<UbicacionFormProps> = ({
+export function UbicacionForm({
   formData,
   onChange,
   onSubmit,
   saving,
-  countries,
-  departments,
-  cities,
-  loadingGeoData = false,
   readOnly = false,
   showSave = true,
   onCancel,
   onToggleEdit,
-}: UbicacionFormProps) => (
-  <FormCard readOnly={readOnly} onToggleEdit={onToggleEdit} hideHeaderEdit>
+}: UbicacionFormProps): JSX.Element {
+  // Usar el hook personalizado para datos geográficos
+  const {
+    countries,
+    departments,
+    cities,
+    loading: loadingGeoData,
+    error: geoError,
+    loadDepartments,
+    loadCities,
+    getCityCoordinates,
+  } = useGeographicData();
+
+  // Efectos para cargar datos en cascada
+  useEffect(() => {
+    if (formData.country_id) {
+      loadDepartments(formData.country_id);
+    }
+  }, [formData.country_id, loadDepartments]);
+
+  useEffect(() => {
+    if (formData.department_id) {
+      loadCities(formData.department_id);
+    }
+  }, [formData.department_id, loadCities]);
+
+  // Obtener datos de la ciudad y departamento seleccionados
+  const selectedCity = cities.find(city => city.id === formData.city_id);
+  const selectedDepartment = departments.find(dept => dept.id === formData.department_id);
+
+  // Actualizar coordenadas cuando cambia la ciudad
+  const lastCoordsRef = useRef<{lat?: number; lon?: number}>({});
+  useEffect(() => {
+    if (formData.city_id) {
+      const coordinates = getCityCoordinates(formData.city_id);
+      if (coordinates.latitude && coordinates.longitude) {
+        const sameLat = lastCoordsRef.current.lat === coordinates.latitude;
+        const sameLon = lastCoordsRef.current.lon === coordinates.longitude;
+        if (!sameLat) onChange('latitude', coordinates.latitude);
+        if (!sameLon) onChange('longitude', coordinates.longitude);
+        lastCoordsRef.current = { lat: coordinates.latitude, lon: coordinates.longitude };
+      }
+    }
+  }, [formData.city_id, getCityCoordinates, onChange]);
+
+  // Auto-seleccionar Colombia si está disponible y no hay país seleccionado
+  const autoCountryRef = useRef(false);
+  useEffect(() => {
+    if (autoCountryRef.current) return;
+    if (countries.length > 0 && !formData.country_id) {
+      const colombia = countries.find(c => c.code === 'COL' || c.code === 'CO');
+      if (colombia) {
+        autoCountryRef.current = true; // solo una vez
+        onChange('country_id', colombia.id);
+      }
+    }
+  }, [countries, formData.country_id, onChange]);
+
+  // Limpiar selecciones dependientes cuando cambia país
+  const handleCountryChange = (value: string) => {
+    onChange('country_id', value);
+    onChange('department_id', '');
+    onChange('city_id', '');
+    // Ya no forzamos Bogotá. Mantenemos coordenadas actuales hasta que el usuario seleccione nueva ciudad.
+  };
+
+  // Limpiar ciudades cuando cambia departamento
+  const handleDepartmentChange = (value: string) => {
+    onChange('department_id', value);
+    onChange('city_id', '');
+    // No reseteamos a Bogotá; se actualizará cuando se elija la nueva ciudad.
+  };
+
+  return (
+    <FormCard readOnly={readOnly} onToggleEdit={onToggleEdit} hideHeaderEdit>
       {/* Acción editar en línea */}
       {onToggleEdit && (
         <div className="flex justify-end mb-3">
           <InlineEditButton onClick={onToggleEdit} editing={!readOnly} label="Editar ubicación" />
         </div>
       )}
+
+      {/* Mostrar error de datos geográficos */}
+      {geoError && (
+        <AlertV2 variant="error" className="mb-4">
+          ⚠️ Error cargando datos geográficos: {geoError}
+        </AlertV2>
+      )}
+
       <form onSubmit={(e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); onSubmit(); }}>
-        <Input
-      label="Dirección Completa *"
-      name="address"
-      value={formData.address}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange('address', e.target.value)}
-      placeholder="Ej: Carrera 15 #85-32, Chapinero"
-      helperText="Incluye número, nombre de la calle y barrio"
-      required
-      variant={readOnly ? 'readOnly' : 'default'}
-    />
-        <div className="mb-4">
-  <label className="block text-sm font-medium text-[color:var(--sp-neutral-800)] mb-2">País *</label>
-          <select
-        name="country_id"
-        value={formData.country_id}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange('country_id', e.target.value)}
-  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary)] focus:border-[color:var(--sp-primary)] border-[color:var(--sp-neutral-300)] disabled:bg-[color:var(--sp-neutral-50)] disabled:text-[color:var(--sp-neutral-700)] disabled:border-[color:var(--sp-neutral-200)] disabled:cursor-default disabled:focus:ring-0"
-        required
-        disabled={readOnly}
-      >
-        <option value="">Selecciona país</option>
-        {countries.map((country: Country) => (
-          <option key={country.id} value={country.id}>
-            {country.name} ({country.phone_code})
-          </option>
-        ))}
-          </select>
-        </div>
-        <div className="mb-4">
-  <label className="block text-sm font-medium text-[color:var(--sp-neutral-800)] mb-2">Departamento *</label>
-          <select
-        name="department_id"
-        value={formData.department_id}
-        onChange={e => onChange('department_id', e.target.value)}
-  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary)] focus:border-[color:var(--sp-primary)] border-[color:var(--sp-neutral-300)] disabled:bg-[color:var(--sp-neutral-50)] disabled:text-[color:var(--sp-neutral-700)] disabled:border-[color:var(--sp-neutral-200)] disabled:cursor-default disabled:focus:ring-0"
-        required
-        disabled={readOnly}
-      >
-        <option value="">Selecciona departamento</option>
-        {departments.map((dept: Department) => (
-          <option key={dept.id} value={dept.id}>
-            {dept.name}
-          </option>
-        ))}
-          </select>
-          {loadingGeoData && departments.length === 0 && (
-            <span className="ml-2 text-xs text-[color:var(--sp-info)]">(Cargando...)</span>
-          )}
-        </div>
-        <div className="mb-4">
-  <label className="block text-sm font-medium text-[color:var(--sp-neutral-800)] mb-2">Ciudad *</label>
-          <select
-        name="city_id"
-        value={formData.city_id}
-        onChange={e => onChange('city_id', e.target.value)}
-  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary)] focus:border-[color:var(--sp-primary)] border-[color:var(--sp-neutral-300)] disabled:bg-[color:var(--sp-neutral-50)] disabled:text-[color:var(--sp-neutral-700)] disabled:border-[color:var(--sp-neutral-200)] disabled:cursor-default disabled:focus:ring-0"
-        required
-        disabled={readOnly}
-      >
-        <option value="">Selecciona ciudad</option>
-        {cities.map((city: City) => (
-          <option key={city.id} value={city.id}>
-            {city.name}
-          </option>
-        ))}
-          </select>
-          {loadingGeoData && cities.length === 0 && (
-            <span className="ml-2 text-xs text-[color:var(--sp-info)]">(Cargando...)</span>
-          )}
-        </div>
-    {showSave && (
-          <div className="flex gap-3 pt-4 border-t">
-            <Button type="submit" disabled={saving || readOnly} size="sm">
-              {saving ? 'Guardando...' : 'Guardar ubicación'}
-            </Button>
-            {onCancel && (
-              <Button type="button" variant="outline" size="sm" onClick={onCancel}>
-                Cancelar
-              </Button>
+        {/* País oculto - solo Colombia */}
+        <input type="hidden" name="country_id" value={formData.country_id} />
+        
+        {/* Departamento y Ciudad en la misma fila */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <SelectV2
+              label="Departamento"
+              name="department_id"
+              value={formData.department_id}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleDepartmentChange(e.target.value)}
+              requiredMark
+              disabled={readOnly || !formData.country_id}
+              helperText={loadingGeoData && departments.length === 0 && formData.country_id ? "Cargando departamentos..." : "Selecciona el departamento"}
+            >
+              <option value="">
+                {!formData.country_id 
+                  ? 'Primero selecciona país' 
+                  : loadingGeoData 
+                  ? 'Cargando departamentos...'
+                  : 'Selecciona departamento'
+                }
+              </option>
+              {departments.map((dept: Department) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </SelectV2>
+            {loadingGeoData && departments.length === 0 && formData.country_id && (
+              <div className="flex items-center gap-2 mt-2">
+                <SpinnerV2 size="sm" />
+                <span className="text-sm text-[color:var(--sp-on-surface-variant)]">Cargando departamentos...</span>
+              </div>
             )}
+          </div>
+
+          <div>
+            <SelectV2
+              label="Ciudad"
+              name="city_id"
+              value={formData.city_id}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange('city_id', e.target.value)}
+              requiredMark
+              disabled={readOnly || !formData.department_id}
+              helperText={loadingGeoData && cities.length === 0 && formData.department_id ? "Cargando ciudades..." : "Selecciona la ciudad"}
+            >
+              <option value="">
+                {!formData.department_id 
+                  ? 'Primero selecciona departamento' 
+                  : loadingGeoData 
+                  ? 'Cargando ciudades...'
+                  : 'Selecciona ciudad'
+                }
+              </option>
+              {cities.map((city: City) => (
+                <option key={city.id} value={city.id}>
+                  {city.name} {city.is_capital ? '(Capital)' : ''}
+                </option>
+              ))}
+            </SelectV2>
+            {loadingGeoData && cities.length === 0 && formData.department_id && (
+              <div className="flex items-center gap-2 mt-2">
+                <SpinnerV2 size="sm" />
+                <span className="text-sm text-[color:var(--sp-on-surface-variant)]">Cargando ciudades...</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Información oculta - las coordenadas se manejan internamente */}
+        
+        {/* Solo mostrar botón de guardar en contextos específicos (no en el flujo principal) */}
+        {showSave && onCancel && (
+          <div className="flex gap-3 pt-4 border-t border-[color:var(--sp-border)]">
+            <ButtonV2 
+              type="submit" 
+              disabled={saving || readOnly || loadingGeoData} 
+              size="sm"
+              variant="primary"
+            >
+              {saving ? 'Guardando...' : 'Guardar ubicación'}
+            </ButtonV2>
+            <ButtonV2 type="button" variant="secondary" size="sm" onClick={onCancel}>
+              Cancelar
+            </ButtonV2>
           </div>
         )}
       </form>
-  </FormCard>
-);
+    </FormCard>
+  );
+}

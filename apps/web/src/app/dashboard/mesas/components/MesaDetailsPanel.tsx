@@ -15,6 +15,10 @@ import MesaDetailsActions from './MesaDetailsActions';
 import MesaDetailsFooter from './MesaDetailsFooter';
 import CrearOrdenWizard from '@spoon/shared/components/mesas/CrearOrdenWizard';
 
+// Type casting para componentes
+const ClockCast = Clock as any;
+const CrearOrdenWizardCast = CrearOrdenWizard as any;
+
 interface MesaDetailsPanelProps {
   mesaNumero: number | null;
   isVisible: boolean;
@@ -73,7 +77,7 @@ const MesaDetailsPanel: React.FC<MesaDetailsPanelProps> = ({
     return (
       <div className="w-full bg-[color:var(--sp-neutral-50)] border-l border-[color:var(--sp-neutral-200)] flex items-center justify-center">
         <div className="text-center text-[color:var(--sp-neutral-600)] p-8">
-          <Clock className="h-12 w-12 mx-auto mb-4 text-[color:var(--sp-neutral-300)]" />
+          <ClockCast className="h-12 w-12 mx-auto mb-4 text-[color:var(--sp-neutral-300)]" />
           <h3 className="text-lg font-medium text-[color:var(--sp-neutral-800)] mb-2">
             Selecciona una mesa
           </h3>
@@ -300,7 +304,7 @@ const MesaDetailsPanel: React.FC<MesaDetailsPanelProps> = ({
 
       {/* Wizard de crear orden */}
       {restaurantId && mesaNumero && (
-        <CrearOrdenWizard
+        <CrearOrdenWizardCast
           isOpen={wizardAbierto}
           onClose={() => setWizardAbierto(false)}
           onCrearOrden={handleProcesarOrdenWizard}

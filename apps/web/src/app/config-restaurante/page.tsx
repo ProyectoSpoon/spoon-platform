@@ -4,6 +4,12 @@
 import React, { useState, useEffect } from 'react';
 import { ClipboardList, MapPin, CalendarDays, Image as LucideImage } from 'lucide-react';
 import { Grid } from '@spoon/shared/components/ui/Grid';
+
+// Type casting for React type conflicts
+const ClipboardListComponent = ClipboardList as any;
+const MapPinComponent = MapPin as any;
+const CalendarDaysComponent = CalendarDays as any;
+const LucideImageComponent = LucideImage as any;
 import { useRouter } from 'next/navigation';
 import { getUserProfile, getUserRestaurant } from '@spoon/shared';
 import { 
@@ -16,6 +22,16 @@ import {
   Progress,
   toast 
 } from '@spoon/shared';
+
+// More type casting for UI components
+const GridComponent = Grid as any;
+const ButtonComponent = Button as any;
+const CardComponent = Card as any;
+const CardContentComponent = CardContent as any;
+const CardHeaderComponent = CardHeader as any;
+const CardTitleComponent = CardTitle as any;
+const CardDescriptionComponent = CardDescription as any;
+const ProgressComponent = Progress as any;
 
 interface ConfigProgress {
   informacionGeneral: boolean;
@@ -33,7 +49,7 @@ const configSteps = [
     id: 'informacionGeneral',
     title: 'Información General',
     description: 'Datos básicos del restaurante: nombre, contacto y tipo de cocina',
-    icon: <ClipboardList className="w-6 h-6" />, // minimalista
+    icon: <ClipboardListComponent className="w-6 h-6" />, // minimalista
     color: 'purple',
     route: '/config-restaurante/informacion-general',
     requiredFields: 4
@@ -42,7 +58,7 @@ const configSteps = [
     id: 'ubicacion',
     title: 'Ubicación',
     description: 'Dirección y ubicación geográfica del restaurante',
-    icon: <MapPin className="w-6 h-6" />, // minimalista
+    icon: <MapPinComponent className="w-6 h-6" />, // minimalista
     color: 'blue',
     route: '/config-restaurante/ubicacion',
     requiredFields: 3
@@ -51,7 +67,7 @@ const configSteps = [
     id: 'horarios',
     title: 'Horarios',
     description: 'Horarios de atención y días de operación',
-    icon: <CalendarDays className="w-6 h-6" />, // minimalista
+    icon: <CalendarDaysComponent className="w-6 h-6" />, // minimalista
     color: 'green',
     route: '/config-restaurante/horario-comercial',
     requiredFields: 2
@@ -60,7 +76,7 @@ const configSteps = [
     id: 'logoPortada',
     title: 'Logo y Portada',
     description: 'Imágenes representativas del restaurante',
-    icon: <LucideImage className="w-6 h-6" />, // minimalista
+    icon: <LucideImageComponent className="w-6 h-6" />, // minimalista
     color: 'orange',
     route: '/config-restaurante/logo-portada',
     requiredFields: 2
@@ -230,7 +246,7 @@ export default function ConfigRestaurantePage() {
         </div>
 
   {/* Tarjetas de configuración */}
-  <Grid className="mb-12 items-stretch">
+  <GridComponent className="mb-12 items-stretch">
           {configSteps.map((step) => {
             const isCompleted = progreso[step.id as keyof ConfigProgress] as boolean;
             const progressValue = isCompleted ? 100 : 0;
@@ -255,7 +271,7 @@ export default function ConfigRestaurantePage() {
               orange: 'text-[--sp-on-warning]'
             }[step.color];
             return (
-      <Card key={step.id} variant="hover" className="relative flex flex-col justify-between h-full">
+      <CardComponent key={step.id} variant="hover" className="relative flex flex-col justify-between h-full">
                 {/* Icono decorativo */}
                 <div className="absolute top-4 right-4">
                   <svg className="w-4 h-4 text-[color:var(--sp-neutral-300)]" fill="currentColor" viewBox="0 0 20 20">
@@ -289,23 +305,23 @@ export default function ConfigRestaurantePage() {
                       </span>
                     </div>
                   </div>
-                  <Button 
+                  <ButtonComponent 
                     variant={step.id === 'logoPortada' ? 'orange' : (step.color as any)}
                     size="full"
                     onClick={() => router.push(step.route)}
                     className={step.id === 'logoPortada' ? 'bg-[color:var(--sp-warning-600)] text-[--sp-on-warning] hover:bg-[color:var(--sp-warning-700)]' : ''}
                   >
                     {isCompleted ? 'Editar →' : 'Configurar →'}
-                  </Button>
+                  </ButtonComponent>
                 </CardContent>
-              </Card>
+              </CardComponent>
             );
           })}
-    </Grid>
+    </GridComponent>
 
         {/* Estado general */}
         {!configuracionCompleta ? (
-          <Card className="text-center bg-[color:var(--sp-warning-50)] border-[color:var(--sp-warning-200)]">
+          <CardComponent className="text-center bg-[color:var(--sp-warning-50)] border-[color:var(--sp-warning-200)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-center mb-4">
                 <svg className="w-8 h-8 text-[color:var(--sp-warning-600)] mr-3" fill="currentColor" viewBox="0 0 20 20">
@@ -318,16 +334,16 @@ export default function ConfigRestaurantePage() {
               <p className="text-[color:var(--sp-warning-700)] mb-6">
                 Completa las configuraciones pendientes para activar todas las funciones
               </p>
-              <Progress 
+              <ProgressComponent 
                 value={progreso.porcentaje} 
                 variant="warning"
                 label={`Progreso actual: ${progreso.totalCompleto} de 4 secciones completadas`}
                 className="max-w-md mx-auto"
               />
             </CardContent>
-          </Card>
+          </CardComponent>
         ) : (
-          <Card className="text-center bg-[color:var(--sp-success-50)] border-[color:var(--sp-success-200)]">
+          <CardComponent className="text-center bg-[color:var(--sp-success-50)] border-[color:var(--sp-success-200)]">
             <CardContent className="p-6">
               <div className="flex items-center justify-center mb-4">
                 <svg className="w-8 h-8 text-[color:var(--sp-success-600)] mr-3" fill="currentColor" viewBox="0 0 20 20">
@@ -340,15 +356,15 @@ export default function ConfigRestaurantePage() {
               <p className="text-[color:var(--sp-success-700)] mb-6">
                 Has completado todos los pasos de configuración. ¡Tu restaurante está completamente configurado!
               </p>
-              <Button 
+              <ButtonComponent 
                 variant="green"
                 size="sm"
                 onClick={() => router.push('/dashboard')}
               >
                 ⏱️ Ir al Dashboard
-              </Button>
+              </ButtonComponent>
             </CardContent>
-          </Card>
+          </CardComponent>
         )}
 
  

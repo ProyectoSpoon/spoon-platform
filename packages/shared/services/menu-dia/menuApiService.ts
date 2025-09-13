@@ -1,5 +1,5 @@
-// ✅ REMOVEMOS LA IMPORTACIÓN PROBLEMÁTICA DE TOAST
-import { supabase } from '@spoon/shared';
+// Evitar dependencias circulares del barrel export
+import { supabase } from '../../lib/supabase';
 
 import { Producto, MenuCombinacion as _MenuCombinacion } from '../../types/menu-dia/menuTypes';
 import { CATEGORIAS_MENU_CONFIG } from '../../constants/menu-dia/menuConstants';
@@ -19,8 +19,8 @@ export const MenuApiService = {
       this._cache.delete(this._key(name, key));
       return;
     }
-    for (const k of Array.from(this._cache.keys())) {
-      if (k.startsWith(`${name}::`)) this._cache.delete(k);
+    for (const k of Array.from(this._cache.keys()) as string[]) {
+      if (typeof k === 'string' && k.startsWith(`${name}::`)) this._cache.delete(k);
     }
   },
   async _withCache<T>(name: string, key: string, ttlMs: number, factory: () => Promise<T>): Promise<T> {
@@ -61,7 +61,7 @@ export const MenuApiService = {
 
     if (error) throw error;
     
-    const transformedData = (data || []).map(item => ({
+  const transformedData = (data || []).map((item: any) => ({
       ...item,
       price: item.suggested_price_min || 0,
       available: item.is_verified,
@@ -85,7 +85,7 @@ export const MenuApiService = {
           .eq('restaurant_id', restaurantId)
           .eq('status', 'active')
           .eq('menu_date', today)
-          .single();
+          .maybeSingle(); // evita 406 cuando 0 filas
         if (error && (error as any).code !== 'PGRST116') throw error;
         return data || null;
       }

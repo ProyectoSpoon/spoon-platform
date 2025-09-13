@@ -99,8 +99,8 @@ export const useMesaActions = (
 
     setProcesandoCobro(true);
     try {
-      const { cobrarMesa: cobrarMesaApi } = await import('../../../lib/supabase');
-      await cobrarMesaApi(restaurantId, mesaNumero);
+  const { cobrarMesaConTransaccion } = await import('../../../lib/supabase');
+  await cobrarMesaConTransaccion(restaurantId, mesaNumero);
       
       onSuccess?.();
       

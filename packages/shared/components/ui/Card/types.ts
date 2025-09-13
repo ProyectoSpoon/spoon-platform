@@ -1,5 +1,5 @@
 // packages/shared/components/ui/Card/types.ts
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 
 export type CardVariant = 'default' | 'hover' | 'menu' | 'accent';
 

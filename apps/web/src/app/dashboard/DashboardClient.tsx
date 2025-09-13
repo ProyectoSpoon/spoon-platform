@@ -13,6 +13,17 @@ import {
   Heart,
 } from 'lucide-react';
 
+// Type casting para componentes de lucide-react
+const SettingsCast = Settings as any;
+const MenuCast = Menu as any;
+const AlertCircleCast = AlertCircle as any;
+const CheckCircleCast = CheckCircle as any;
+const EyeCast = Eye as any;
+const ExternalLinkCast = ExternalLink as any;
+const CoffeeCast = Coffee as any;
+const HeartCast = Heart as any;
+const LinkCast = Link as any;
+
 export default function DashboardClient() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [mounted, setMounted] = useState(false);
@@ -48,7 +59,7 @@ export default function DashboardClient() {
         <div className="max-w-2xl mx-auto">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-[color:var(--sp-primary-600)] rounded-full flex items-center justify-center">
-              <Coffee className="h-8 w-8 text-[color:var(--sp-on-primary)]" />
+              <CoffeeCast className="h-8 w-8 text-[color:var(--sp-on-primary)]" />
             </div>
           </div>
 
@@ -79,11 +90,11 @@ export default function DashboardClient() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Link href="/dashboard/configuracion" className="group">
+        <LinkCast href="/dashboard/configuracion" className="group">
           <div className="bg-[color:var(--sp-surface-elevated)] rounded-lg border border-[color:var(--sp-border)] p-6 hover:shadow-lg transition-all duration-200 hover:border-[color:var(--sp-primary-300)]">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-[color:var(--sp-primary-100)] rounded-lg group-hover:bg-[color:var(--sp-primary-200)] transition-colors">
-                <Settings className="h-6 w-6 text-[color:var(--sp-primary-600)]" />
+                <SettingsCast className="h-6 w-6 text-[color:var(--sp-primary-600)]" />
               </div>
               <div>
                 <h3 className="font-semibold text-[color:var(--sp-neutral-900)]">Configuración</h3>
@@ -95,15 +106,15 @@ export default function DashboardClient() {
             </p>
             <div className="mt-4 flex items-center text-[color:var(--sp-primary-600)] text-sm font-medium group-hover:text-[color:var(--sp-primary-700)]">
               Ir a configuración
-              <ExternalLink className="h-4 w-4 ml-1" />
+              <ExternalLinkCast className="h-4 w-4 ml-1" />
             </div>
           </div>
-        </Link>
+        </LinkCast>
 
         <div className="bg-[color:var(--sp-surface-elevated)] rounded-lg border border-[color:var(--sp-border)] p-6 opacity-60">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-3 bg-[color:var(--sp-info-100)] rounded-lg">
-              <Menu className="h-6 w-6 text-[color:var(--sp-info-600)]" />
+              <MenuCast className="h-6 w-6 text-[color:var(--sp-info-600)]" />
             </div>
             <div>
               <h3 className="font-semibold text-[color:var(--sp-neutral-900)]">Menú Diario</h3>
@@ -119,7 +130,7 @@ export default function DashboardClient() {
         <div className="bg-[color:var(--sp-surface-elevated)] rounded-lg border border-[color:var(--sp-border)] p-6 opacity-60">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-3 bg-[color:var(--sp-success-100)] rounded-lg">
-              <Eye className="h-6 w-6 text-[color:var(--sp-success-600)]" />
+              <EyeCast className="h-6 w-6 text-[color:var(--sp-success-600)]" />
             </div>
             <div>
               <h3 className="font-semibold text-[color:var(--sp-neutral-900)]">Analytics</h3>
@@ -138,7 +149,7 @@ export default function DashboardClient() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-[color:var(--sp-warning-50)] border border-[color:var(--sp-warning-200)] rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-5 w-5 text-[color:var(--sp-warning-600)]" />
+              <AlertCircleCast className="h-5 w-5 text-[color:var(--sp-warning-600)]" />
               <span className="font-medium text-[color:var(--sp-warning-900)]">Configuración</span>
             </div>
             <p className="text-sm text-[color:var(--sp-warning-700)]">Completa la configuración de tu restaurante para empezar</p>
@@ -146,7 +157,7 @@ export default function DashboardClient() {
 
           <div className="p-4 bg-[color:var(--sp-error-50)] border border-[color:var(--sp-error-200)] rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-5 w-5 text-[color:var(--sp-error-600)]" />
+              <AlertCircleCast className="h-5 w-5 text-[color:var(--sp-error-600)]" />
               <span className="font-medium text-[color:var(--sp-error-900)]">Menú</span>
             </div>
             <p className="text-sm text-[color:var(--sp-error-700)]">Sin menú configurado para hoy</p>
@@ -154,7 +165,7 @@ export default function DashboardClient() {
 
           <div className="p-4 bg-[color:var(--sp-neutral-50)] border border-[color:var(--sp-neutral-200)] rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <Eye className="h-5 w-5 text-[color:var(--sp-neutral-600)]" />
+              <EyeCast className="h-5 w-5 text-[color:var(--sp-neutral-600)]" />
               <span className="font-medium text-[color:var(--sp-neutral-900)]">Visibilidad</span>
             </div>
             <p className="text-sm text-[color:var(--sp-neutral-700)]">No visible en búsquedas aún</p>
@@ -164,7 +175,7 @@ export default function DashboardClient() {
 
       <div className="bg-[color:var(--sp-primary-600)] bg-gradient-to-r from-[color:var(--sp-primary-600)] to-[color:var(--sp-info-600)] rounded-lg p-6 text-[color:var(--sp-on-primary)] text-center">
         <div className="flex justify-center mb-3">
-          <Heart className="h-6 w-6" />
+          <HeartCast className="h-6 w-6" />
         </div>
         <h3 className="font-semibold mb-2">¡Estamos aquí para ayudarte a crecer!</h3>
         <p className="text-sm opacity-90">

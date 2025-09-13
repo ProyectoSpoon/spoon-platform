@@ -12,6 +12,13 @@ import { AuditoriaTab } from './components/AuditoriaTab';
 import { EstadisticasUsuarios } from './components/EstadisticasUsuarios';
 import type { UsuarioRestaurante, RoleSistema, EstadisticasUsuarios as EstadisticasUsuariosType } from '@spoon/shared/services/usuarios';
 
+// Type casting para componentes
+const UsersCast = Users as any;
+const SettingsCast = Settings as any;
+const FileTextCast = FileText as any;
+const TabsCast = Tabs as any;
+const SinPermisosCast = SinPermisos as any;
+
 export default function ConfiguracionUsuariosPage() {
   const [activeTab, setActiveTab] = useState('usuarios');
   const [loading, setLoading] = useState(true);
@@ -116,7 +123,7 @@ export default function ConfiguracionUsuariosPage() {
   if (!hasPermission('config.usuarios')) {
     return (
       <div className="mx-auto max-w-7xl px-6 md:px-8 py-8">
-        <SinPermisos 
+        <SinPermisosCast 
           titulo="Sin permisos para gestionar usuarios"
           mensaje="Solo los propietarios pueden acceder a la configuración de usuarios y roles."
         />
@@ -158,7 +165,7 @@ export default function ConfiguracionUsuariosPage() {
       />
 
       {/* Pestañas */}
-      <Tabs
+      <TabsCast
         className="mt-0 mb-3"
         activeId={activeTab}
         onChange={setActiveTab}
@@ -166,17 +173,17 @@ export default function ConfiguracionUsuariosPage() {
           { 
             id: 'usuarios', 
             label: `Usuarios (${usuarios.filter((u: any) => u.is_active).length})`, 
-            icon: <Users className="h-4 w-4" />
+            icon: <UsersCast className="h-4 w-4" />
           },
           { 
             id: 'roles', 
             label: 'Configuración de Roles', 
-            icon: <Settings className="h-4 w-4" /> 
+            icon: <SettingsCast className="h-4 w-4" /> 
           },
           { 
             id: 'auditoria', 
             label: 'Auditoría', 
-            icon: <FileText className="h-4 w-4" /> 
+            icon: <FileTextCast className="h-4 w-4" /> 
           },
         ]}
       />

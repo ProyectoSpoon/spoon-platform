@@ -10,6 +10,10 @@ import { DollarSign } from 'lucide-react';
 import { Mesa } from '@spoon/shared/types/mesas';
 import { formatearMoneda } from '@spoon/shared/utils/mesas';
 
+// Type casting para componentes
+const ButtonCast = Button as any;
+const DollarSignCast = DollarSign as any;
+
 interface MesaDetailsFooterProps {
   mesa: Mesa;
   cobrando?: boolean;
@@ -33,7 +37,7 @@ export const MesaDetailsFooter: React.FC<MesaDetailsFooterProps> = ({
     <div className="border-t border-[color:var(--sp-neutral-200)] bg-[--sp-surface] p-4 space-y-3">
       {mesa.estado === 'ocupada' && mesa.ordenActiva ? (
         <>
-          <Button
+          <ButtonCast
             onClick={onCobrar}
             disabled={cobrando || !mesa.ordenActiva.total}
             className="w-full bg-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-700)] text-[--sp-on-success] font-bold py-3 text-lg"
@@ -45,29 +49,29 @@ export const MesaDetailsFooter: React.FC<MesaDetailsFooterProps> = ({
               </>
             ) : (
               <>
-                <DollarSign className="h-5 w-5 mr-2" />
+                <DollarSignCast className="h-5 w-5 mr-2" />
                 COBRAR {formatearMoneda(mesa.ordenActiva.total)}
               </>
             )}
-          </Button>
+          </ButtonCast>
           
-          <Button
+          <ButtonCast
             onClick={onClose}
             variant="outline"
             className="w-full"
             disabled={cobrando}
           >
             Cerrar
-          </Button>
+          </ButtonCast>
         </>
       ) : (
-        <Button
+        <ButtonCast
           onClick={onClose}
           variant="outline"
           className="w-full"
         >
           Cerrar
-        </Button>
+        </ButtonCast>
       )}
 
     <div className="text-center text-xs text-[color:var(--sp-neutral-500)]">

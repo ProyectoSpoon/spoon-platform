@@ -3,6 +3,21 @@ import { Search, UserPlus, Edit3, Mail, Phone, Calendar, Clock, Users } from 'lu
 import { Button, SelectV2 as Select, Input, SwitchV2 as Switch, DialogV2 as Dialog } from '@spoon/shared';
 import { UsuariosService, type UsuarioRestaurante, type RoleSistema } from '@spoon/shared/services/usuarios';
 
+// Type casting para componentes de lucide-react y @spoon/shared
+const SearchCast = Search as any;
+const UserPlusCast = UserPlus as any;
+const Edit3Cast = Edit3 as any;
+const MailCast = Mail as any;
+const PhoneCast = Phone as any;
+const CalendarCast = Calendar as any;
+const ClockCast = Clock as any;
+const UsersCast = Users as any;
+const ButtonCast = Button as any;
+const SelectCast = Select as any;
+const InputCast = Input as any;
+const SwitchCast = Switch as any;
+const DialogCast = Dialog as any;
+
 interface UsuariosTabProps {
   usuarios: UsuarioRestaurante[];
   roles: RoleSistema[];
@@ -194,21 +209,21 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
             Gestiona los miembros de tu equipo
           </p>
         </div>
-        <Button 
+        <ButtonCast 
           onClick={() => setModalInvitar(true)}
           className="flex items-center gap-2"
         >
-          <UserPlus className="h-4 w-4" />
+          <UserPlusCast className="h-4 w-4" />
           Invitar Usuario
-        </Button>
+        </ButtonCast>
       </div>
 
       {/* Filtros */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="md:w-64">
-          <Select
+          <SelectCast
             value={filtroRol}
-            onChange={(e) => setFiltroRol(e.target.value)}
+            onChange={(e: any) => setFiltroRol(e.target.value)}
             placeholder="Filtrar por rol"
           >
             <option value="todos">Todos los roles</option>
@@ -217,15 +232,15 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
                 {getRoleLabel(rol.name)}
               </option>
             ))}
-          </Select>
+          </SelectCast>
         </div>
         <div className="flex-1">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[color:var(--sp-neutral-400)]" />
-            <Input
+            <SearchCast className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[color:var(--sp-neutral-400)]" />
+            <InputCast
               placeholder="🔍 Buscar por nombre o email..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e: any) => setBusqueda(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -236,7 +251,7 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
       <div className="space-y-3">
         {usuariosFiltrados.length === 0 ? (
           <div className="text-center py-12 text-[color:var(--sp-neutral-500)]">
-            <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <UsersCast className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No se encontraron usuarios con los filtros aplicados</p>
           </div>
         ) : (
@@ -261,12 +276,12 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
                       </h3>
                       <div className="flex items-center gap-4 text-sm text-[color:var(--sp-neutral-600)] mt-1">
                         <div className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
+                          <MailCast className="h-3 w-3" />
                           <span className="truncate">{usuario.email}</span>
                         </div>
                         {usuario.phone && (
                           <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
+                            <PhoneCast className="h-3 w-3" />
                             <span>{usuario.phone}</span>
                           </div>
                         )}
@@ -278,12 +293,12 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
                           </span>
                         )}
                         <div className="flex items-center gap-1 text-xs text-[color:var(--sp-neutral-500)]">
-                          <Calendar className="h-3 w-3" />
+                          <CalendarCast className="h-3 w-3" />
                           Creado: {formatearFecha(usuario.created_at)}
                         </div>
                         {usuario.last_login && (
                           <div className="flex items-center gap-1 text-xs text-[color:var(--sp-neutral-500)]">
-                            <Clock className="h-3 w-3" />
+                            <ClockCast className="h-3 w-3" />
                             Último acceso: {formatearFecha(usuario.last_login)}
                           </div>
                         )}
@@ -293,22 +308,22 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
                   
                   {/* Acciones */}
                   <div className="flex items-center gap-3">
-                    <Button
+                    <ButtonCast
                       variant="outline"
                       size="sm"
                       onClick={() => abrirModalEdicion(usuario)}
                       className="flex items-center gap-1"
                     >
-                      <Edit3 className="h-3 w-3" />
+                      <Edit3Cast className="h-3 w-3" />
                       Editar
-                    </Button>
+                    </ButtonCast>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-[color:var(--sp-neutral-600)]">
                         {usuario.is_active ? 'Activo' : 'Inactivo'}
                       </span>
-                      <Switch
+                      <SwitchCast
                         checked={usuario.is_active}
-                        onChange={(e) => handleToggleUsuario(usuario.id, e.currentTarget.checked)}
+                        onChange={(e: any) => handleToggleUsuario(usuario.id, e.currentTarget.checked)}
                       />
                     </div>
                   </div>
@@ -320,37 +335,37 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
       </div>
 
       {/* Modal Invitar Usuario */}
-  <Dialog open={modalInvitar} onClose={() => setModalInvitar(false)}>
+  <DialogCast open={modalInvitar} onClose={() => setModalInvitar(false)}>
         <div className="p-6">
           <h2 className="text-lg font-semibold mb-4">➕ Invitar Nuevo Usuario</h2>
           
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Input
+              <InputCast
                 placeholder="Nombre"
                 value={formInvitar.first_name}
-                onChange={(e) => setFormInvitar(prev => ({ ...prev, first_name: e.target.value }))}
+                onChange={(e: any) => setFormInvitar(prev => ({ ...prev, first_name: e.target.value }))}
               />
-              <Input
+              <InputCast
                 placeholder="Apellido"
                 value={formInvitar.last_name}
-                onChange={(e) => setFormInvitar(prev => ({ ...prev, last_name: e.target.value }))}
+                onChange={(e: any) => setFormInvitar(prev => ({ ...prev, last_name: e.target.value }))}
               />
             </div>
-            <Input
+            <InputCast
               type="email"
               placeholder="Email"
               value={formInvitar.email}
-              onChange={(e) => setFormInvitar(prev => ({ ...prev, email: e.target.value }))}
+              onChange={(e: any) => setFormInvitar(prev => ({ ...prev, email: e.target.value }))}
             />
-            <Input
+            <InputCast
               placeholder="Teléfono"
               value={formInvitar.phone}
-              onChange={(e) => setFormInvitar(prev => ({ ...prev, phone: e.target.value }))}
+              onChange={(e: any) => setFormInvitar(prev => ({ ...prev, phone: e.target.value }))}
             />
-            <Select
+            <SelectCast
               value={formInvitar.role_id}
-              onChange={(e) => setFormInvitar(prev => ({ ...prev, role_id: e.target.value }))}
+              onChange={(e: any) => setFormInvitar(prev => ({ ...prev, role_id: e.target.value }))}
               placeholder="Seleccionar rol"
             >
               {roles.filter(rol => rol.name !== 'propietario').map(rol => (
@@ -358,7 +373,7 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
                   {getRoleLabel(rol.name)}
                 </option>
               ))}
-            </Select>
+            </SelectCast>
             <textarea
               placeholder="Mensaje personalizado (opcional)"
               value={formInvitar.mensaje}
@@ -369,18 +384,18 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
           </div>
           
           <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={() => setModalInvitar(false)}>
+            <ButtonCast variant="outline" onClick={() => setModalInvitar(false)}>
               Cancelar
-            </Button>
-            <Button onClick={handleInvitarUsuario}>
+            </ButtonCast>
+            <ButtonCast onClick={handleInvitarUsuario}>
               📧 Enviar Invitación
-            </Button>
+            </ButtonCast>
           </div>
         </div>
-      </Dialog>
+      </DialogCast>
 
       {/* Modal Editar Usuario */}
-  <Dialog open={modalEditar.isOpen} onClose={() => setModalEditar({ isOpen: false, usuario: null })}>
+  <DialogCast open={modalEditar.isOpen} onClose={() => setModalEditar({ isOpen: false, usuario: null })}>
         <div className="p-6">
           <h2 className="text-lg font-semibold mb-4">✏️ Editar Usuario</h2>
           
@@ -400,9 +415,9 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
                 </div>
               </div>
               
-              <Select
+              <SelectCast
                 value={formEditar.role_id}
-                onChange={(e) => setFormEditar(prev => ({ ...prev, role_id: e.target.value }))}
+                onChange={(e: any) => setFormEditar(prev => ({ ...prev, role_id: e.target.value }))}
                 placeholder="Seleccionar rol"
               >
                 {roles.map(rol => (
@@ -410,10 +425,10 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
                     {getRoleLabel(rol.name)}
                   </option>
                 ))}
-              </Select>
+              </SelectCast>
               
               <div className="flex items-center gap-2">
-                <Switch
+                <SwitchCast
                   checked={formEditar.is_active}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setFormEditar(prev => ({ ...prev, is_active: e.target.checked }))
@@ -425,15 +440,15 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
           )}
           
           <div className="flex justify-end gap-3 mt-6">
-            <Button variant="outline" onClick={() => setModalEditar({ isOpen: false, usuario: null })}>
+            <ButtonCast variant="outline" onClick={() => setModalEditar({ isOpen: false, usuario: null })}>
               Cancelar
-            </Button>
-            <Button onClick={handleEditarUsuario}>
+            </ButtonCast>
+            <ButtonCast onClick={handleEditarUsuario}>
               💾 Guardar
-            </Button>
+            </ButtonCast>
           </div>
         </div>
-      </Dialog>
+      </DialogCast>
     </div>
   );
 };

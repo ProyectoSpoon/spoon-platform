@@ -16,17 +16,17 @@ export const ESTADOS_CAJA = {
 
 // Configuración de caja
 export const CAJA_CONFIG = {
-  MONTO_INICIAL_DEFAULT: 5000000, // $50,000 en centavos
+  MONTO_INICIAL_DEFAULT: 50000, // $50,000 en PESOS (antes centavos)
   REFRESH_INTERVAL: 30000, // 30 segundos
   DENOMINACIONES_EFECTIVO: [
-    { valor: 10000000, label: '$100,000' },
-    { valor: 5000000, label: '$50,000' },
-    { valor: 2000000, label: '$20,000' },
-    { valor: 1000000, label: '$10,000' },
-    { valor: 500000, label: '$5,000' },
-    { valor: 200000, label: '$2,000' },
-    { valor: 100000, label: '$1,000' },
-    { valor: 50000, label: '$500' }
+    { valor: 100000, label: '$100,000' },
+    { valor: 50000, label: '$50,000' },
+    { valor: 20000, label: '$20,000' },
+    { valor: 10000, label: '$10,000' },
+    { valor: 5000, label: '$5,000' },
+    { valor: 2000, label: '$2,000' },
+    { valor: 1000, label: '$1,000' },
+    { valor: 500, label: '$500' }
   ]
 };
 
@@ -43,9 +43,9 @@ export const CAJA_MESSAGES = {
 };
 
 // Utilidades de formato
-export const formatCurrency = (centavos: number): string => formatCurrencyCOP(centavos);
+export const formatCurrency = (pesos: number): string => formatCurrencyCOP(pesos);
 
-export const parseCurrency = (currency: string): number => parseCurrencyToCents(currency);
+export const parseCurrency = (currency: string): number => parseCurrencyToCents(currency); // ahora retorna pesos
 
 // Categorías de gastos disponibles
 export const CATEGORIAS_GASTOS: { value: CategoriaGasto; label: string; icon: string; color: string }[] = [
@@ -89,8 +89,8 @@ export const CONCEPTOS_FRECUENTES = {
 
 // Validaciones para gastos
 export const VALIDACIONES_GASTOS = {
-  MONTO_MINIMO: 100, // $1 en centavos
-  MONTO_MAXIMO: 100000000, // $1,000,000 en centavos
+  MONTO_MINIMO: 1, // $1 en pesos
+  MONTO_MAXIMO: 1000000, // $1,000,000 en pesos
   CONCEPTO_MIN_LENGTH: 3,
   CONCEPTO_MAX_LENGTH: 255,
   NOTAS_MAX_LENGTH: 500

@@ -13,6 +13,18 @@ import {
   Plus
 } from 'lucide-react';
 
+// Type casting para componentes
+const XCast = X as any;
+const SaveCast = Save as any;
+const UsersCast = Users as any;
+const MapPinCast = MapPin as any;
+const FileTextCast = FileText as any;
+const AlertCircleCast = AlertCircle as any;
+const SettingsCast = Settings as any;
+const MinusCast = Minus as any;
+const PlusCast = Plus as any;
+const ButtonCast = Button as any;
+
 // ========================================
 // INTERFACES
 // ========================================
@@ -149,7 +161,7 @@ const EditarMesaModal: React.FC<EditarMesaModalProps> = ({
   <div className="flex items-center justify-between p-6 border-b border-[color:var(--sp-border)]">
           <div className="flex items-center space-x-3">
             <div className="bg-[color:var(--sp-primary-100)] p-2 rounded-lg">
-              <Settings className="h-5 w-5 text-[color:var(--sp-primary-600)]" />
+              <SettingsCast className="h-5 w-5 text-[color:var(--sp-primary-600)]" />
             </div>
             <div>
               <h2 className="text-xl font-semibold text-[color:var(--sp-neutral-900)]">
@@ -165,7 +177,7 @@ const EditarMesaModal: React.FC<EditarMesaModalProps> = ({
             disabled={guardando}
             className="p-2 hover:bg-[color:var(--sp-neutral-100)] rounded-lg transition-colors"
           >
-            <X className="h-5 w-5 text-[color:var(--sp-neutral-500)]" />
+            <XCast className="h-5 w-5 text-[color:var(--sp-neutral-500)]" />
           </button>
         </div>
 
@@ -174,7 +186,7 @@ const EditarMesaModal: React.FC<EditarMesaModalProps> = ({
           {/* Nombre de la mesa */}
           <div>
             <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">
-              <FileText className="h-4 w-4 inline mr-2" />
+              <FileTextCast className="h-4 w-4 inline mr-2" />
               Nombre personalizado (opcional)
             </label>
             <input
@@ -190,7 +202,7 @@ const EditarMesaModal: React.FC<EditarMesaModalProps> = ({
           {/* Zona */}
           <div>
             <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">
-              <MapPin className="h-4 w-4 inline mr-2" />
+              <MapPinCast className="h-4 w-4 inline mr-2" />
               Zona *
             </label>
             <select
@@ -210,7 +222,7 @@ const EditarMesaModal: React.FC<EditarMesaModalProps> = ({
             </select>
             {errors.zona && (
               <p className="mt-1 text-sm text-[color:var(--sp-error-600)] flex items-center">
-                <AlertCircle className="h-4 w-4 mr-1" />
+                <AlertCircleCast className="h-4 w-4 mr-1" />
                 {errors.zona}
               </p>
             )}
@@ -219,7 +231,7 @@ const EditarMesaModal: React.FC<EditarMesaModalProps> = ({
           {/* Capacidad */}
           <div>
             <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">
-              <Users className="h-4 w-4 inline mr-2" />
+              <UsersCast className="h-4 w-4 inline mr-2" />
               Capacidad de personas *
             </label>
             <div className="flex items-center space-x-3">
@@ -229,7 +241,7 @@ const EditarMesaModal: React.FC<EditarMesaModalProps> = ({
                 disabled={guardando || formData.capacidad <= 1}
                 className="p-2 border border-[color:var(--sp-neutral-300)] rounded-lg hover:bg-[color:var(--sp-neutral-50)] disabled:opacity-50"
               >
-                <Minus className="h-4 w-4" />
+                <MinusCast className="h-4 w-4" />
               </button>
               
               <input
@@ -250,14 +262,14 @@ const EditarMesaModal: React.FC<EditarMesaModalProps> = ({
                 disabled={guardando || formData.capacidad >= 20}
                 className="p-2 border border-[color:var(--sp-neutral-300)] rounded-lg hover:bg-[color:var(--sp-neutral-50)] disabled:opacity-50"
               >
-                <Plus className="h-4 w-4" />
+                <PlusCast className="h-4 w-4" />
               </button>
               
               <span className="text-sm text-[color:var(--sp-neutral-500)]">personas</span>
             </div>
             {errors.capacidad && (
               <p className="mt-1 text-sm text-[color:var(--sp-error-600)] flex items-center">
-                <AlertCircle className="h-4 w-4 mr-1" />
+                <AlertCircleCast className="h-4 w-4 mr-1" />
                 {errors.capacidad}
               </p>
             )}
@@ -281,23 +293,23 @@ const EditarMesaModal: React.FC<EditarMesaModalProps> = ({
 
         {/* Footer */}
   <div className="flex items-center justify-end space-x-3 p-6 border-t border-[color:var(--sp-border)] bg-[color:var(--sp-neutral-50)] rounded-b-xl">
-          <Button
+          <ButtonCast
             variant="secondary"
             onClick={onClose}
             disabled={guardando}
           >
             Cancelar
-          </Button>
+          </ButtonCast>
           
-          <Button
+          <ButtonCast
             variant="blue"
             onClick={handleGuardar}
             disabled={guardando}
             className="flex items-center space-x-2"
           >
-            <Save className="h-4 w-4" />
+            <SaveCast className="h-4 w-4" />
             <span>{guardando ? 'Guardando...' : 'Guardar cambios'}</span>
-          </Button>
+          </ButtonCast>
         </div>
       </div>
     </div>

@@ -75,12 +75,12 @@ export const PopoverV2: React.FC<PopoverV2Props> = ({ children, content, placeme
 
   return (
     <span className={cn('relative inline-block', className)}>
-      {React.cloneElement(children, {
+      {React.cloneElement(children as any, {
         ref: (node: HTMLElement) => { (triggerRef as any).current = node; const { ref } = children as any; if (typeof ref === 'function') ref(node); else if (ref) ref.current = node; },
         'aria-haspopup': mode === 'tooltip' ? 'tooltip' : 'dialog',
         'aria-expanded': open,
         'aria-controls': open ? id : undefined,
-        onClick: (e: React.MouseEvent) => { children.props.onClick?.(e); toggle(); }
+        onClick: (e: React.MouseEvent) => { (children as any).props.onClick?.(e); toggle(); }
       })}
       {open && (
         <div

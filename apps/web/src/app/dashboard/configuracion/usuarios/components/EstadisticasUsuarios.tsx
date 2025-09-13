@@ -2,6 +2,14 @@ import React from 'react';
 import { Users, CreditCard, UtensilsCrossed, ChefHat, BriefcaseBusiness, Settings as SettingsIcon } from 'lucide-react';
 import { UsuariosService } from '@spoon/shared/services/usuarios';
 
+// Type casting para componentes de lucide-react
+const UsersCast = Users as any;
+const CreditCardCast = CreditCard as any;
+const UtensilsCrossedCast = UtensilsCrossed as any;
+const ChefHatCast = ChefHat as any;
+const BriefcaseBusinessCast = BriefcaseBusiness as any;
+const SettingsIconCast = SettingsIcon as any;
+
 interface EstadisticasUsuariosProps {
   estadisticas: {
     usuariosActivos: number;
@@ -24,25 +32,25 @@ export const EstadisticasUsuarios: React.FC<EstadisticasUsuariosProps> = ({
 
   const roleCards = Object.entries(roleNames).map(([slug, label]) => {
     const base = 'rounded-md border p-2 transition-all duration-200 hover:shadow-sm';
-    let icon = <Users className="h-4 w-4 text-[color:var(--sp-neutral-700)]" />;
+    let icon = <UsersCast className="h-4 w-4 text-[color:var(--sp-neutral-700)]" />;
     let color = 'border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-surface)]';
     if (slug === 'cajero') {
-      icon = <CreditCard className="h-4 w-4 text-[color:var(--sp-info-700)]" />;
+      icon = <CreditCardCast className="h-4 w-4 text-[color:var(--sp-info-700)]" />;
       color = 'border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-surface)]';
     } else if (slug === 'mesero') {
-      icon = <UtensilsCrossed className="h-4 w-4 text-[color:var(--sp-warning-700)]" />;
+      icon = <UtensilsCrossedCast className="h-4 w-4 text-[color:var(--sp-warning-700)]" />;
       color = 'border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-surface)]';
     } else if (slug === 'cocinero') {
-      icon = <ChefHat className="h-4 w-4 text-[color:var(--sp-error-700)]" />;
+      icon = <ChefHatCast className="h-4 w-4 text-[color:var(--sp-error-700)]" />;
       color = 'border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-surface)]';
     } else if (slug === 'gerente') {
-      icon = <Users className="h-4 w-4 text-[color:var(--sp-info-800)]" />;
+      icon = <UsersCast className="h-4 w-4 text-[color:var(--sp-info-800)]" />;
       color = 'border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-surface)]';
     } else if (slug === 'propietario') {
-      icon = <BriefcaseBusiness className="h-4 w-4 text-[color:var(--sp-purple-700)]" />;
+      icon = <BriefcaseBusinessCast className="h-4 w-4 text-[color:var(--sp-purple-700)]" />;
       color = 'border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-surface)]';
     } else if (slug === 'administrador') {
-      icon = <SettingsIcon className="h-4 w-4 text-[color:var(--sp-neutral-700)]" />;
+      icon = <SettingsIconCast className="h-4 w-4 text-[color:var(--sp-neutral-700)]" />;
       color = 'border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-surface)]';
     }
     const cleanLabel = label.replace(/^[^\w]+\s*/, '');

@@ -2,15 +2,14 @@
 
 import React, { useMemo, useState } from 'react';
 import { Card as CardRaw, CardContent as CardContentRaw } from '@spoon/shared/components/ui/Card';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Card = CardRaw as any; // Cast temporal para conflictos de tipos React duplicados
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CardContent = CardContentRaw as any;
 
 // Hooks
 import { useCaja } from '../hooks/useCaja';
 import { useCajaSesion } from '../hooks/useCajaSesion';
 import { useGastos } from '../hooks/useGastos';
+import { useSaldoCalculado } from '../hooks/useSaldoCalculado';
 
 // Componentes
 import { CajaHeader, CajaStatus } from '../components/CajaHeader';
@@ -18,22 +17,32 @@ import { MetricasDashboard, MetricasAlert } from '../components/MetricasDashboar
 import { FiltrosToolbar } from '../components/FiltrosToolbar';
 import { MovimientosPanel } from '../components/MovimientosPanel';
 import { EmptyStates } from '../components/EmptyState';
+import { CierresList, CierreCajaItem } from '../components/cierres/CierresList';
+import CierreDetalle from '../components/cierres/CierreDetalle';
+import { SecurityPanel } from '../components/SecurityPanel';
 
 // Modals
 import { ModalProcesarPago } from './modals/ModalProcesarPago';
 import ModalNuevaVenta from './modals/ModalNuevaVenta';
 import GastoWizardSlideOver from './modals/GastoWizardSlideOver';
 import ModalAperturaCaja from './modals/ModalAperturaCaja';
+import { ModalCierreCaja } from '../components/ModalCierreCaja';
 
 // Types
 import { OrdenPendiente } from '../types/cajaTypes';
-import { supabase, getUserProfile } from '@spoon/shared/lib/supabase';
+import { supabase, getUserProfile, getCierresCajaRecientes } from '@spoon/shared/lib/supabase';
+import { toast } from '@spoon/shared/components/ui/Toast';
 
 type TabActiva = 'movimientos' | 'arqueo' | 'reportes';
 
 export default function CajaPage() {
   // Hooks centralizados
-  const { sesionActual, estadoCaja, abrirCaja, cerrarCaja, requiereSaneamiento, cerrarSesionPrevia } = useCajaSesion();
+  const { sesionActual, estadoCaja, abrirCaja, cerrarCaja, requiereSaneamiento, cerrarSesionPrevia, rpcValidacionHabilitada } = useCajaSesion();
+  // Saldo calculado dinámico (evita depender de campo inexistente saldo_final_calculado)
+  const { saldoCalculado: saldoCalculadoDin, loading: loadingSaldoCalc } = useSaldoCalculado(
+    sesionActual?.id || null,
+    sesionActual?.monto_inicial || 0
+  );
   const { 
     ordenesMesas,
     ordenesDelivery, 
@@ -49,6 +58,20 @@ export default function CajaPage() {
   setFechaFinFiltro
   } = useCaja();
   const { gastos, crearGasto, loading: loadingGastos } = useGastos();
+  // Feature flag (panel de seguridad opcional)
+  const [showSecurityPanel, setShowSecurityPanel] = React.useState<boolean>(() => {
+    // Prioridad: variable de entorno pública NEXT_PUBLIC_SHOW_SECURITY_PANEL
+    const envFlag = (process as any)?.env?.NEXT_PUBLIC_SHOW_SECURITY_PANEL;
+    if (typeof envFlag === 'string') {
+      return envFlag === 'true' || envFlag === '1';
+    }
+    // Fallback: localStorage key
+    if (typeof window !== 'undefined') {
+      const stored = window.localStorage.getItem('showSecurityPanel');
+      if (stored != null) return stored === 'true';
+    }
+    return true; // default ON
+  });
 
   // Estado local simplificado
   const [tabActiva, setTabActiva] = useState<TabActiva>('movimientos');
@@ -61,11 +84,62 @@ export default function CajaPage() {
   const [modals, setModals] = useState({
     pago: false,
     gasto: false,
-  orden: null as OrdenPendiente | null,
-  apertura: false,
-  nuevaVenta: false
+    orden: null as OrdenPendiente | null,
+    apertura: false,
+    nuevaVenta: false,
+    cierre: false
   });
   const [mensajeErrorCierre, setMensajeErrorCierre] = useState<string | null>(null);
+  const mostrarAvisoValidacion = sesionActual && estadoCaja === 'abierta' && rpcValidacionHabilitada === false;
+  // Estado para cierres (scaffolding inicial)
+  const [cierres, setCierres] = useState<CierreCajaItem[]>([]);
+  const [loadingCierres, setLoadingCierres] = useState(false);
+  const [cierreSeleccionado, setCierreSeleccionado] = useState<string | null>(null);
+
+  // Cargar cierres reales cuando se activa tab 'arqueo'
+  React.useEffect(() => {
+    if (tabActiva !== 'arqueo') return;
+    let cancel = false;
+    const load = async () => {
+      setLoadingCierres(true);
+      try {
+        if (!sesionActual?.restaurant_id) {
+          if (!cancel) setCierres([]);
+        } else {
+          const data = await getCierresCajaRecientes(sesionActual.restaurant_id, 30);
+          const mapped: CierreCajaItem[] = data.map(d => ({
+            id: d.id,
+            abierta_at: d.abierta_at,
+            cerrada_at: d.cerrada_at,
+            cajero_apertura: d.cajero_id,
+            cajero_cierre: d.cajero_id,
+            total_ventas_centavos: d.total_ventas_centavos,
+            total_efectivo_centavos: d.total_efectivo_centavos,
+            total_gastos_centavos: d.total_gastos_centavos,
+            // cálculo preliminar de diferencia si existe saldo_final_reportado (solo efectivo vs teórico)
+            ...(d as any).saldo_final_reportado != null ? (() => {
+              const efectivoTeorico = (d.monto_inicial || 0) + d.total_efectivo_centavos - d.total_gastos_centavos;
+              const contado = (d as any).saldo_final_reportado as number;
+              const diff = contado - efectivoTeorico;
+              let estado: 'cuadrado' | 'faltante' | 'sobrante' | null = 'cuadrado';
+              const tolerancia = 0; // ajustar si se define umbral
+              if (Math.abs(diff) > tolerancia) {
+                estado = diff < 0 ? 'faltante' : 'sobrante';
+              }
+              return { estado_cuadre: estado, diferencia_centavos: diff };
+            })() : { estado_cuadre: 'pendiente', diferencia_centavos: null }
+          }));
+          if (!cancel) setCierres(mapped);
+        }
+      } catch (e) {
+        if (!cancel) setCierres([]);
+      } finally {
+        if (!cancel) setLoadingCierres(false);
+      }
+    };
+    load();
+    return () => { cancel = true; };
+  }, [tabActiva, sesionActual?.restaurant_id]);
 
   // Datos combinados y filtrados
   const ordenesPendientes = useMemo(() => {
@@ -107,13 +181,18 @@ export default function CajaPage() {
   };
 
   const handleCerrarCaja = async () => {
-    const res = await cerrarCaja('Cierre manual');
+    setModals(prev => ({ ...prev, cierre: true }));
+  };
+
+  const handleConfirmarCierre = async (saldoReportado: number, notas: string): Promise<void> => {
+    const res = await cerrarCaja(notas, { saldoFinalReportadoPesos: saldoReportado });
     if (!res.success) {
       setMensajeErrorCierre(res.error || 'No se pudo cerrar la caja');
       // Limpiar automáticamente después de unos segundos
       setTimeout(() => setMensajeErrorCierre(null), 6000);
     } else {
       setMensajeErrorCierre(null);
+      setModals(prev => ({ ...prev, cierre: false }));
     }
   };
 
@@ -122,6 +201,12 @@ export default function CajaPage() {
     if (estadoCaja === 'cerrada' || !sesionActual?.id) {
   setModals(prev => ({ ...prev, apertura: true }));
   return; // el modal de apertura guiará al usuario
+    }
+    // Bloquear si requiere saneamiento (sesión de día previo)
+    if (requiereSaneamiento) {
+      alert('Sesión previa detectada. Debes cerrar la sesión anterior antes de registrar nuevas ventas.');
+      setModals(prev => ({ ...prev, cierre: true }));
+      return;
     }
     // Verificar rol: solo cajero/admin
     try {
@@ -140,10 +225,28 @@ export default function CajaPage() {
   };
 
   const handleNuevoGasto = () => {
+    if (estadoCaja === 'cerrada' || !sesionActual?.id) {
+      setModals(prev => ({ ...prev, apertura: true }));
+      return;
+    }
+    if (requiereSaneamiento) {
+      alert('Sesión previa detectada. Debes cerrar la sesión anterior antes de registrar gastos.');
+      setModals(prev => ({ ...prev, cierre: true }));
+      return;
+    }
     setModals(prev => ({ ...prev, gasto: true }));
   };
 
   const handleProcesarPago = (orden: OrdenPendiente) => {
+    if (estadoCaja === 'cerrada' || !sesionActual?.id) {
+      setModals(prev => ({ ...prev, apertura: true }));
+      return;
+    }
+    if (requiereSaneamiento) {
+      alert('Sesión previa detectada. Debes cerrar la sesión anterior antes de cobrar órdenes.');
+      setModals(prev => ({ ...prev, cierre: true }));
+      return;
+    }
     setModals(prev => ({ 
       ...prev, 
       pago: true, 
@@ -217,6 +320,19 @@ export default function CajaPage() {
         </Card>
       ) : (
         <div className="space-y-5">
+              {mostrarAvisoValidacion && (
+                <div>
+                  <Card className="border-[color:var(--sp-warning-300)] bg-[color:var(--sp-warning-50)] rounded-lg shadow-sm">
+                    <CardContent className="p-3 flex items-start gap-2">
+                      <span className="text-[color:var(--sp-warning-600)] text-sm">⚠️</span>
+                      <div className="text-[11px] leading-snug text-[color:var(--sp-warning-700)]">
+                        Validación avanzada de cierre deshabilitada (función validar_cierre_caja ausente).<br />
+                        Se está usando una verificación simplificada (consulta directa de órdenes activas). Asegura cerrar manualmente mesas antes de cerrar la caja.
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
           {/* Métricas en carrusel horizontal móvil */}
           <div className="-mx-4 sm:mx-0 overflow-x-auto pb-2 scrollbar-thin snap-x snap-mandatory flex gap-4 sm:block sm:overflow-visible">
             <div className="min-w-[640px] sm:min-w-0 flex-1 snap-start sm:snap-none">
@@ -269,9 +385,20 @@ export default function CajaPage() {
                   gastos={gastosFiltrados}
                   onProcesarPago={handleProcesarPago}
                   loading={loading}
+                  disabled={!!requiereSaneamiento}
                 />
               ) : tabActiva === 'arqueo' ? (
-                EmptyStates.proximamente()
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[color:var(--sp-neutral-900)]">Cierres de caja</h3>
+                    <p className="text-[11px] text-[color:var(--sp-neutral-500)] mt-0.5">Histórico de sesiones cerradas. Versión inicial (placeholder).</p>
+                  </div>
+                  <CierresList
+                    loading={loadingCierres}
+                    cierres={cierres}
+                    onSelect={(id) => setCierreSeleccionado(id)}
+                  />
+                </div>
               ) : (
                 EmptyStates.proximamente()
               )}
@@ -295,6 +422,13 @@ export default function CajaPage() {
         </div>
       )}
 
+      {/* Panel de seguridad (límites y progreso) al final */}
+      {showSecurityPanel && (
+        <div className="px-4 sm:px-5 pb-6">
+          <SecurityPanel ventasTotalesPesos={metricas.ventasTotales || 0} />
+        </div>
+      )}
+
       {/* Modals */}
       <ModalProcesarPago
         orden={modals.orden}
@@ -310,6 +444,9 @@ export default function CajaPage() {
         onClose={() => setModals(prev => ({ ...prev, nuevaVenta: false }))}
         loading={loading}
         onConfirmar={async (venta) => {
+          if (requiereSaneamiento) {
+            return { success: false, error: 'Sesión previa detectada. Debes cerrar la sesión anterior antes de registrar ventas.' } as any;
+          }
           try {
             if (!sesionActual?.id) {
               return { success: false, error: 'No hay sesión de caja abierta' };
@@ -322,7 +459,7 @@ export default function CajaPage() {
               ? Math.max(0, (venta.montoRecibido as number) - venta.total)
               : 0;
 
-            // Insertar transacción directa
+      // Insertar transacción directa (asegurando timestamp usado por métricas)
       const { data, error: errIns } = await supabase
               .from('transacciones_caja')
               .insert({
@@ -332,8 +469,9 @@ export default function CajaPage() {
                 metodo_pago: venta.metodoPago,
                 monto_total: venta.total,
                 monto_recibido: venta.metodoPago === 'efectivo' ? (venta.montoRecibido || venta.total) : venta.total,
-        monto_cambio: montoCambio,
-        cajero_id: (profile as any).id
+    monto_cambio: montoCambio,
+    cajero_id: (profile as any).id,
+    procesada_at: new Date().toISOString()
               })
               .select('id')
               .single();
@@ -356,11 +494,18 @@ export default function CajaPage() {
       <ModalAperturaCaja
         isOpen={modals.apertura}
         onClose={() => setModals(prev => ({ ...prev, apertura: false }))}
-        onConfirmar={async (monto, notas, cajeroId) => {
-          const res = await abrirCaja(monto, notas, cajeroId);
+        onConfirmar={async (monto, notas) => {
+          const res = await abrirCaja(monto, notas);
           if (!res.success) {
             return { success: false, error: res.error } as any;
           }
+          // Éxito: notificar y cerrar
+          try {
+            toast.success('Caja abierta correctamente');
+          } catch {}
+          setModals(prev => ({ ...prev, apertura: false }));
+          // refrescar métricas/listas por si acaso
+          setTimeout(() => refrescar(), 0);
           return { success: true } as any;
         }}
         loading={loading}
@@ -373,6 +518,19 @@ export default function CajaPage() {
         onConfirmar={handleConfirmarGasto}
         loading={loadingGastos}
       />
+
+      {/* Modal profesional de cierre de caja */}
+      <ModalCierreCaja
+        isOpen={modals.cierre}
+        onClose={() => setModals(prev => ({ ...prev, cierre: false }))}
+        onConfirm={handleConfirmarCierre}
+        // Convertimos a PESOS para el modal (internamente ahora todo en pesos)
+  saldoCalculado={saldoCalculadoDin}
+        loading={loading || loadingSaldoCalc}
+      />
+
+  {/* Detalle cierre (placeholder) */}
+  <CierreDetalle cierreId={cierreSeleccionado} onClose={() => setCierreSeleccionado(null)} />
     </div>
   );
 };

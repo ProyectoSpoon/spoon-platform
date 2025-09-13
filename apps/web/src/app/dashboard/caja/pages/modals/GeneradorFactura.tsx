@@ -4,6 +4,16 @@
 import React, { useState, useEffect } from 'react';
 import { X, Receipt, AlertCircle, CheckCircle, User, Phone, Mail, FileText } from 'lucide-react';
 
+// Type casting for React type conflicts
+const XComponent = X as any;
+const ReceiptComponent = Receipt as any;
+const AlertCircleComponent = AlertCircle as any;
+const CheckCircleComponent = CheckCircle as any;
+const UserComponent = User as any;
+const PhoneComponent = Phone as any;
+const MailComponent = Mail as any;
+const FileTextComponent = FileText as any;
+
 // Importar funciones de supabase
 import { generarFactura, getProximoNumeroFactura } from '@spoon/shared/lib/supabase';
 
@@ -43,8 +53,8 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
     const cargarProximoNumero = async () => {
       try {
         // Obtener restaurant_id de la transacción o sesión de caja
-        const restaurantId = transaccion.restaurant_id || 
-                            transaccion.caja_sesiones?.restaurant_id;
+        const restaurantId = (transaccion as any).restaurant_id || 
+                            (transaccion as any).caja_sesiones?.restaurant_id;
         
         if (!restaurantId) {
           console.warn('No se pudo obtener restaurant_id para vista previa');
@@ -137,8 +147,8 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
       const total = subtotal + impuestos;
       
       // Obtener restaurant_id (desde sesión de caja o contexto)
-      const restaurantId = transaccion.restaurant_id || 
-                          transaccion.caja_sesiones?.restaurant_id || 
+      const restaurantId = (transaccion as any).restaurant_id || 
+                          (transaccion as any).caja_sesiones?.restaurant_id || 
                           '';
 
       if (!restaurantId) {
@@ -218,7 +228,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
       >
         <div className="bg-[color:var(--sp-surface-elevated)] rounded-lg p-6 w-full max-w-md">
           <div className="text-center">
-            <CheckCircle className="w-16 h-16 text-[color:var(--sp-success-600)] mx-auto mb-4" />
+            <CheckCircleComponent className="w-16 h-16 text-[color:var(--sp-success-600)] mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-[color:var(--sp-success-800)] mb-2">
               ¡Factura Generada!
             </h3>
@@ -246,7 +256,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="heading-section flex items-center gap-2">
-            <Receipt className="w-5 h-5" />
+            <ReceiptComponent className="w-5 h-5" />
             Generar Factura
           </h3>
           <button
@@ -254,7 +264,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
             className="p-1 hover:bg-[color:var(--sp-neutral-100)] rounded-full transition-colors"
             disabled={generando}
           >
-            <X className="w-5 h-5" />
+            <XComponent className="w-5 h-5" />
           </button>
         </div>
         
@@ -286,7 +296,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
         {error && (
           <div className="bg-[color:var(--sp-error-50)] border border-[color:var(--sp-error-200)] rounded-lg p-3 mb-4">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-[color:var(--sp-error-600)]" />
+              <AlertCircleComponent className="w-4 h-4 text-[color:var(--sp-error-600)]" />
               <p className="text-[color:var(--sp-error-800)] text-sm">{error}</p>
             </div>
           </div>
@@ -295,7 +305,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
         {/* Datos del cliente */}
         <div className="space-y-4 mb-6">
           <h4 className="font-medium flex items-center gap-2">
-            <User className="w-4 h-4" />
+            <UserComponent className="w-4 h-4" />
             Datos del Cliente (Opcional)
           </h4>
           
@@ -320,7 +330,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
           
           <div>
             <label className="block text-sm font-medium mb-1">
-              <FileText className="w-3 h-3 inline mr-1" />
+              <FileTextComponent className="w-3 h-3 inline mr-1" />
               Cédula/NIT (Opcional)
             </label>
             <input
@@ -340,7 +350,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
           
           <div>
             <label className="block text-sm font-medium mb-1">
-              <Mail className="w-3 h-3 inline mr-1" />
+              <MailComponent className="w-3 h-3 inline mr-1" />
               Email (Opcional)
             </label>
             <input
@@ -360,7 +370,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
           
           <div>
             <label className="block text-sm font-medium mb-1">
-              <Phone className="w-3 h-3 inline mr-1" />
+              <PhoneComponent className="w-3 h-3 inline mr-1" />
               Teléfono (Opcional)
             </label>
             <input
@@ -408,7 +418,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
               </>
             ) : (
               <>
-                <Receipt className="w-4 h-4" />
+                <ReceiptComponent className="w-4 h-4" />
                 Generar Factura
               </>
             )}

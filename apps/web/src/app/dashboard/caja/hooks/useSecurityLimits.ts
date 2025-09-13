@@ -1,14 +1,7 @@
 // packages/shared/caja/hooks/useSecurityLimits.ts
 import { useState, useEffect } from 'react';
 import { supabase, getUserProfile } from '@spoon/shared/lib/supabase';
-import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
-
-interface SecurityLimits {
-  limite_transaccion_normal: number;
-  limite_transaccion_efectivo: number;
-  limite_autorizacion_supervisor: number;
-  limite_diario_cajero: number;
-}
+import { SecurityLimits } from '@spoon/shared/caja/types/security';
 
 export const useSecurityLimits = () => {
   const [limits, setLimits] = useState<SecurityLimits | null>(null);
@@ -25,7 +18,14 @@ export const useSecurityLimits = () => {
       });
 
       if (error) throw error;
-      setLimits(data);
+
+      // Backend ahora retorna límites en PESOS directamente
+      setLimits({
+        limite_transaccion_normal: Number(data.limite_transaccion_normal || 0),
+        limite_transaccion_efectivo: Number(data.limite_transaccion_efectivo || 0),
+        limite_autorizacion_supervisor: Number(data.limite_autorizacion_supervisor || 0),
+        limite_diario_cajero: Number(data.limite_diario_cajero || 0)
+      });
     } catch (err) {
       console.error('Error obteniendo límites de seguridad:', err);
     } finally {
@@ -37,9 +37,16 @@ export const useSecurityLimits = () => {
     obtenerLimites();
   }, []);
 
-  const formatearMonto = (centavos: number): string => formatCurrencyCOP(centavos);
+  const formatearMonto = (pesos: number): string => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(pesos);
+  };
 
-  const validarMonto = (monto: number, metodoPago: string): {
+  const validarMonto = (montoPesos: number, metodoPago: string): {
     valid: boolean;
     warnings: string[];
     requiresAuth: boolean;
@@ -49,21 +56,21 @@ export const useSecurityLimits = () => {
     const warnings: string[] = [];
     let requiresAuth = false;
 
-    if (monto > limits.limite_autorizacion_supervisor) {
-      return { 
-        valid: false, 
+    if (montoPesos > limits.limite_autorizacion_supervisor) {
+      return {
+        valid: false,
         warnings: [`Monto excede límite máximo: ${formatearMonto(limits.limite_autorizacion_supervisor)}`],
-        requiresAuth: false 
+        requiresAuth: false
       };
     }
 
-    if (monto > limits.limite_transaccion_normal) {
-      warnings.push(`Monto alto: ${formatearMonto(monto)} > ${formatearMonto(limits.limite_transaccion_normal)}`);
+    if (montoPesos > limits.limite_transaccion_normal) {
+      warnings.push(`Monto alto: ${formatearMonto(montoPesos)} > ${formatearMonto(limits.limite_transaccion_normal)}`);
       requiresAuth = true;
     }
 
-    if (metodoPago === 'efectivo' && monto > limits.limite_transaccion_efectivo) {
-      warnings.push(`Efectivo alto: ${formatearMonto(monto)} > ${formatearMonto(limits.limite_transaccion_efectivo)}`);
+    if (metodoPago === 'efectivo' && montoPesos > limits.limite_transaccion_efectivo) {
+      warnings.push(`Efectivo alto: ${formatearMonto(montoPesos)} > ${formatearMonto(limits.limite_transaccion_efectivo)}`);
       requiresAuth = true;
     }
 

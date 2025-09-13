@@ -103,33 +103,49 @@ export const useMesaState = (restaurantId: string | null): MesaStateHook => {
   const estadoCompleto = await getEstadoCompletoMesas(restaurantId);
       
       // Convertir al formato unificado
-      const mesasUnificadas: Mesa[] = (estadoCompleto.mesas as MesaApi[]).map((mesa: MesaApi) => ({
-        id: mesa.id || `mesa-${mesa.numero}`,
-        numero: mesa.numero,
-        nombre: mesa.nombre,
-        zona: mesa.zona,
-        capacidad: mesa.capacidad,
-        estado: mesa.estado,
-        notas: mesa.notas,
-        ordenActiva: mesa.detallesOrden ? {
+      const mesasUnificadas: Mesa[] = (estadoCompleto.mesas as MesaApi[]).map((mesa: MesaApi) => {
+        const ordenActiva = mesa.detallesOrden ? {
           id: `orden-${mesa.numero}`,
           total: mesa.detallesOrden.total,
-          items: (mesa.detallesOrden.items || []).map((item: any) => ({
-            id: item.id || `item-${Date.now()}`,
-            nombre: item.nombre || 'Sin nombre',
-            cantidad: item.cantidad || 1,
-            precioUnitario: item.precio_unitario || 0,
-            precioTotal: item.precio_total || 0,
-            tipo: item.tipo || 'menu_dia',
-            observaciones: item.observaciones
-          })),
+          items: (mesa.detallesOrden.items || []).map((item: any) => {
+            const cantidad = item.cantidad || 1;
+            const precioDerivado = item.precio_unitario
+              || item.precioUnitario
+              || item.generated_combinations?.combination_price
+              || item.generated_special_combinations?.combination_price
+              || (item.precio_total && cantidad ? (item.precio_total / cantidad) : 0);
+            const precioUnitario = precioDerivado || 0;
+            const precioTotal = item.precio_total || (precioUnitario * cantidad);
+            return {
+              id: item.id || `item-${Date.now()}-${Math.random()}`,
+              nombre: item.nombre || item.generated_combinations?.combination_name || item.generated_special_combinations?.combination_name || 'Sin nombre',
+              cantidad,
+              precioUnitario,
+              precioTotal,
+              tipo: item.tipo || item.tipo_item || 'menu_dia',
+              observaciones: item.observaciones || item.observaciones_item || null
+            };
+          }),
           mesero: undefined,
           fechaCreacion: new Date().toISOString(),
           observaciones: undefined
-        } : null,
-        created_at: mesa.created_at || new Date().toISOString(),
-        updated_at: mesa.updated_at || new Date().toISOString()
-      }));
+        } : null;
+        const estadoNormalizado = ordenActiva && ordenActiva.items.length > 0 && mesa.estado === 'libre'
+          ? 'ocupada'
+          : mesa.estado;
+        return {
+          id: mesa.id || `mesa-${mesa.numero}`,
+          numero: mesa.numero,
+          nombre: mesa.nombre,
+          zona: mesa.zona,
+          capacidad: mesa.capacidad,
+          estado: estadoNormalizado,
+          notas: mesa.notas,
+          ordenActiva,
+          created_at: mesa.created_at || new Date().toISOString(),
+          updated_at: mesa.updated_at || new Date().toISOString()
+        } as Mesa;
+      });
       
       setMesas(mesasUnificadas);
       setEstadisticas(calcularEstadisticas(mesasUnificadas));

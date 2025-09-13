@@ -3,6 +3,10 @@
 import React from 'react';
 import { Trash2, RefreshCw } from 'lucide-react';
 
+// Type casting para evitar conflictos de tipos React
+const Trash2Component = Trash2 as any;
+const RefreshCwComponent = RefreshCw as any;
+
 interface Props {
   isOpen: boolean;
   busy: boolean;
@@ -18,7 +22,7 @@ export default function DeleteConfirmationModal({ isOpen, busy, onCancel, onConf
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[--sp-surface-elevated] rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
         <div className="text-center">
           <div className="w-16 h-16 bg-[color:var(--sp-error-100)] rounded-full flex items-center justify-center mx-auto mb-4">
-            <Trash2 className="w-8 h-8 text-[color:var(--sp-error-600)]" />
+            <Trash2Component className="w-8 h-8 text-[color:var(--sp-error-600)]" />
           </div>
           <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-2">
             ¿Eliminar combinación?
@@ -41,12 +45,12 @@ export default function DeleteConfirmationModal({ isOpen, busy, onCancel, onConf
             >
               {busy ? (
                 <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  <RefreshCwComponent className="w-4 h-4 mr-2 animate-spin" />
                   Eliminando...
                 </>
               ) : (
                 <>
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <Trash2Component className="w-4 h-4 mr-2" />
                   Eliminar
                 </>
               )}
@@ -57,3 +61,4 @@ export default function DeleteConfirmationModal({ isOpen, busy, onCancel, onConf
     </div>
   );
 }
+

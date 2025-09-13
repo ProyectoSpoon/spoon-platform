@@ -3,6 +3,10 @@ import React from 'react';
 import { Card, CardContent } from '@spoon/shared/components/ui/Card';
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
+// Type casting for React type conflicts
+const CardComponent = Card as any;
+const CardContentComponent = CardContent as any;
+
 export const SidebarResumen: React.FC<{
   balance: number;
   ventas: number;
@@ -16,15 +20,15 @@ export const SidebarResumen: React.FC<{
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-  <Card><CardContent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">BALANCE</p><p className="text-xl font-bold text-[color:var(--sp-info-700)]">{fmt(balance)}</p></CardContent></Card>
-  <Card><CardContent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">VENTAS</p><p className="text-xl font-bold text-[color:var(--sp-success-700)]">{fmt(ventas)}</p></CardContent></Card>
-  <Card><CardContent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">GASTOS</p><p className="text-xl font-bold text-[color:var(--sp-error-700)]">{fmt(gastos)}</p></CardContent></Card>
-  <Card><CardContent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">ÓRDENES</p><p className="text-xl font-bold text-[color:var(--sp-primary-700)]">{ordenes}</p></CardContent></Card>
+  <CardComponent><CardContentComponent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">BALANCE</p><p className="text-xl font-bold text-[color:var(--sp-info-700)]">{fmt(balance)}</p></CardContentComponent></CardComponent>
+  <CardComponent><CardContentComponent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">VENTAS</p><p className="text-xl font-bold text-[color:var(--sp-success-700)]">{fmt(ventas)}</p></CardContentComponent></CardComponent>
+  <CardComponent><CardContentComponent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">GASTOS</p><p className="text-xl font-bold text-[color:var(--sp-error-700)]">{fmt(gastos)}</p></CardContentComponent></CardComponent>
+  <CardComponent><CardContentComponent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">ÓRDENES</p><p className="text-xl font-bold text-[color:var(--sp-primary-700)]">{ordenes}</p></CardContentComponent></CardComponent>
       </div>
 
       {estadisticas.length > 0 && (
-        <Card>
-          <CardContent className="p-4 space-y-2">
+        <CardComponent>
+          <CardContentComponent className="p-4 space-y-2">
             <p className="text-sm font-semibold">📊 Estadísticas Rápidas</p>
     <div className="grid grid-cols-2 gap-3">
               {estadisticas.map((e, i) => (
@@ -34,26 +38,26 @@ export const SidebarResumen: React.FC<{
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </CardContentComponent>
+        </CardComponent>
       )}
 
       {alertas.length > 0 && (
-        <Card>
-          <CardContent className="p-4 space-y-2">
+        <CardComponent>
+          <CardContentComponent className="p-4 space-y-2">
             <p className="text-sm font-semibold">⚠️ Alertas y Notificaciones</p>
             {alertas.map((a, i) => (
               <div key={i} className={`text-xs px-3 py-2 rounded border ${a.tipo==='warning'?'bg-[color:var(--sp-warning-50)] border-[color:var(--sp-warning-200)] text-[color:var(--sp-warning-800)]': a.tipo==='success'?'bg-[color:var(--sp-success-50)] border-[color:var(--sp-success-200)] text-[color:var(--sp-success-800)]':'bg-[color:var(--sp-neutral-50)] border-[color:var(--sp-neutral-200)] text-[color:var(--sp-neutral-700)]'}`}>
                 {a.label}
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </CardContentComponent>
+        </CardComponent>
       )}
 
       {actividad.length > 0 && (
-        <Card>
-          <CardContent className="p-4 space-y-2">
+        <CardComponent>
+          <CardContentComponent className="p-4 space-y-2">
             <p className="text-sm font-semibold">🕒 Actividad Reciente</p>
             <div className="space-y-2 text-sm">
               {actividad.map((r, i) => (
@@ -63,9 +67,11 @@ export const SidebarResumen: React.FC<{
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </CardContentComponent>
+        </CardComponent>
       )}
     </div>
   );
 };
+
+

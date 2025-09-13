@@ -1,17 +1,24 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@spoon/shared/components/ui/Card';
 import { Button } from '@spoon/shared/components/ui/Button';
 import { Input } from '@spoon/shared/components/ui/Input';
-import { SelectV2 } from '@spoon/shared/components/ui/SelectV2';
-import { UsuariosService, type UsuarioRestaurante, type RoleSistema } from '@spoon/shared/services/usuarios';
-import { getCurrentUser } from '@spoon/shared/lib/supabase';
+// Selector de cajero eliminado
+
+// Type casting to fix React version conflicts in monorepo
+const CardComponent = Card as any;
+const CardContentComponent = CardContent as any;
+const CardHeaderComponent = CardHeader as any;
+const CardTitleComponent = CardTitle as any;
+const ButtonComponent = Button as any;
+const InputComponent = Input as any;
+// Eliminados servicios de usuarios y current user
 
 interface ModalAperturaCajaProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirmar: (montoInicial: number, notas?: string, cajeroId?: string) => Promise<{ success: boolean; error?: string } | void>;
+  onConfirmar: (montoInicial: number, notas?: string) => Promise<{ success: boolean; error?: string } | void>;
   loading?: boolean;
 }
 
@@ -20,69 +27,36 @@ const ModalAperturaCaja: React.FC<ModalAperturaCajaProps> = ({ isOpen, onClose, 
   const [montoMasked, setMontoMasked] = useState<string>('');
   const [notas, setNotas] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [usuarios, setUsuarios] = useState<UsuarioRestaurante[]>([]);
-  const [cajeroId, setCajeroId] = useState<string>('');
   const [enviando, setEnviando] = useState(false);
+  const MAX_MONTO = 10000000; // 10,000,000 COP
+  const montoInputRef = useRef<HTMLInputElement | null>(null);
+  // Control para cancelar requests en cierre/unmount
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Crear/abortar controlador según estado del modal y limpiar en unmount
+  useEffect(() => {
+    if (isOpen) {
+      abortRef.current = new AbortController();
+    } else {
+      abortRef.current?.abort();
+    }
+    return () => {
+      // cleanup on unmount
+      abortRef.current?.abort();
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
       setMonto('');
-  setNotas('');
+      setNotas('');
       setError(null);
       setEnviando(false);
-  setMontoMasked('');
-      // cargar usuarios activos del restaurante y filtrar por roles con permiso de caja (p.ej. 'cajero')
-      (async () => {
-        const [{ data: users }, { data: roles }] = await Promise.all([
-          UsuariosService.getUsuariosRestaurante(),
-          UsuariosService.getRolesSistema()
-        ]);
-
-  const activos = (users || []).filter(u => u.is_active);
-  let candidatos = activos;
-
-        try {
-          // Roles permitidos para operar la caja: incluir propietario/gerente/admin además de cajero
-          const allowedSlugs = new Set(['cajero', 'gerente', 'propietario', 'administrador']);
-          const normalize = (s: string) => (s || '')
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z]/g, '')
-            .trim();
-          const roleIdPermitidos = new Set<string>();
-          (roles || []).forEach((r: RoleSistema) => {
-            const slug = normalize(r.name);
-            if (allowedSlugs.has(slug)) {
-              roleIdPermitidos.add(r.id);
-            }
-          });
-          if (roleIdPermitidos.size > 0) {
-            candidatos = activos.filter(u => (u.user_roles || []).some(ur => ur.is_active && roleIdPermitidos.has(ur.role_id)));
-          }
-          // Si el filtrado por roles da vacío (p.ej., no hay 'cajero' pero sí propietario/gerente sin mapeo), usar activos
-          if (candidatos.length === 0) {
-            candidatos = activos;
-          }
-        } catch {
-          // fallback: mantener 'activos' completos si algo falla
-          candidatos = activos;
-        }
-
-        setUsuarios(candidatos);
-
-        // Preseleccionar usuario actual si está en lista filtrada
-        try {
-          const current = await getCurrentUser();
-          if (current?.id && candidatos.some(u => u.id === current.id)) {
-            setCajeroId(current.id);
-          } else {
-            setCajeroId('');
-          }
-        } catch {
-          setCajeroId('');
-        }
-      })();
+      setMontoMasked('');
+      // Auto-focus primer campo
+      setTimeout(() => {
+        try { montoInputRef.current?.focus(); } catch {}
+      }, 0);
     }
   }, [isOpen]);
 
@@ -96,89 +70,126 @@ const ModalAperturaCaja: React.FC<ModalAperturaCajaProps> = ({ isOpen, onClose, 
   const formatMiles = (val: number) => new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(val || 0);
 
   const handleMontoChange = (raw: string) => {
-    const value = parseMonto(raw);
-    setMonto(String(value));
-    setMontoMasked(value ? formatMiles(value) : '');
+    const parsed = parseMonto(raw);
+    const clamped = Math.min(MAX_MONTO, Math.max(0, parsed));
+    if (parsed !== clamped) {
+      setError('Monto máximo permitido: $10,000,000 COP.');
+    } else if (error) {
+      setError(null);
+    }
+    setMonto(String(clamped));
+    setMontoMasked(clamped ? formatMiles(clamped) : '');
+  };
+
+  const setQuickMonto = (val: number) => {
+    const clamped = Math.min(MAX_MONTO, Math.max(0, Math.round(val)));
+    setMonto(String(clamped));
+    setMontoMasked(clamped ? formatMiles(clamped) : '');
+    setError(null);
+    // Reenfocar en el input para flujo rápido con teclado
+    try { montoInputRef.current?.focus(); } catch {}
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (!(enviando || loading)) {
+        try { abortRef.current?.abort(); } catch {}
+        onClose();
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!(enviando || loading)) void handleConfirmar();
+    }
   };
 
   const handleConfirmar = async () => {
-  const montoNum = parseMonto(monto);
-    if (!monto || montoNum <= 0) {
-      setError('Ingresa un monto inicial válido (> 0).');
-      return;
-    }
-    if (!cajeroId) {
-      setError('Selecciona el cajero que abrirá la caja.');
+    const montoNum = parseMonto(monto);
+    // Validación de rango 0 - 10,000,000 COP
+    if (monto === '' || isNaN(montoNum) || montoNum < 0 || montoNum > 10000000) {
+      setError('Monto debe estar entre $0 y $10,000,000 COP.');
       return;
     }
     setError(null);
     setEnviando(true);
     try {
-  // Enviar en pesos enteros; el hook convierte a centavos
-  const res: any = await onConfirmar(montoNum, notas || undefined, cajeroId);
-      if (!res || res.success) {
+  const signal = abortRef.current?.signal;
+      // Enviar en pesos enteros (unificado, sin conversión a centavos)
+      const res: any = await onConfirmar(montoNum, notas || undefined);
+  // Si se canceló durante la espera, evitar updates de estado
+  if (signal?.aborted) return;
+  if (!res || res.success) {
         onClose();
       } else if (res?.error) {
         setError(res.error);
       }
     } finally {
-      setEnviando(false);
+  // Evitar updates de estado si ya se abortó
+  if (!abortRef.current?.signal.aborted) setEnviando(false);
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--sp-neutral-900)]/60">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader>
-          <CardTitle>Abrir caja</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm text-[color:var(--sp-neutral-700)]">Cajero</label>
-            <SelectV2
-              placeholder="Selecciona el usuario"
-              value={cajeroId}
-              onChange={(e) => setCajeroId(e.target.value)}
-              required
-            >
-              <option value="" disabled hidden>Selecciona el usuario</option>
-              {usuarios.map(u => (
-                <option key={u.id} value={u.id}>
-                  {u.first_name} {u.last_name} — {u.email}
-                </option>
-              ))}
-            </SelectV2>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--sp-neutral-900)]/60" onKeyDown={handleKeyDown}>
+      <CardComponent className="w-full max-w-md shadow-lg">
+        <CardHeaderComponent>
+          <CardTitleComponent>Abrir caja</CardTitleComponent>
+        </CardHeaderComponent>
+        <CardContentComponent className="space-y-4">
+          {/* Selector de cajero eliminado: el cajero es el usuario autenticado */}
           <div className="space-y-1">
             <label className="text-sm text-[color:var(--sp-neutral-700)]">Monto inicial (COP)</label>
-            <Input
+            <InputComponent
               inputMode="numeric"
               placeholder="0"
               value={montoMasked}
-              onChange={(e) => handleMontoChange(e.target.value)}
+              onChange={(e: any) => handleMontoChange(e.target.value)}
+              autoFocus
+              ref={montoInputRef}
+              // Hints for native inputs; enforcement handled in onChange
+              maxLength={12}
             />
+            <div className="text-xs text-[color:var(--sp-neutral-600)]">Monto en efectivo que tendrás al inicio del turno.</div>
+            <div className="flex flex-wrap gap-2 pt-2">
+              <ButtonComponent variant="outline" size="sm" onClick={() => setQuickMonto(500000)}>+$500.000</ButtonComponent>
+              <ButtonComponent variant="outline" size="sm" onClick={() => setQuickMonto(1000000)}>+$1.000.000</ButtonComponent>
+              <ButtonComponent variant="outline" size="sm" onClick={() => setQuickMonto(2000000)}>+$2.000.000</ButtonComponent>
+            </div>
           </div>
           <div className="space-y-1">
             <label className="text-sm text-[color:var(--sp-neutral-700)]">Notas (opcional)</label>
-            <Input
+            <InputComponent
               placeholder="Ej: Apertura de turno mañana"
               value={notas}
-              onChange={(e) => setNotas(e.target.value)}
+              onChange={(e: any) => setNotas(e.target.value)}
             />
           </div>
           {error && (
             <div className="text-sm text-[color:var(--sp-error-700)]">{error}</div>
           )}
+          {!error && parseMonto(monto) === 0 && (
+            <div className="text-xs text-[color:var(--sp-neutral-600)]">Apertura con 0 COP registrada. Puedes agregar efectivo luego mediante transacciones.</div>
+          )}
           <div className="flex justify-end space-x-2 pt-2">
-            <Button variant="outline" onClick={onClose} disabled={enviando || loading}>Cancelar</Button>
-            <Button variant="green" onClick={handleConfirmar} disabled={enviando || loading}>
+            <ButtonComponent
+              variant="red"
+              onClick={() => {
+                try { abortRef.current?.abort(); } catch {}
+                onClose();
+              }}
+              disabled={enviando || loading}
+            >
+              Cancelar
+            </ButtonComponent>
+            <ButtonComponent variant="green" onClick={handleConfirmar} disabled={enviando || loading}>
               {enviando || loading ? 'Abriendo…' : 'Abrir caja'}
-            </Button>
+            </ButtonComponent>
           </div>
-        </CardContent>
-      </Card>
+        </CardContentComponent>
+      </CardComponent>
     </div>
   );
 };

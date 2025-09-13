@@ -67,6 +67,7 @@ export interface PedidoDomicilio {
   sent_at: string | null;
   delivered_at: string | null;
   paid_at: string | null;
+  cooking_started_at?: string | null; // Nuevo: inicio real de cocina
   
   // Notas
   special_notes: string | null;

@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { Button } from '@spoon/shared/components/ui/Button';
 import { Card, CardContent } from '@spoon/shared/components/ui/Card';
+
+// Type casting for React type conflicts
+const ButtonComponent = Button as any;
+const CardComponent = Card as any;
+const CardContentComponent = CardContent as any;
 import { TransaccionCaja } from '../types/cajaTypes';
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
@@ -38,11 +43,12 @@ interface MovimientosPanelProps {
   gastos: any[];
   onProcesarPago: (orden: OrdenPendiente) => void;
   loading?: boolean;
+  disabled?: boolean;
 }
 
-type SubTab = 'ingresos' | 'egresos' | 'por_cobrar' | 'por_pagar';
+type SubTab = 'ingresos' | 'egresos' | 'por_cobrar';
 
-const formatCurrency = (centavos: number) => formatCurrencyCOP(centavos);
+const formatCurrency = (pesos: number) => formatCurrencyCOP(pesos);
 
 const EmptyState: React.FC<{
   icon: string;
@@ -55,9 +61,9 @@ const EmptyState: React.FC<{
     <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-2">{title}</h3>
     <p className="text-[color:var(--sp-neutral-600)] mb-4">{subtitle}</p>
     {action && (
-      <Button onClick={action.onClick} variant="outline">
+      <ButtonComponent onClick={action.onClick} variant="outline">
         {action.label}
-      </Button>
+      </ButtonComponent>
     )}
   </div>
 );
@@ -67,7 +73,8 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
   transacciones,
   gastos,
   onProcesarPago,
-  loading = false
+  loading = false,
+  disabled = false
 }) => {
   const [subTab, setSubTab] = useState<SubTab>('por_cobrar');
 
@@ -75,8 +82,7 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
   const subTabs = [
     { key: 'ingresos' as SubTab, label: 'Ingresos', count: transacciones.length },
     { key: 'egresos' as SubTab, label: 'Egresos', count: gastos.length },
-    { key: 'por_cobrar' as SubTab, label: 'Por cobrar', count: ordenesPendientes.length },
-    { key: 'por_pagar' as SubTab, label: 'Por pagar', count: 0 }
+  { key: 'por_cobrar' as SubTab, label: 'Por cobrar', count: ordenesPendientes.length }
   ];
 
   const renderSubTabContent = () => {
@@ -95,8 +101,8 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
         return (
           <div className="space-y-3">
             {ordenesPendientes.map((orden) => (
-              <Card key={orden.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
+              <CardComponent key={orden.id} className="hover:shadow-md transition-shadow">
+                <CardContentComponent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
@@ -125,18 +131,19 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                       <div className="value-number">
                         {formatCurrency(orden.monto_total)}
                       </div>
-                      <Button
+                      <ButtonComponent
                         onClick={() => onProcesarPago(orden)}
-                        disabled={loading}
+                        disabled={loading || disabled}
+                        title={disabled ? 'Bloqueado: primero cierra la sesión previa' : undefined}
                         size="sm"
                         className="bg-[color:var(--sp-info-600)] hover:bg-[color:var(--sp-info-700)]"
                       >
                         💳 Cobrar
-                      </Button>
+                      </ButtonComponent>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </CardContentComponent>
+              </CardComponent>
             ))}
           </div>
         );
@@ -155,8 +162,8 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
         return (
           <div className="space-y-3">
             {transacciones.map((transaccion) => (
-              <Card key={transaccion.id} className="border-l-4 border-l-[color:var(--sp-success-500)]">
-                <CardContent className="p-4">
+              <CardComponent key={transaccion.id} className="border-l-4 border-l-[color:var(--sp-success-500)]">
+                <CardContentComponent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
@@ -191,8 +198,8 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </CardContentComponent>
+              </CardComponent>
             ))}
           </div>
         );
@@ -211,8 +218,8 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
         return (
           <div className="space-y-3">
             {gastos.map((gasto) => (
-              <Card key={gasto.id} className="border-l-4 border-l-[color:var(--sp-error-500)]">
-                <CardContent className="p-4">
+              <CardComponent key={gasto.id} className="border-l-4 border-l-[color:var(--sp-error-500)]">
+                <CardContentComponent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
@@ -241,19 +248,10 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </CardContentComponent>
+              </CardComponent>
             ))}
           </div>
-        );
-
-      case 'por_pagar':
-        return (
-          <EmptyState
-            icon="📋"
-            title="Sin implementar"
-            subtitle="Funcionalidad próximamente disponible"
-          />
         );
 
       default:
@@ -266,7 +264,7 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
       {/* Sub-navegación */}
   <div className="flex space-x-1 bg-[color:var(--sp-neutral-50)] rounded-lg p-1 w-fit">
         {subTabs.map((tab) => (
-          <Button
+          <ButtonComponent
             key={tab.key}
             variant={subTab === tab.key ? 'default' : 'ghost'}
             size="sm"
@@ -279,7 +277,7 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                 {tab.count}
               </span>
             )}
-          </Button>
+          </ButtonComponent>
         ))}
       </div>
 
@@ -290,3 +288,4 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
     </div>
   );
 };
+

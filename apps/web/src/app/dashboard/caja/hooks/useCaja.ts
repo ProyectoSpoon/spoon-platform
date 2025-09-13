@@ -25,10 +25,11 @@ interface MetricasCaja {
   totalTarjeta: number;
   totalDigital: number;
   gastosDelPeriodo?: any[];
+  gastosPorCategoria?: Record<string, number>;
 }
 
 export const useCaja = () => {
-  const { sesionActual, estadoCaja } = useCajaSesion();
+  const { sesionActual, estadoCaja, requiereSaneamiento } = useCajaSesion();
   const [ordenesMesas, setOrdenesMesas] = useState<OrdenPendiente[]>([]);
   const [ordenesDelivery, setOrdenesDelivery] = useState<OrdenPendiente[]>([]);
   // Filtro de fecha (Bogotá day string: YYYY-MM-DD)
@@ -185,8 +186,8 @@ export const useCaja = () => {
         id: mesa.id,
         tipo: 'mesa',
         identificador: `Mesa ${mesa.numero_mesa}`,
-        // Normalizar a centavos: ordenes_mesa.monto_total suele estar en pesos
-        monto_total: Math.round((mesa.monto_total || 0) * 100),
+        // Ahora montos en pesos directamente
+        monto_total: Math.round(mesa.monto_total || 0),
         fecha_creacion: mesa.fecha_creacion,
         detalles: mesa.nombre_mesero ? `Mesero: ${mesa.nombre_mesero}` : undefined
       }));
@@ -195,8 +196,8 @@ export const useCaja = () => {
         id: orden.id,
         tipo: 'delivery',
         identificador: orden.customer_name,
-        // Normalizar a centavos: delivery_orders.total_amount suele estar en pesos
-        monto_total: Math.round((orden.total_amount || 0) * 100),
+        // Montos en pesos
+        monto_total: Math.round(orden.total_amount || 0),
         fecha_creacion: orden.created_at,
         detalles: orden.customer_phone
       }));
@@ -213,8 +214,9 @@ export const useCaja = () => {
             totalTarjeta: (transaccionesData as any).totalTarjeta,
             totalDigital: (transaccionesData as any).totalDigital,
             transacciones: (transaccionesData as any).transacciones,
-    totalGastos: (gastosData as any)?.totalGastos ?? 0,
-    gastos: (gastosData as any)?.gastos ?? []
+            totalGastos: (gastosData as any)?.totalGastos ?? 0,
+            gastos: (gastosData as any)?.gastos ?? [],
+            gastosPorCategoria: (gastosData as any)?.gastosPorCategoria
           }
         : {
             totalVentas: (transaccionesData as any).totalVentas,
@@ -222,8 +224,9 @@ export const useCaja = () => {
             totalTarjeta: (transaccionesData as any).totalTarjeta,
             totalDigital: (transaccionesData as any).totalDigital,
             transacciones: (transaccionesData as any).transacciones,
-    totalGastos: (transaccionesData as any).totalGastos,
-    gastos: (transaccionesData as any).gastos || []
+            totalGastos: (transaccionesData as any).totalGastos,
+            gastos: (transaccionesData as any).gastos || [],
+            gastosPorCategoria: (transaccionesData as any).gastosPorCategoria
           };
 
       const balance = sesionId 
@@ -233,16 +236,40 @@ export const useCaja = () => {
       // ACTUALIZAR ESTADO
       setOrdenesMesas(mesasTransformadas);
       setOrdenesDelivery(deliveryTransformadas);
+      // Recalcular total de gastos si el reportado es 0 pero hay elementos
+      let gastosTotalesFinal = typeof totales.totalGastos === 'number' ? totales.totalGastos : 0;
+      if (gastosTotalesFinal === 0 && Array.isArray(totales.gastos) && totales.gastos.length > 0) {
+        const suma = totales.gastos.reduce((s: number, g: any) => {
+          // Soportar diferentes claves potenciales
+            const v = g.monto ?? g.monto_total ?? g.total ?? 0;
+            const num = typeof v === 'string' ? parseFloat(v) : Number(v);
+            return s + (isNaN(num) ? 0 : num);
+        }, 0);
+        if (suma > 0) {
+          console.warn('[useCaja][debug] Recalculando gastosTotales. Valor API=0, suma items=', suma);
+          gastosTotalesFinal = suma;
+        }
+      }
+
+      console.log('[useCaja][debug] totales antes de setMetricas', {
+        totalVentas: totales.totalVentas,
+        totalGastos: totales.totalGastos,
+        gastosLength: Array.isArray(totales.gastos) ? totales.gastos.length : 'no-array',
+        sampleGasto: Array.isArray(totales.gastos) && totales.gastos.length > 0 ? totales.gastos[0] : null,
+        gastosTotalesFinal
+      });
+
       setMetricas({
         balance,
         ventasTotales: totales.totalVentas,
         porCobrar: porCobrarTotal,
-        gastosTotales: totales.totalGastos,
+        gastosTotales: gastosTotalesFinal,
         transaccionesDelDia: totales.transacciones,
         totalEfectivo: totales.totalEfectivo,
-  totalTarjeta: totales.totalTarjeta,
-  totalDigital: totales.totalDigital,
-  gastosDelPeriodo: totales.gastos
+        totalTarjeta: totales.totalTarjeta,
+        totalDigital: totales.totalDigital,
+        gastosDelPeriodo: totales.gastos,
+        gastosPorCategoria: totales.gastosPorCategoria
       });
 
       setError(null);
@@ -401,6 +428,10 @@ const procesarPago = async (
   try {
     if (!sesionActual) {
       throw new Error('No hay sesión de caja abierta');
+    }
+
+    if (requiereSaneamiento) {
+      throw new Error('Operación bloqueada: hay una sesión previa pendiente de cierre.');
     }
 
     setLoading(true);

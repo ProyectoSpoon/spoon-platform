@@ -7,6 +7,14 @@ import { getUserProfile, getUserRestaurant, updateRestaurant } from '@spoon/shar
 import toast from 'react-hot-toast';
 import { Grid } from '@spoon/shared/components/ui/Grid';
 
+// Type casting to resolve React version conflicts
+const ArrowLeftComponent = ArrowLeft as any;
+const CheckComponent = Check as any;
+const ClockComponent = Clock as any;
+const PlusComponent = Plus as any;
+const Trash2Component = Trash2 as any;
+const AlertTriangleComponent = AlertTriangle as any;
+
 // Tipos
 interface Turno {
   horaApertura: string;
@@ -301,7 +309,7 @@ export default function HorarioComercialPage() {
               onClick={handleVolver}
               className="flex items-center gap-2 px-4 py-2 bg-[--sp-surface] hover:bg-[color:var(--sp-neutral-50)] text-[color:var(--sp-neutral-700)] border border-[color:var(--sp-neutral-300)] rounded-lg transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeftComponent className="w-4 h-4" />
               Volver
             </button>
             <div className="text-center flex-1">
@@ -318,7 +326,7 @@ export default function HorarioComercialPage() {
             </p>
             {errores.length > 0 && (
               <div className="mt-3 p-3 bg-[color:var(--sp-error-50)] border border-[color:var(--sp-error-200)] rounded-lg flex items-center gap-2 text-[color:var(--sp-error-700)] animate-fade-in" role="alert">
-                <AlertTriangle className="w-4 h-4" />
+                <AlertTriangleComponent className="w-4 h-4" />
                 <span className="text-sm">Hay errores en los horarios configurados</span>
               </div>
             )}
@@ -328,25 +336,28 @@ export default function HorarioComercialPage() {
         {/* Tabs de días */}
   <div className="bg-[--sp-surface-elevated] p-5 border border-[color:var(--sp-neutral-200)] rounded-lg shadow-lg">
           <div className="flex gap-1 overflow-x-auto" role="tablist">
-            {DIAS_SEMANA.map((dia) => (
-              <button
-                key={dia}
-                role="tab"
-                aria-selected={diaSeleccionado === dia}
-                aria-current={diaSeleccionado === dia ? 'page' : undefined}
-                onClick={() => setDiaSeleccionado(dia)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap relative focus:outline-none ${
-                  diaSeleccionado === dia
-                    ? 'bg-[color:var(--sp-neutral-900)] text-[--sp-on-neutral] shadow-md'
-                    : 'bg-[--sp-surface] text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-50)] border border-[color:var(--sp-neutral-300)]'
-                }`}
-              >
-                {NOMBRES_DIAS[dia]}
-                {diaSeleccionado === dia && (
-                  <span className="absolute left-1/2 -translate-x-1/2 bottom-0 w-3/4 h-1 bg-[color:var(--sp-primary-600)] rounded-full animate-fade-in" />
-                )}
-              </button>
-            ))}
+            {DIAS_SEMANA.map((dia) => {
+              const active = diaSeleccionado === dia;
+              return (
+                <button
+                  key={dia}
+                  role="tab"
+                  aria-selected={active}
+                  aria-current={active ? 'page' : undefined}
+                  onClick={() => setDiaSeleccionado(dia)}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap relative focus:outline-none focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:ring-offset-1 border ${
+                    active
+                      ? 'bg-[color:var(--sp-primary-50)] text-[color:var(--sp-primary-800)] border-[color:var(--sp-primary-300)] shadow-sm'
+                      : 'bg-[--sp-surface] text-[color:var(--sp-neutral-600)] hover:bg-[color:var(--sp-neutral-50)] border-[color:var(--sp-neutral-300)]'
+                  }`}
+                >
+                  {NOMBRES_DIAS[dia]}
+                  {active && (
+                    <span className="absolute left-1/2 -translate-x-1/2 bottom-0 w-3/4 h-0.5 bg-[color:var(--sp-primary-600)] rounded-full" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -385,7 +396,7 @@ export default function HorarioComercialPage() {
                           </span>
                         ))
                       ) : (
-                        <span className="text-[color:var(--sp-error-600)] flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Cerrado</span>
+                        <span className="text-[color:var(--sp-error-600)] flex items-center gap-1"><AlertTriangleComponent className="w-4 h-4" /> Cerrado</span>
                       )}
                     </div>
                     <button
@@ -413,25 +424,27 @@ export default function HorarioComercialPage() {
                 </label>
                 <div className="flex gap-2">
       <button
-                    onClick={() => toggleDiaAbierto(diaSeleccionado, true)}
-                    className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
-                      horarioDiaActual.abierto
-        ? 'bg-[color:var(--sp-neutral-900)] text-[--sp-on-neutral] border-[color:var(--sp-neutral-900)]'
-        : 'bg-[--sp-surface] text-[color:var(--sp-neutral-700)] border-[color:var(--sp-neutral-300)] hover:bg-[color:var(--sp-neutral-50)]'
-                    }`}
-                  >
-                    Abierto
-                  </button>
+        aria-pressed={horarioDiaActual.abierto}
+        onClick={() => toggleDiaAbierto(diaSeleccionado, true)}
+        className={`px-4 py-2 text-sm rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-[color:var(--sp-success-500)] focus:ring-offset-1 ${
+          horarioDiaActual.abierto
+            ? 'bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)] border-[color:var(--sp-success-300)] shadow-sm'
+            : 'bg-[--sp-surface] text-[color:var(--sp-neutral-600)] border-[color:var(--sp-neutral-300)] hover:bg-[color:var(--sp-neutral-50)]'
+        }`}
+      >
+        Abierto
+      </button>
       <button
-                    onClick={() => toggleDiaAbierto(diaSeleccionado, false)}
-                    className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
-                      !horarioDiaActual.abierto
-        ? 'bg-[color:var(--sp-neutral-900)] text-[--sp-on-neutral] border-[color:var(--sp-neutral-900)]'
-        : 'bg-[--sp-surface] text-[color:var(--sp-neutral-700)] border-[color:var(--sp-neutral-300)] hover:bg-[color:var(--sp-neutral-50)]'
-                    }`}
-                  >
-                    Cerrado
-                  </button>
+        aria-pressed={!horarioDiaActual.abierto}
+        onClick={() => toggleDiaAbierto(diaSeleccionado, false)}
+        className={`px-4 py-2 text-sm rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-[color:var(--sp-error-500)] focus:ring-offset-1 ${
+          !horarioDiaActual.abierto
+            ? 'bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)] border-[color:var(--sp-error-300)] shadow-sm'
+            : 'bg-[--sp-surface] text-[color:var(--sp-neutral-600)] border-[color:var(--sp-neutral-300)] hover:bg-[color:var(--sp-neutral-50)]'
+        }`}
+      >
+        Cerrado
+      </button>
                 </div>
               </div>
 
@@ -454,7 +467,7 @@ export default function HorarioComercialPage() {
                               className="text-[color:var(--sp-error-600)] hover:text-[color:var(--sp-error-700)] text-sm flex items-center gap-1 transition-transform active:scale-95"
                               aria-label={`Eliminar turno ${indice + 1}`}
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <Trash2Component className="w-3 h-3" />
                               Eliminar
                             </button>
                           )}
@@ -501,7 +514,7 @@ export default function HorarioComercialPage() {
                       } animate-fade-in`}
                       aria-label="Agregar turno"
                     >
-                      <Plus className="w-4 h-4" />
+                      <PlusComponent className="w-4 h-4" />
                       {horarioDiaActual.turnos.length >= 3 
                         ? 'Máximo 3 turnos por día'
                         : 'Agregar turno'
@@ -545,7 +558,7 @@ export default function HorarioComercialPage() {
               onClick={handleVolver}
         className="flex items-center gap-2 px-6 py-2 bg-[--sp-surface] hover:bg-[color:var(--sp-neutral-50)] text-[color:var(--sp-neutral-700)] border border-[color:var(--sp-neutral-300)] rounded-lg transition-colors font-medium"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeftComponent className="w-4 h-4" />
               Ubicación
             </button>
             <button
@@ -564,7 +577,7 @@ export default function HorarioComercialPage() {
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4" />
+                  <CheckComponent className="w-4 h-4" />
                   {errores.length > 0
                     ? 'Corrige errores primero'
                     : tieneHorariosConfigurados() 
@@ -580,7 +593,7 @@ export default function HorarioComercialPage() {
         {/* Info de progreso */}
         <div className="bg-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded-lg p-4 shadow-md">
           <div className="flex items-center gap-3">
-            <Clock className="text-[color:var(--sp-info-600)] w-5 h-5" />
+            <ClockComponent className="text-[color:var(--sp-info-600)] w-5 h-5" />
             <div>
               <h3 className="font-bold text-[color:var(--sp-info-800)]">Horarios de Atención</h3>
               <p className="text-sm text-[color:var(--sp-info-700)]">

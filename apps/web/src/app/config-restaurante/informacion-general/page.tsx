@@ -14,6 +14,14 @@ import {
   toast 
 } from '@spoon/shared';
 
+// Type casting to resolve React version conflicts
+const ButtonComponent = Button as any;
+const CardComponent = Card as any;
+const CardContentComponent = CardContent as any;
+const CardHeaderComponent = CardHeader as any;
+const CardTitleComponent = CardTitle as any;
+const InputComponent = Input as any;
+
 interface RestaurantInfo {
   name: string;
   description: string;
@@ -86,17 +94,20 @@ export default function InformacionGeneralPage() {
         cuisineType: restaurant.cuisine_type || ''
       });
       setIsPhonePreFilled(!!profile?.phone && !restaurant.contact_phone);
-      setIsEmailPreFilled(!!profile?.email && !restaurant.contact_email);
     } else {
+      // Para usuarios nuevos, sugerir un nombre basado en el perfil
+      const suggestedName = profile?.first_name && profile?.last_name 
+        ? `Restaurante ${profile.first_name} ${profile.last_name}`
+        : '';
+        
       setFormData({
-        name: '',
+        name: suggestedName,
         description: '',
         phone: profile?.phone || '',
         email: profile?.email || '',
         cuisineType: ''
       });
       setIsPhonePreFilled(!!profile?.phone);
-      setIsEmailPreFilled(!!profile?.email);
     }
   };
 
@@ -124,43 +135,63 @@ export default function InformacionGeneralPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Prevenir cambios en el email (solo lectura)
+    if (name === 'email') {
+      console.log('⚠️ Email field is read-only');
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
     if (name === 'phone') setIsPhonePreFilled(false);
-    if (name === 'email') setIsEmailPreFilled(false);
   };
 
   const validateForm = (): boolean => {
+    console.log('🔍 validateForm called with:', formData);
+    
     if (!formData.name.trim()) {
+      console.log('❌ Name validation failed');
       toast.error('Por favor, ingresa el nombre de tu restaurante');
       return false;
     }
     if (!formData.phone.trim()) {
+      console.log('❌ Phone validation failed');
       toast.error('El teléfono de contacto es necesario para que te encuentren');
       return false;
     }
-    const phoneRegex = /^[\+]?[0-9\\s\\-\\(\\)]{7,15}$/;
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)]{7,15}$/;
     if (!phoneRegex.test(formData.phone)) {
+      console.log('❌ Phone format validation failed:', formData.phone);
       toast.error('Ingresa un teléfono válido (ej: +57 312 345 6789)');
       return false;
     }
     if (!formData.email.trim()) {
+      console.log('❌ Email validation failed');
       toast.error('El email es necesario para contactos importantes');
       return false;
     }
-    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
+      console.log('❌ Email format validation failed:', formData.email);
       toast.error('Ingresa un email válido (ej: contacto@turestaurante.com)');
       return false;
     }
+    
+    console.log('✅ All validations passed!');
     return true;
   };
 
   // Guardar datos
   const handleSave = async () => {
+    console.log('🚀 handleSave called!', { formData, isFormValid });
+    
     if (!validateForm()) return;
+    
+    console.log('✅ Form validation passed!');
+    
     try {
       setSaving(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -227,7 +258,20 @@ export default function InformacionGeneralPage() {
     router.push('/config-restaurante');
   };
 
-  const isFormValid = formData.name.trim() && formData.phone.trim() && formData.email.trim();
+  const isFormValid = !!(formData.name.trim() && formData.phone.trim() && formData.email.trim());
+
+  // DEBUG: Log para verificar el estado del formulario
+  useEffect(() => {
+    console.log('🔍 Form Debug:', {
+      name: formData.name,
+      phone: formData.phone,
+      email: formData.email,
+      isFormValid,
+      nameValid: !!formData.name.trim(),
+      phoneValid: !!formData.phone.trim(),
+      emailValid: !!formData.email.trim()
+    });
+  }, [formData, isFormValid]);
 
   if (loading) {
     return (
@@ -245,16 +289,16 @@ export default function InformacionGeneralPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         
         {/* Header */}
-        <Card>
-          <CardHeader>
+        <CardComponent>
+          <CardHeaderComponent>
             <div className="flex items-center justify-between mb-4">
-              <Button 
+              <ButtonComponent 
                 variant="outline" 
                 onClick={handleBack}
                 className="flex items-center gap-2"
               >
                 ← Volver
-              </Button>
+              </ButtonComponent>
               
               <div className="text-center flex-1">
                 <span className="text-sm text-[color:var(--sp-neutral-500)] font-medium">Paso 1 de 4</span>
@@ -263,9 +307,9 @@ export default function InformacionGeneralPage() {
               <div className="w-20"></div>
             </div>
             
-            <CardTitle>
+            <CardTitleComponent>
               Información General
-            </CardTitle>
+            </CardTitleComponent>
             <p className="text-[color:var(--sp-neutral-600)]">
               Empecemos con los datos básicos de tu restaurante
             </p>
@@ -274,16 +318,16 @@ export default function InformacionGeneralPage() {
                 👤 {userInfo.email} • {restaurantId ? `Editando restaurante` : 'Nuevo restaurante'}
               </p>
             )}
-          </CardHeader>
-        </Card>
+          </CardHeaderComponent>
+        </CardComponent>
 
         {/* Formulario principal con jerarquía visual */}
-        <Card>
-          <CardContent>
+        <CardComponent>
+          <CardContentComponent>
             <div className="space-y-8">
               {/* Nombre del restaurante */}
               <div className="pb-2 border-b border-[color:var(--sp-neutral-200)]">
-                <Input
+                <InputComponent
                   label="Nombre del Restaurante *"
                   name="name"
                   value={formData.name}
@@ -301,7 +345,7 @@ export default function InformacionGeneralPage() {
               {/* Contacto */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2 pb-2 border-b border-[color:var(--sp-neutral-200)]">
                 <div>
-                  <Input
+                  <InputComponent
                     label={`Teléfono del Restaurante * ${isPhonePreFilled ? '(Pre-llenado)' : ''}`}
                     name="phone"
                     type="tel"
@@ -322,24 +366,21 @@ export default function InformacionGeneralPage() {
                 </div>
 
                 <div>
-                  <Input
-                    label={`Email del Restaurante * ${isEmailPreFilled ? '(Pre-llenado)' : ''}`}
+                  <InputComponent
+                    label="Email del Restaurante * (Email de registro)"
                     name="email"
                     type="email"
                     value={formData.email}
-                    onChange={handleInputChange}
+                    readOnly={true}
+                    disabled={true}
                     placeholder="Ej: contacto@restaurante.com"
                     leftIcon={
-                      <svg className="w-5 h-5 text-[color:var(--sp-primary-600)]" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-5 h-5 text-[color:var(--sp-neutral-400)]" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
                         <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
                       </svg>
                     }
-                    helperText={
-                      isEmailPreFilled 
-                        ? "💡 Usamos tu email personal, pero puedes usar uno específico para el restaurante si lo prefieres"
-                        : "Este será el email de contacto público de tu restaurante"
-                    }
+                    helperText="🔒 Este es el email con el que te registraste. Para cambiarlo, contacta soporte técnico."
                   />
                 </div>
               </div>
@@ -393,23 +434,23 @@ export default function InformacionGeneralPage() {
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </CardContentComponent>
+        </CardComponent>
 
         {/* Botones de navegación mejorados */}
-        <Card>
-          <CardContent>
+        <CardComponent>
+          <CardContentComponent>
             <div className="flex justify-between items-center">
-              <Button 
+              <ButtonComponent 
                 variant="outline" 
                 onClick={handleBack}
                 className="flex items-center gap-2"
                 disabled={saving}
               >
                 ← Configuración
-              </Button>
+              </ButtonComponent>
               
-      <Button
+      <ButtonComponent
                 onClick={handleSave}
                 disabled={saving || !isFormValid}
                 loading={saving}
@@ -426,7 +467,7 @@ export default function InformacionGeneralPage() {
                 ) : (
                   'Completa los campos obligatorios'
                 )}
-              </Button>
+              </ButtonComponent>
             </div>
             {!isFormValid && (
               <div className="mt-3 p-3 bg-[color:var(--sp-warning-50)] border border-[color:var(--sp-warning-200)] rounded-lg">
@@ -440,12 +481,12 @@ export default function InformacionGeneralPage() {
                 </ul>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </CardContentComponent>
+        </CardComponent>
 
         {/* Progreso visual mejorado */}
-        <Card className="bg-[color:var(--sp-info-50)] border-[color:var(--sp-info-200)]">
-          <CardContent>
+        <CardComponent className="bg-[color:var(--sp-info-50)] border-[color:var(--sp-info-200)]">
+          <CardContentComponent>
             <div className="flex items-center gap-3">
               <svg className="w-8 h-8 text-[color:var(--sp-info-600)]" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.84L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.84l-7-3z"/>
@@ -464,9 +505,11 @@ export default function InformacionGeneralPage() {
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </CardContentComponent>
+        </CardComponent>
       </div>
     </div>
   );
 }
+
+

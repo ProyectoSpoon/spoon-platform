@@ -3,6 +3,18 @@ import { Settings, RotateCcw, Shield, AlertTriangle, Check, X } from 'lucide-rea
 import { Button, SelectV2 as Select, SwitchV2 as Switch, Card } from '@spoon/shared';
 import { UsuariosService, type RoleSistema, type PermisoRol } from '@spoon/shared/services/usuarios';
 
+// Type casting para componentes de lucide-react y @spoon/shared
+const SettingsCast = Settings as any;
+const RotateCcwCast = RotateCcw as any;
+const ShieldCast = Shield as any;
+const AlertTriangleCast = AlertTriangle as any;
+const CheckCast = Check as any;
+const XCast = X as any;
+const ButtonCast = Button as any;
+const SelectCast = Select as any;
+const SwitchCast = Switch as any;
+const CardCast = Card as any;
+
 interface ConfiguracionRolesTabProps {
   roles: RoleSistema[];
   permisos: any; // Permisos agrupados por módulo
@@ -122,7 +134,7 @@ export const ConfiguracionRolesTab: React.FC<ConfiguracionRolesTabProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-lg font-semibold text-[color:var(--sp-neutral-900)] flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+            <SettingsCast className="h-5 w-5" />
             Configuración de Roles
           </h2>
           <p className="text-sm text-[color:var(--sp-neutral-600)]">
@@ -134,15 +146,15 @@ export const ConfiguracionRolesTab: React.FC<ConfiguracionRolesTabProps> = ({
       {/* Selector de rol */}
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 bg-[color:var(--sp-neutral-50)] rounded-lg">
         <div className="flex items-center gap-3">
-          <Shield className="h-5 w-5 text-[color:var(--sp-info-600)]" />
+          <ShieldCast className="h-5 w-5 text-[color:var(--sp-info-600)]" />
           <span className="font-medium text-[color:var(--sp-neutral-900)]">
             Seleccionar rol:
           </span>
         </div>
         <div className="flex-1 md:max-w-md">
-          <Select
+          <SelectCast
             value={rolSeleccionado}
-            onChange={(e) => setRolSeleccionado(e.target.value)}
+            onChange={(e: any) => setRolSeleccionado(e.target.value)}
             placeholder="Selecciona un rol para configurar"
           >
             {roles.filter(rol => rol.name !== 'administrador').map(rol => (
@@ -150,26 +162,26 @@ export const ConfiguracionRolesTab: React.FC<ConfiguracionRolesTabProps> = ({
                 {roleDisplayNames[rol.name] || rol.name}
               </option>
             ))}
-          </Select>
+          </SelectCast>
         </div>
         {rolSeleccionado && (
-          <Button
+          <ButtonCast
             variant="outline"
             onClick={restaurarPorDefecto}
             className="flex items-center gap-2"
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcwCast className="h-4 w-4" />
             Restaurar por defecto
-          </Button>
+          </ButtonCast>
         )}
       </div>
 
       {/* Información del rol seleccionado */}
       {rolActual && (
-        <Card className="p-4 bg-[color:var(--sp-info-50)] border-[color:var(--sp-info-200)]">
+        <CardCast className="p-4 bg-[color:var(--sp-info-50)] border-[color:var(--sp-info-200)]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[color:var(--sp-info-100)] flex items-center justify-center">
-              <Settings className="h-5 w-5 text-[color:var(--sp-info-600)]" />
+              <SettingsCast className="h-5 w-5 text-[color:var(--sp-info-600)]" />
             </div>
             <div>
               <h3 className="font-semibold text-[color:var(--sp-info-900)]">
@@ -180,7 +192,7 @@ export const ConfiguracionRolesTab: React.FC<ConfiguracionRolesTabProps> = ({
               </p>
             </div>
           </div>
-        </Card>
+        </CardCast>
       )}
 
       {/* Matriz de permisos */}
@@ -195,7 +207,7 @@ export const ConfiguracionRolesTab: React.FC<ConfiguracionRolesTabProps> = ({
             </div>
           ) : (
             Object.entries(permisos).map(([modulo, permisosModulo]: [string, any]) => (
-              <Card key={modulo} className="overflow-hidden">
+              <CardCast key={modulo} className="overflow-hidden">
                 <div className="p-4 bg-[color:var(--sp-neutral-50)] border-b border-[color:var(--sp-neutral-200)]">
                   <h3 className="font-semibold text-[color:var(--sp-neutral-900)] flex items-center gap-2">
                     <span className="text-lg">{moduleIcons[modulo] || '📋'}</span>
@@ -225,7 +237,7 @@ export const ConfiguracionRolesTab: React.FC<ConfiguracionRolesTabProps> = ({
                     })}
                   </div>
                 </div>
-              </Card>
+              </CardCast>
             ))
           )}
         </div>
@@ -234,7 +246,7 @@ export const ConfiguracionRolesTab: React.FC<ConfiguracionRolesTabProps> = ({
       {/* Estado sin selección */}
       {!rolSeleccionado && (
         <div className="text-center py-12 text-[color:var(--sp-neutral-500)]">
-          <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <SettingsCast className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium">Selecciona un rol para comenzar</p>
           <p className="text-sm mt-2">
             Podrás ver y modificar los permisos específicos del rol seleccionado
@@ -245,7 +257,7 @@ export const ConfiguracionRolesTab: React.FC<ConfiguracionRolesTabProps> = ({
       {/* Indicador de cambios */}
       {hasChanges && (
         <div className="fixed bottom-4 right-4 bg-[color:var(--sp-success-600)] text-[color:var(--sp-on-primary)] px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
-          <Check className="h-4 w-4" />
+          <CheckCast className="h-4 w-4" />
           Cambios guardados automáticamente
         </div>
       )}
@@ -276,7 +288,7 @@ const PermisoToggle: React.FC<PermisoToggleProps> = ({
           </span>
           {permiso.is_critical && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)]">
-              <AlertTriangle className="h-3 w-3" />
+              <AlertTriangleCast className="h-3 w-3" />
               Crítico
             </span>
           )}
@@ -295,13 +307,13 @@ const PermisoToggle: React.FC<PermisoToggleProps> = ({
         
         <div className="flex items-center gap-2">
           {granted ? (
-            <Check className="h-4 w-4 text-[color:var(--sp-success-600)]" />
+            <CheckCast className="h-4 w-4 text-[color:var(--sp-success-600)]" />
           ) : (
-            <X className="h-4 w-4 text-[color:var(--sp-neutral-400)]" />
+            <XCast className="h-4 w-4 text-[color:var(--sp-neutral-400)]" />
           )}
-          <Switch
+          <SwitchCast
             checked={granted}
-            onChange={(e) => onChange(e.target.checked)}
+            onChange={(e: any) => onChange(e.target.checked)}
           />
         </div>
       </div>

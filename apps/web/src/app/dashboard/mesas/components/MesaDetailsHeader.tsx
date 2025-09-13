@@ -10,6 +10,10 @@ import { Mesa } from '@spoon/shared/types/mesas';
 import { getEstadoDisplay } from '@spoon/shared/utils/mesas';
 import { formatearNombreMesa, formatearCapacidad } from '@spoon/shared/utils/mesas';
 
+// Type casting para componentes de lucide-react
+const XCast = X as any;
+const UsersCast = Users as any;
+
 interface MesaDetailsHeaderProps {
   mesa: Mesa;
   onClose: () => void;
@@ -42,7 +46,7 @@ export const MesaDetailsHeader: React.FC<MesaDetailsHeaderProps> = ({
           <div className="flex items-center gap-4 text-sm opacity-90">
             <span>{estadoDisplay.texto}</span>
             <div className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
+              <UsersCast className="h-3 w-3" />
               <span>{formatearCapacidad(mesa.capacidad)}</span>
             </div>
             {mesa.zona && mesa.zona !== 'Principal' && (
@@ -57,7 +61,7 @@ export const MesaDetailsHeader: React.FC<MesaDetailsHeaderProps> = ({
         className="text-[--sp-on-primary] hover:opacity-90 transition-colors p-1"
         aria-label="Cerrar panel de detalles"
       >
-        <X className="h-5 w-5" />
+        <XCast className="h-5 w-5" />
       </button>
     </div>
   );

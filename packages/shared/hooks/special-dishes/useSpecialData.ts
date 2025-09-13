@@ -6,9 +6,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  getUserProfile, 
-  getUserRestaurant, 
+import {
+  getUserProfile,
+  getUserRestaurant,
   supabase,
   getRestaurantSpecialDishes,
   getSpecialCombinations,
@@ -23,8 +23,7 @@ import {
   getAvailableSpecialsToday as _getAvailableSpecialsToday,
   updateSpecialDish,
   type SpecialDish,
-  
-} from '@spoon/shared';
+} from '../../lib/supabase';
 
 import { Producto, LoadingStates } from '../../types/menu-dia/menuTypes';
 import { CATEGORIAS_MENU_CONFIG } from '../../constants/menu-dia/menuConstants';
@@ -190,7 +189,7 @@ export const useSpecialData = () => {
 
       if (error) throw error;
       
-      const transformedData = (data || []).map(item => ({
+  const transformedData = (data || []).map((item: any) => ({
         ...item,
         price: item.suggested_price_min || 0,
         available: item.is_verified,
@@ -331,9 +330,9 @@ export const useSpecialData = () => {
       setLoadingStates(prev => ({ ...prev, loading: true }));
       setCurrentSpecialDish(specialDish);
       // Cargar selecciones de productos existentes
-      const selections = await _getSpecialDishSelections(specialDish.id);
+  const selections = await _getSpecialDishSelections(specialDish.id);
       const grouped: { [categoryId: string]: Producto[] } = {};
-      selections.forEach(sel => {
+  selections.forEach((sel: any) => {
         // Encontrar categoryId desde nombre (inverso)
         const cfg = CATEGORIAS_MENU_CONFIG.find(c => c.nombre === sel.category_name || c.id === sel.category_name);
         const catId = cfg?.id || sel.category_name;
@@ -376,8 +375,8 @@ export const useSpecialData = () => {
       });
       await insertSpecialDishSelections(currentSpecialDish.id, selectedProducts);
       // Recalcular métricas y marcar completo
-      const totalProductsEdit = Object.values(selectedProducts).reduce((acc, arr) => acc + arr.length, 0);
-      const categoriesConfiguredEdit = Object.values(selectedProducts).filter(arr => arr.length > 0).length;
+  const totalProductsEdit = Object.values(selectedProducts).reduce((acc: number, arr: Producto[]) => acc + arr.length, 0);
+  const categoriesConfiguredEdit = Object.values(selectedProducts).filter((arr: Producto[]) => arr.length > 0).length;
       try {
         await updateSpecialDish(currentSpecialDish.id, {
           total_products_selected: totalProductsEdit as any,
@@ -409,7 +408,7 @@ export const useSpecialData = () => {
     try {
       const selections = await _getSpecialDishSelections(specialDishId);
       const grouped: { [categoryName: string]: string[] } = {};
-      selections.forEach(sel => {
+  selections.forEach((sel: any) => {
         const name = sel.category_name || 'Otros';
         if (!grouped[name]) grouped[name] = [];
         grouped[name].push(sel.product_name);

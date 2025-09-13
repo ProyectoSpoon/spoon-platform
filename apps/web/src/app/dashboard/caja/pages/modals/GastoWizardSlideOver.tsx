@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Button } from '@spoon/shared/components/ui/Button';
 import { Input } from '@spoon/shared/components/ui/Input';
 import { NuevoGasto, CategoriaGasto } from '../../types/cajaTypes';
@@ -11,6 +11,15 @@ import {
   formatCurrency
 } from '../../constants/cajaConstants';
 import { X, Check } from 'lucide-react';
+import { useSecurityLimits } from '../../hooks/useSecurityLimits';
+import { SecurityAlert } from '../../components/SecurityAlert';
+
+// TEMP: Cast shared UI components & icons to any to bypass duplicate React type versions
+// This mirrors approach in other updated modals until type consolidation is done.
+const AnyButton: any = Button as any;
+const AnyInput: any = Input as any;
+const IconX: any = X as any;
+const IconCheck: any = Check as any;
 
 interface Props {
   isOpen: boolean;
@@ -32,11 +41,23 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
   const [isAnimating, setIsAnimating] = useState(false);
   const [categoria, setCategoria] = useState<CategoriaGasto>('servicios');
   const [concepto, setConcepto] = useState('');
+  // Monto en pesos (no centavos). IMPORTANTE: Antes se dividía por 100 en las validaciones
+  // Nota: la UI ahora opera en PESOS; evitar suposiciones de centavos que generen límites artificiales
+  // de $10,000 (1,000,000 / 100). Ahora las validaciones usan directamente pesos.
   const [monto, setMonto] = useState<number>(0);
+  // Cadena formateada mostrada en el input (con separador de miles)
+  const [montoInput, setMontoInput] = useState<string>('0');
   const [notas, setNotas] = useState('');
   const [errores, setErrores] = useState<string[]>([]);
   const [procesando, setProcesando] = useState(false);
   const [showConceptos, setShowConceptos] = useState(false);
+  // Seguridad de límites (usamos límite de transacción normal para egresos por ahora)
+  const { limits, validarMonto } = useSecurityLimits();
+  const [securityState, setSecurityState] = useState<{
+    valid: boolean;
+    warnings: string[];
+    requiresAuth: boolean;
+  } | null>(null);
 
   // Animación de entrada/salida del slide-over
   useEffect(() => {
@@ -46,9 +67,10 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
       setCategoria('servicios');
       setConcepto('');
       setMonto(0);
-      setNotas('');
+  setNotas('');
       setErrores([]);
       setShowConceptos(false);
+  setMontoInput('0');
     } else {
       setIsAnimating(false);
     }
@@ -61,14 +83,20 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
     if (concepto.trim().length < VALIDACIONES_GASTOS.CONCEPTO_MIN_LENGTH) {
       errs.push(`El concepto debe tener al menos ${VALIDACIONES_GASTOS.CONCEPTO_MIN_LENGTH} caracteres`);
     }
-    if (monto < VALIDACIONES_GASTOS.MONTO_MINIMO / 100) {
-      errs.push('El monto debe ser mayor a $1');
+    if (monto < VALIDACIONES_GASTOS.MONTO_MINIMO) {
+      errs.push(`El monto debe ser mayor a $${VALIDACIONES_GASTOS.MONTO_MINIMO.toLocaleString('es-CO')}`);
     }
-    if (monto > VALIDACIONES_GASTOS.MONTO_MAXIMO / 100) {
-      errs.push('El monto no puede exceder $1,000,000');
+    if (monto > VALIDACIONES_GASTOS.MONTO_MAXIMO) {
+      errs.push(`El monto no puede exceder $${VALIDACIONES_GASTOS.MONTO_MAXIMO.toLocaleString('es-CO')}`);
     }
     if (notas.length > VALIDACIONES_GASTOS.NOTAS_MAX_LENGTH) {
       errs.push('Las notas no pueden exceder 500 caracteres');
+    }
+    // Validación de límites de seguridad
+    const sec = validarMonto ? validarMonto(monto, 'gasto') : { valid: true, warnings: [], requiresAuth: false };
+    setSecurityState(sec);
+    if (!sec.valid) {
+      errs.push(...sec.warnings);
     }
     setErrores(errs);
     return errs.length === 0;
@@ -77,8 +105,8 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
   // No disparar setState durante render: usar una bandera derivada para el botón
   const canSubmit = useMemo(() => {
     if (concepto.trim().length < VALIDACIONES_GASTOS.CONCEPTO_MIN_LENGTH) return false;
-    if (monto < VALIDACIONES_GASTOS.MONTO_MINIMO / 100) return false;
-    if (monto > VALIDACIONES_GASTOS.MONTO_MAXIMO / 100) return false;
+  if (monto < VALIDACIONES_GASTOS.MONTO_MINIMO) return false;
+  if (monto > VALIDACIONES_GASTOS.MONTO_MAXIMO) return false;
     if (notas.length > VALIDACIONES_GASTOS.NOTAS_MAX_LENGTH) return false;
     return true;
   }, [concepto, monto, notas]);
@@ -90,11 +118,16 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
   const handleConfirmar = async () => {
   if (!validar()) return;
 
+    if (securityState?.requiresAuth) {
+      const proceed = window.confirm('Este gasto requiere autorización de supervisor. ¿Desea continuar?');
+      if (!proceed) return;
+    }
+
     try {
       setProcesando(true);
       const payload: NuevoGasto = {
         concepto: concepto.trim(),
-        monto: Math.round(monto * 100),
+  monto: Math.round(monto),
         categoria,
         notas: notas.trim() || undefined
       };
@@ -106,6 +139,29 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
     } finally {
       setProcesando(false);
     }
+  };
+
+  const formatNumber = useCallback((value: number) => {
+    return new Intl.NumberFormat('es-CO').format(value);
+  }, []);
+
+  const parseMontoInput = (raw: string) => {
+    // Mantener solo dígitos
+    const digits = raw.replace(/[^0-9]/g, '');
+    if (!digits) return 0;
+    return parseInt(digits, 10);
+  };
+
+  const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const value = parseMontoInput(raw);
+    setMonto(value);
+    setMontoInput(value === 0 ? '0' : formatNumber(value));
+  };
+
+  const quickSetMonto = (value: number) => {
+    setMonto(value);
+    setMontoInput(formatNumber(value));
   };
 
   if (!isOpen) return null;
@@ -120,7 +176,7 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
 
       {/* Slide-over panel (entra de derecha a izquierda) */}
       <div
-        className={`absolute right-0 top-0 h-full w-full max-w-xl bg-[color:var(--sp-surface-elevated)] shadow-xl transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`absolute right-0 top-0 h-full w-full sm:max-w-md md:max-w-lg lg:max-w-xl bg-[color:var(--sp-surface-elevated)] shadow-xl transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}
         role="dialog"
         aria-modal="true"
       >
@@ -133,9 +189,9 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
             <p className="text-xs text-[color:var(--sp-neutral-600)] mt-0.5">Completa la información y registra el gasto</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={closeIfAllowed}>
-              <X className="w-4 h-4" />
-            </Button>
+            <AnyButton variant="outline" size="sm" onClick={closeIfAllowed}>
+              <IconX className="w-4 h-4" />
+            </AnyButton>
           </div>
         </div>
 
@@ -144,7 +200,7 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
           {/* Categoría */}
           <div className="space-y-3">
             <label className="text-sm font-medium">Categoría del gasto</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {CATEGORIAS_GASTOS.map((cat) => {
                 const selected = categoria === cat.value;
                 return (
@@ -165,7 +221,7 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
                     </div>
                     {selected && (
                       <span className="absolute right-2 top-2 w-5 h-5 rounded-full bg-[color:var(--sp-success-500)] text-[color:var(--sp-on-success)] grid place-items-center">
-                        <Check className="w-3 h-3" />
+                        <IconCheck className="w-3 h-3" />
                       </span>
                     )}
                   </button>
@@ -177,10 +233,13 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
           {/* Concepto */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Concepto del gasto</label>
-              <Button variant="outline" size="sm" onClick={() => setShowConceptos((v) => !v)} className="text-xs">
+              <label className="text-sm font-medium">
+                Concepto del gasto
+                <span className="ml-2 text-[10px] tracking-wide text-[color:var(--sp-neutral-500)]">*campo obligatorio</span>
+              </label>
+              <AnyButton variant="outline" size="sm" onClick={() => setShowConceptos((v) => !v)} className="text-xs">
                 💡 Sugerencias
-              </Button>
+              </AnyButton>
             </div>
             <textarea
               value={concepto}
@@ -212,23 +271,38 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
           {/* Monto */}
           <div className="space-y-3">
             <label className="text-sm font-medium">Monto gastado</label>
-            <Input
-              type="number"
-              value={Number.isFinite(monto) ? monto : 0}
-              onChange={(e) => setMonto(parseFloat(e.target.value || '0'))}
-              placeholder="0"
-              className="text-center text-3xl font-semibold"
-              min={0}
-              step={0.01}
-            />
-            <p className="text-xs text-[color:var(--sp-neutral-500)]">Equivale a: {formatCurrency(Math.round((monto || 0) * 100))}</p>
+            <div className="relative">
+              <AnyInput
+                type="text"
+                inputMode="numeric"
+                value={montoInput}
+                onChange={handleMontoChange}
+                placeholder="0"
+                className="text-center text-3xl font-semibold pr-10"
+                aria-label="Monto del gasto en pesos"
+              />
+              <span className="absolute inset-y-0 left-3 flex items-center text-sm font-medium text-[color:var(--sp-neutral-500)]">$</span>
+            </div>
+    {limits && (
+              <SecurityAlert
+                type={securityState && !securityState.valid ? 'error' : securityState?.requiresAuth ? 'warning' : 'info'}
+                title={securityState && !securityState.valid ? 'Gasto bloqueado por límite' : securityState?.requiresAuth ? 'Autorización requerida' : 'Límites de seguridad'}
+                messages={securityState?.warnings?.length ? securityState.warnings : ['Se aplican límites de control para montos de gastos.']}
+                limits={{
+      current: (monto || 0),
+      limit: (limits.limite_transaccion_normal || 0),
+                  label: 'Límite por transacción'
+                }}
+              />
+            )}
+            <p className="text-xs text-[color:var(--sp-neutral-500)]">Equivale a: {formatCurrency(Math.round(monto || 0))}</p>
             <div className="space-y-2">
               <label className="text-xs text-[color:var(--sp-neutral-500)]">Montos rápidos</label>
-              <div className="grid grid-cols-4 gap-2">
-                {[5000, 10000, 20000, 50000].map((m) => (
-                  <Button key={m} variant="outline" size="sm" onClick={() => setMonto(m)} className="text-xs">
-                    {new Intl.NumberFormat('es-CO').format(m)}
-                  </Button>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                {[1000, 5000, 10000, 20000, 50000].map((m) => (
+                  <AnyButton key={m} variant="outline" size="sm" onClick={() => quickSetMonto(m)} className="text-xs">
+                    {formatNumber(m)}
+                  </AnyButton>
                 ))}
               </div>
             </div>
@@ -257,12 +331,12 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
         {/* Footer */}
   <div className="p-4 border-t bg-[color:var(--sp-surface)] sticky bottom-0 z-10">
           <div className="flex items-center justify-between">
-            <Button variant="outline" onClick={closeIfAllowed} disabled={procesando}>
+            <AnyButton variant="outline" onClick={closeIfAllowed} disabled={procesando}>
               Cancelar
-            </Button>
-            <Button onClick={handleConfirmar} disabled={procesando || !canSubmit} className="bg-[color:var(--sp-info-600)] hover:bg-[color:var(--sp-info-700)] text-[color:var(--sp-on-info)]">
+            </AnyButton>
+            <AnyButton onClick={handleConfirmar} disabled={procesando || !canSubmit || (securityState && !securityState.valid)} className="bg-[color:var(--sp-info-600)] hover:bg-[color:var(--sp-info-700)] text-[color:var(--sp-on-info)]">
               {procesando ? 'Registrando...' : 'Registrar Gasto'}
-            </Button>
+            </AnyButton>
           </div>
         </div>
       </div>
@@ -271,3 +345,4 @@ export const GastoWizardSlideOver: React.FC<Props> = ({ isOpen, onClose, onConfi
 };
 
 export default GastoWizardSlideOver;
+

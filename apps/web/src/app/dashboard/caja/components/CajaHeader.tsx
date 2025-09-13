@@ -3,6 +3,12 @@ import { Button } from '@spoon/shared/components/ui/Button';
 import { Store, Plus, Receipt } from 'lucide-react';
 import { formatCurrencyCOP } from '@spoon/shared/lib/utils';
 
+// Type casting for React type conflicts
+const ButtonComponent = Button as any;
+const StoreComponent = Store as any;
+const PlusComponent = Plus as any;
+const ReceiptComponent = Receipt as any;
+
 interface CajaHeaderProps {
   estadoCaja: 'abierta' | 'cerrada';
   ordenesPendientes?: number;
@@ -56,7 +62,7 @@ export const CajaHeader: React.FC<CajaHeaderProps> = ({
       {/* Acciones principales */}
       <div className="flex items-center space-x-3">
         {/* Botón Abrir/Cerrar Caja */}
-  <Button
+  <ButtonComponent
           variant="outline"
           onClick={estadoCaja === 'cerrada' ? onAbrirCaja : onCerrarCaja}
           disabled={loading}
@@ -67,43 +73,45 @@ export const CajaHeader: React.FC<CajaHeaderProps> = ({
             }
           `}
         >
-          <Store className="w-4 h-4 mr-2" />
+          <StoreComponent className="w-4 h-4 mr-2" />
           {estadoCaja === 'cerrada' ? 'Abrir caja' : 'Cerrar caja'}
-        </Button>
+        </ButtonComponent>
 
         {/* Botón saneador: cerrar sesión previa */}
         {requiereSaneamiento && (
-          <Button
+          <ButtonComponent
             variant="outline"
             onClick={onCerrarSesionPrevia}
             disabled={loading}
             className="bg-[color:var(--sp-warning-50)] text-[color:var(--sp-warning-800)] border-[color:var(--sp-warning-200)] hover:bg-[color:var(--sp-warning-100)]"
           >
             Cerrar sesión previa
-          </Button>
+          </ButtonComponent>
         )}
 
         {/* Botón Nueva Venta - Variante verde + estados focus/active visibles */}
-        <Button
+        <ButtonComponent
           variant="outline"
           onClick={onNuevaVenta}
-          disabled={estadoCaja === 'cerrada' || loading}
+          disabled={estadoCaja === 'cerrada' || requiereSaneamiento || loading}
+          title={requiereSaneamiento ? 'Bloqueado: primero cierra la sesión previa' : undefined}
           className="bg-[color:var(--sp-success-50)] text-[color:var(--sp-success-800)] border-[color:var(--sp-success-200)] hover:bg-[color:var(--sp-success-100)] hover:border-[color:var(--sp-success-300)] hover:text-[color:var(--sp-success-900)] hover:shadow-sm active:bg-[color:var(--sp-success-200)] focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 transition-colors"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <PlusComponent className="w-4 h-4 mr-2" />
           Nueva venta
-        </Button>
+        </ButtonComponent>
 
         {/* Botón Nuevo Gasto */}
-        <Button
+        <ButtonComponent
           variant="outline"
           onClick={onNuevoGasto}
-          disabled={estadoCaja === 'cerrada' || loading}
+          disabled={estadoCaja === 'cerrada' || requiereSaneamiento || loading}
+          title={requiereSaneamiento ? 'Bloqueado: primero cierra la sesión previa' : undefined}
           className="bg-[color:var(--sp-error-50)] text-[color:var(--sp-error-700)] border-[color:var(--sp-error-200)] hover:bg-[color:var(--sp-error-100)]"
         >
-          <Receipt className="w-4 h-4 mr-2" />
+          <ReceiptComponent className="w-4 h-4 mr-2" />
           Nuevo gasto
-        </Button>
+        </ButtonComponent>
       </div>
     </div>
   );
@@ -116,7 +124,7 @@ export const CajaStatus: React.FC<{
 }> = ({ sesionActual, estadoCaja }) => {
   if (estadoCaja === 'cerrada' || !sesionActual) return null;
 
-  const formatCurrency = (centavos: number) => formatCurrencyCOP(centavos);
+  const formatCurrency = (pesos: number) => formatCurrencyCOP(pesos);
   // Asegurar hora mostrada en zona horaria de Bogotá para evitar desfases
   const formatHoraBogota = (isoString: string) => {
     try {

@@ -5,4 +5,4 @@
 
 "use client";
 
-export { useCajaSesion } from '../caja/hooks/useCajaSesion';
+export { useCajaSesion } from './caja/hooks/useCajaSesion';

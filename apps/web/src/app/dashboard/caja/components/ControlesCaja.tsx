@@ -6,7 +6,17 @@ import { Input } from '@spoon/shared/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@spoon/shared/components/ui/Card';
 // Usar el hook real de la app (no el mock compartido)
 import { useCajaSesion } from '../hooks/useCajaSesion';
+import { useSaldoCalculado } from '../hooks/useSaldoCalculado';
 import { formatCurrency, CAJA_CONFIG, CAJA_MESSAGES } from '@spoon/shared/caja/constants/cajaConstants';
+import { ModalCierreCaja } from './ModalCierreCaja';
+
+// Type casting to resolve React version conflicts
+const ButtonComponent = Button as any;
+const InputComponent = Input as any;
+const CardComponent = Card as any;
+const CardContentComponent = CardContent as any;
+const CardHeaderComponent = CardHeader as any;
+const CardTitleComponent = CardTitle as any;
 
 interface ControlesCajaProps {
   className?: string;
@@ -16,9 +26,14 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
   const { sesionActual, estadoCaja, loading, abrirCaja, cerrarCaja } = useCajaSesion();
   const [montoInicial, setMontoInicial] = useState(CAJA_CONFIG.MONTO_INICIAL_DEFAULT);
   const [notasApertura, setNotasApertura] = useState('');
-  const [notasCierre, setNotasCierre] = useState('');
   const [showAbrirModal, setShowAbrirModal] = useState(false);
   const [showCerrarModal, setShowCerrarModal] = useState(false);
+
+  // Hook para calcular saldo dinámicamente
+  const { saldoCalculado, loading: loadingSaldo } = useSaldoCalculado(
+    sesionActual?.id || null,
+    sesionActual?.monto_inicial || 0
+  );
 
   const handleAbrirCaja = async () => {
     const resultado = await abrirCaja(montoInicial, notasApertura);
@@ -28,16 +43,20 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
     }
   };
 
-  const handleCerrarCaja = async () => {
-    const resultado = await cerrarCaja(notasCierre);
+  const handleCerrarCaja = async (saldoReportado: number, notas: string): Promise<void> => {
+    const resultado = await cerrarCaja(notas, { saldoFinalReportadoPesos: saldoReportado });
     if (resultado.success) {
       setShowCerrarModal(false);
-      setNotasCierre('');
+    } else {
+      // El modal puede manejar errores mediante props adicionales si es necesario
+      console.error('Error al cerrar caja:', resultado.error);
+      // Por ahora, mantenemos el modal abierto para que el usuario pueda reintentar
     }
   };
 
-  const formatearMonto = (centavos: number) => {
-    return formatCurrency(centavos);
+  // UI trabaja en PESOS; este helper recibe pesos y formatea
+  const formatearMonto = (pesos: number) => {
+    return formatCurrency(pesos);
   };
 
   if (estadoCaja === 'abierta' && sesionActual) {
@@ -64,52 +83,22 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
           </div>
         </div>
 
-        <Button
+        <ButtonComponent
           variant="outline"
           onClick={() => setShowCerrarModal(true)}
           disabled={loading}
           className="text-[color:var(--sp-error-600)] border-[color:var(--sp-error-200)] hover:bg-[color:var(--sp-error-50)]"
         >
           Cerrar Caja
-        </Button>
+        </ButtonComponent>
 
-        {showCerrarModal && (
-          <div className="fixed inset-0 bg-[color:color-mix(in_srgb,black_50%,transparent)] flex items-center justify-center z-50">
-            <Card className="w-full max-w-md">
-              <CardHeader>
-                <CardTitle>Cerrar Caja</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Notas de cierre (opcional)</label>
-                  <textarea
-                    value={notasCierre}
-                    onChange={(e) => setNotasCierre(e.target.value)}
-                    placeholder="Observaciones del cierre..."
-                    className="w-full p-2 border rounded-md resize-none h-20"
-                  />
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowCerrarModal(false)}
-                    className="flex-1"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleCerrarCaja}
-                    disabled={loading}
-                    className="flex-1 bg-[color:var(--sp-error-600)] hover:bg-[color:var(--sp-error-700)]"
-                  >
-                    {loading ? 'Cerrando...' : 'Cerrar Caja'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        <ModalCierreCaja
+          isOpen={showCerrarModal}
+          onClose={() => setShowCerrarModal(false)}
+          onConfirm={handleCerrarCaja}
+          saldoCalculado={saldoCalculado}
+          loading={loading || loadingSaldo}
+        />
       </div>
     );
   }
@@ -121,28 +110,28 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
   <span className="text-sm font-medium text-[color:var(--sp-neutral-600)]">Caja Cerrada</span>
       </div>
 
-      <Button
+      <ButtonComponent
         onClick={() => setShowAbrirModal(true)}
         disabled={loading}
   className="bg-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-700)]"
       >
         <span className="mr-2">🏪</span>
         Abrir Caja
-      </Button>
+      </ButtonComponent>
 
       {showAbrirModal && (
   <div className="fixed inset-0 bg-[color:color-mix(in_srgb,black_50%,transparent)] flex items-center justify-center z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Abrir Caja</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <CardComponent className="w-full max-w-md">
+            <CardHeaderComponent>
+              <CardTitleComponent>Abrir Caja</CardTitleComponent>
+            </CardHeaderComponent>
+            <CardContentComponent className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Monto inicial en efectivo</label>
-                <Input
+                <InputComponent
                   type="number"
                   value={montoInicial / 100}
-                  onChange={(e) => setMontoInicial(Math.round(parseFloat(e.target.value || '0') * 100))}
+                  onChange={(e: any) => setMontoInicial(Math.round(parseFloat(e.target.value || '0') * 100))}
                   placeholder="50000"
                   className="text-right"
                 />
@@ -165,7 +154,7 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
                 <label className="text-sm font-medium">Montos sugeridos</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[25000, 50000, 100000].map((monto) => (
-                    <Button
+                    <ButtonComponent
                       key={monto}
                       variant="outline"
                       size="sm"
@@ -173,31 +162,40 @@ export const ControlesCaja: React.FC<ControlesCajaProps> = ({ className }) => {
                       className="text-xs"
                     >
                       {new Intl.NumberFormat('es-CO').format(monto)}
-                    </Button>
+                    </ButtonComponent>
                   ))}
                 </div>
               </div>
               
               <div className="flex space-x-2">
-                <Button
+                <ButtonComponent
                   variant="outline"
                   onClick={() => setShowAbrirModal(false)}
                   className="flex-1"
                 >
                   Cancelar
-                </Button>
-                <Button
+                </ButtonComponent>
+                <ButtonComponent
                   onClick={handleAbrirCaja}
                   disabled={loading || montoInicial <= 0}
                   className="flex-1"
                 >
                   {loading ? 'Abriendo...' : 'Abrir Caja'}
-                </Button>
+                </ButtonComponent>
               </div>
-            </CardContent>
-          </Card>
+            </CardContentComponent>
+          </CardComponent>
         </div>
       )}
     </div>
   );
 };
+
+
+
+
+
+
+
+
+

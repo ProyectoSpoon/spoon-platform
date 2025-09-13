@@ -19,6 +19,16 @@ import { AuditoriaTab } from './usuarios/components/AuditoriaTab';
 import { UsuariosService } from '@spoon/shared/services/usuarios';
 import type { UsuarioRestaurante, RoleSistema, PermisoSistema, EstadisticasUsuarios as EstadisticasUsuariosStats } from '@spoon/shared/services/usuarios';
 
+// Type casting para componentes de lucide-react y @spoon/shared
+const InfoCast = Info as any;
+const ClockCast = Clock as any;
+const UploadCast = Upload as any;
+const UsersCast = Users as any;
+const TabsCast = Tabs as any;
+const GeneralInfoFormCast = GeneralInfoForm as any;
+const UbicacionFormCast = UbicacionForm as any;
+const SinPermisosCast = SinPermisos as any;
+
 export default function ConfiguracionPage() {
   // Estados existentes
   const [editGeneral, setEditGeneral] = useState(false);
@@ -310,10 +320,10 @@ export default function ConfiguracionPage() {
 
   // Construir items de pestañas dinámicamente
   const tabItems = [
-    { id: 'info', label: 'Información General', icon: <Info className="h-4 w-4" /> },
-    { id: 'location', label: 'Ubicación', icon: <Info className="h-4 w-4" /> },
-    { id: 'horarios', label: 'Horarios', icon: <Clock className="h-4 w-4" /> },
-    { id: 'imagenes', label: 'Imágenes', icon: <Upload className="h-4 w-4" /> }
+    { id: 'info', label: 'Información General', icon: <InfoCast className="h-4 w-4" /> },
+    { id: 'location', label: 'Ubicación', icon: <InfoCast className="h-4 w-4" /> },
+    { id: 'horarios', label: 'Horarios', icon: <ClockCast className="h-4 w-4" /> },
+    { id: 'imagenes', label: 'Imágenes', icon: <UploadCast className="h-4 w-4" /> }
   ];
 
   // Solo agregar pestaña de usuarios si tiene permisos
@@ -321,7 +331,7 @@ export default function ConfiguracionPage() {
     tabItems.push({
       id: 'usuarios',
       label: `Usuarios y Roles${usuarios.length ? ` (${usuarios.filter((u) => u.is_active).length})` : ''}`,
-      icon: <Users className="h-4 w-4" />
+      icon: <UsersCast className="h-4 w-4" />
     } as any);
   }
 
@@ -330,7 +340,7 @@ export default function ConfiguracionPage() {
         
 
       {/* Pestañas */}
-      <Tabs
+      <TabsCast
         className="mt-0 mb-3"
         activeId={activeTab}
         onChange={setActiveTab}
@@ -340,7 +350,7 @@ export default function ConfiguracionPage() {
       {/* Contenido de pestañas */}
       <div className="mt-2">
         {activeTab === 'info' && (
-          <GeneralInfoForm
+          <GeneralInfoFormCast
             formData={generalInfo}
             onChange={handleGeneralChange}
             onSubmit={handleGeneralSubmit}
@@ -353,14 +363,11 @@ export default function ConfiguracionPage() {
         )}
 
         {activeTab === 'location' && (
-          <UbicacionForm
+          <UbicacionFormCast
             formData={ubicacion}
             onChange={handleUbicacionChange}
             onSubmit={handleUbicacionSubmit}
             saving={savingUbicacion}
-            countries={countries}
-            departments={departments}
-            cities={cities}
             readOnly={!editUbicacion}
             showSave={editUbicacion}
             onCancel={() => setEditUbicacion(false)}
@@ -409,7 +416,7 @@ export default function ConfiguracionPage() {
                 />
 
                 {/* Sub-pestañas del módulo de usuarios */}
-                <Tabs
+                <TabsCast
                   className="mt-0 mb-3"
                   activeId={activeUsersTab}
                   onChange={setActiveUsersTab}
@@ -417,17 +424,17 @@ export default function ConfiguracionPage() {
                     { 
                       id: 'usuarios', 
                         label: `Usuarios${usuarios.length ? ` (${usuarios.filter((u) => u.is_active).length})` : ''}`, 
-                        icon: <Users className="h-4 w-4" />
+                        icon: <UsersCast className="h-4 w-4" />
                       },
                     { 
                       id: 'roles', 
                       label: 'Configuración de Roles', 
-                      icon: <Info className="h-4 w-4" /> 
+                      icon: <InfoCast className="h-4 w-4" /> 
                     },
                     { 
                       id: 'auditoria', 
                       label: 'Auditoría', 
-                      icon: <Clock className="h-4 w-4" /> 
+                      icon: <ClockCast className="h-4 w-4" /> 
                     },
                   ]}
                 />
@@ -470,7 +477,7 @@ export default function ConfiguracionPage() {
                 </div>
               </div>
             ) : (
-              <SinPermisos 
+              <SinPermisosCast 
                 titulo="Sin permisos para gestionar usuarios"
                 mensaje="Solo los propietarios pueden acceder a la configuración de usuarios y roles."
               />

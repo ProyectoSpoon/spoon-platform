@@ -3,6 +3,11 @@
 import React from 'react';
 import { Card, CardContent } from '@spoon/shared/components/ui/Card';
 import { Button } from '@spoon/shared/components/ui/Button';
+
+// Type casting for React type conflicts
+const CardComponent = Card as any;
+const CardContentComponent = CardContent as any;
+const ButtonComponent = Button as any;
 import { OrdenPendiente as OrdenPendienteType } from '../../caja/types/cajaTypes';
 import { formatCurrency } from '../../caja/constants/cajaConstants';
 
@@ -45,12 +50,12 @@ export const OrdenPendiente: React.FC<OrdenPendienteProps> = ({
   };
 
   return (
-    <Card className={`
+    <CardComponent className={`
       transition-all duration-200 hover:shadow-md cursor-pointer
       border-l-4 ${getColorBorde(orden.tipo)}
       ${className}
     `}>
-      <CardContent className="p-4">
+      <CardContentComponent className="p-4">
         <div className="flex items-center justify-between">
           {/* Información de la orden */}
           <div className="flex-1">
@@ -86,7 +91,7 @@ export const OrdenPendiente: React.FC<OrdenPendienteProps> = ({
               </div>
             </div>
             
-            <Button
+            <ButtonComponent
               onClick={() => onProcesarPago(orden)}
               disabled={loading}
               size="sm"
@@ -103,11 +108,11 @@ export const OrdenPendiente: React.FC<OrdenPendienteProps> = ({
                   <span>Cobrar</span>
                 </div>
               )}
-            </Button>
+            </ButtonComponent>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </CardContentComponent>
+    </CardComponent>
   );
 };
 
@@ -180,3 +185,4 @@ export const EstadisticasOrdenes: React.FC<{
     </div>
   );
 };
+

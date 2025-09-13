@@ -1,51 +1,101 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Truck, Clock, CheckCircle, DollarSign, Users, RefreshCw } from 'lucide-react';
-import { usePedidos } from '../hooks/usePedidos';
-import { useDomiciliarios } from '../hooks/useDomiciliarios';
-import { useMenuDelDia } from '../hooks/useMenuDelDia';
-import { ESTADOS_PEDIDO } from '../constants/domiciliosConstants';
+import { Plus as PlusRaw, Truck as TruckRaw } from 'lucide-react';
+const Plus: any = PlusRaw; // Cast temporal por duplicación de tipos React
+const Truck: any = TruckRaw;
+const LinkAny: any = Link;
+import { ESTADOS_PEDIDO, REFRESH_INTERVAL } from '../constants/domiciliosConstants';
 import PedidoForm from './PedidoForm';
-import PedidosTable from './PedidosTable';
+import PedidoDetailCard from './PedidoDetailCard';
+import PedidosTableOverview from './PedidosTableOverview';
 import DomiciliariosPanel from './DomiciliariosPanel';
+import DomiciliariosWizardSlideOver from './modals/DomiciliariosWizardSlideOver';
 import PagoModal from './PagoModal';
+import TopBannerCaja from '../components/TopBannerCaja';
+import HeaderTabsAndActions from '../components/HeaderTabsAndActions';
+import CompactMetrics from '../components/CompactMetrics';
+import FiltersCompact from '../components/FiltersCompact';
+import { useDomiciliosPageController } from '../hooks/useDomiciliosPageController';
 
 export default function DomiciliosPage() {
-  const { 
-    pedidos, 
-    loading: loadingPedidos, 
-    loadingStates, 
-    crearPedido, 
-    actualizarEstado, 
+  // Inline sort controls component (stateless)
+  function SortControls({ value, onChange }: { value: { key: 'tiempo'|'valor'|'estado'; dir: 'asc'|'desc' }, onChange: (v: { key: 'tiempo'|'valor'|'estado'; dir: 'asc'|'desc' })=>void }) {
+    return (
+      <div className="flex items-center gap-1">
+        <select value={value.key} onChange={(e)=> onChange({ key: e.target.value as any, dir: value.dir })} className="px-2 py-1 border rounded-md text-xs">
+          <option value="tiempo">Tiempo</option>
+          <option value="valor">Valor</option>
+          <option value="estado">Estado</option>
+        </select>
+        <select value={value.dir} onChange={(e)=> onChange({ key: value.key, dir: e.target.value as any })} className="px-2 py-1 border rounded-md text-xs">
+          <option value="asc">Asc</option>
+          <option value="desc">Desc</option>
+        </select>
+      </div>
+    );
+  }
+  const {
+    // data
+    pedidos,
+    domiciliarios,
+    domiciliariosDisponibles,
+    menu,
+    filtros,
+
+    // loading
+    loadingPedidos,
+    loadingDomiciliarios,
+    loadingMenu,
+    loadingStates,
+  // error/info
+    
+
+    // caja
+    hasOpenCajaSession,
+  hayMenuHoy,
+
+    // pagination/limits
+    limit,
+
+    // ui state
+  tab, setTab,
+    mostrarFormulario, setMostrarFormulario,
+    pedidoParaPago, setPedidoParaPago,
+    wizardOpen, setWizardOpen,
+    isCompact,
+
+    // metrics
+    pendientes, enRuta, entregados, totalDia, disponibles,
+
+    // actions
+    crearPedido,
+    actualizarEstado,
+    actualizarEstadoDomiciliario,
     registrarPago,
-    cargarPedidos 
-  } = usePedidos();
+    cargarPedidos,
+    updateFiltros,
+    loadMore,
+  agregarDomiciliario,
+  onChangeTab,
+  onAplicarFiltros,
+  } = useDomiciliosPageController();
 
-  const { 
-    domiciliarios, 
-    domiciliariosDisponibles, 
-    loading: loadingDomiciliarios, 
-    agregarDomiciliario, 
-    actualizarEstado: actualizarEstadoDomiciliario 
-  } = useDomiciliarios();
+  // Estado de vista y selección deben declararse al tope (reglas de hooks)
+  type VistaActiva = 'tabla' | 'detalle';
+  const [vistaActiva, setVistaActiva] = useState<VistaActiva>('tabla');
+  const [pedidoSeleccionado, setPedidoSeleccionado] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<'tiempo'|'valor'|'estado'>('tiempo');
+  const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
 
-  const { 
-    menu, 
-    loading: loadingMenu, 
-    hayMenuHoy 
-  } = useMenuDelDia();
-
-  const [mostrarFormulario, setMostrarFormulario] = useState<boolean>(false);
-  const [pedidoParaPago, setPedidoParaPago] = useState<string | null>(null);
-
-  // Calcular estadisticas localmente
-  const pendientes = pedidos.filter(p => p.status === ESTADOS_PEDIDO.RECIBIDO || p.status === ESTADOS_PEDIDO.COCINANDO).length;
-  const enRuta = pedidos.filter(p => p.status === ESTADOS_PEDIDO.ENVIADO).length;
-  const entregados = pedidos.filter(p => p.status === ESTADOS_PEDIDO.ENTREGADO || p.status === ESTADOS_PEDIDO.PAGADO).length;
-  const totalDia = pedidos.reduce((sum, p) => sum + p.total_amount + p.delivery_fee, 0);
-  const disponibles = domiciliariosDisponibles.length;
+  // Auto-refresh cada 30s
+  useEffect(() => {
+    const id = setInterval(() => {
+      cargarPedidos();
+    }, REFRESH_INTERVAL);
+    return () => clearInterval(id);
+  }, [cargarPedidos]);
 
   if (loadingPedidos || loadingDomiciliarios || loadingMenu) {
     return (
@@ -58,6 +108,7 @@ export default function DomiciliosPage() {
           <p className="text-[color:var(--sp-neutral-600)] text-sm">
             Preparando toda la informacion.
           </p>
+          <div role="status" aria-live="polite" className="sr-only">Cargando contenidos</div>
         </div>
       </div>
     );
@@ -80,135 +131,133 @@ export default function DomiciliosPage() {
               Necesitas configurar el menu del dia antes de recibir pedidos de domicilio.
             </p>
             
-            <Link
+            <LinkAny
               href="/dashboard/carta/menu-dia"
         className="px-6 py-3 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] rounded-lg hover:bg-[color:var(--sp-primary-700)] transition-colors inline-flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
               Configurar Menu del Dia
-            </Link>
+            </LinkAny>
           </div>
         </div>
       </div>
     );
   }
 
+  // isCompact viene del hook controlador
+
   return (
-  <div className="min-h-screen bg-[--sp-surface]">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+	<div className="min-h-screen bg-[--sp-surface]">
+      <div className={(isCompact ? 'max-w-5xl' : 'max-w-7xl') + ' mx-auto px-4 py-6 transition-[max-width]'}>
+  <TopBannerCaja visible={!hasOpenCajaSession} />
+  {/* Error live region */}
+  <div aria-live="assertive" className="sr-only" id="domicilios-aria-errors"></div>
         
-        <div className="mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-              <h1 className="heading-page">Domicilios</h1>
-              <p className="text-[color:var(--sp-neutral-600)] mt-1">
-                Gestiona los pedidos y domiciliarios de hoy
-              </p>
-            </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={cargarPedidos}
-                className="flex items-center px-4 py-2 border border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] rounded-lg hover:bg-[color:var(--sp-neutral-50)] transition-colors"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Actualizar
-              </button>
-              
-              <button
-                onClick={() => setMostrarFormulario(true)}
-        className="flex items-center px-6 py-2 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] rounded-lg hover:bg-[color:var(--sp-primary-700)] transition-colors"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Nuevo Pedido
-              </button>
-            </div>
-          </div>
+        <HeaderTabsAndActions
+          tab={tab}
+          registros={pedidos.length}
+          limit={limit}
+          onChangeTab={onChangeTab}
+          onActualizar={onAplicarFiltros}
+          onNuevoPedido={() => setMostrarFormulario(true)}
+          onGestionarDomiciliarios={() => setWizardOpen(true)}
+          descripcion={tab==='hoy' ? 'Gestiona los pedidos del día en tiempo real.' : 'Explora pedidos anteriores, filtra por estado y domiciliario.'}
+        />
+
+        <CompactMetrics
+          pendientes={pendientes}
+          enRuta={enRuta}
+          entregados={entregados}
+          totalDia={totalDia}
+          disponibles={disponibles}
+          showCajaBannerInside={!hasOpenCajaSession}
+        />
+
+  {/* Toggle vista tabla/detalle */}
+        <div className="flex items-center gap-2 mb-3">
+          <button
+            className={`px-3 py-1.5 text-sm rounded-md border ${vistaActiva==='tabla' ? 'bg-[color:var(--sp-neutral-100)] font-medium' : ''}`}
+            onClick={()=> setVistaActiva('tabla')}
+            aria-pressed={vistaActiva==='tabla'}
+          >
+            Tabla
+          </button>
+          <button
+            className={`px-3 py-1.5 text-sm rounded-md border ${vistaActiva==='detalle' ? 'bg-[color:var(--sp-neutral-100)] font-medium' : ''}`}
+            onClick={()=> setVistaActiva('detalle')}
+            aria-pressed={vistaActiva==='detalle'}
+          >
+            Detalle
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-      <div className="bg-[--sp-surface-elevated] rounded-lg shadow-sm p-4">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-[color:var(--sp-warning-100)]">
-                <Clock className="h-6 w-6 text-[color:var(--sp-warning-600)]" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-[color:var(--sp-neutral-600)]">Pendientes</p>
-                <p className="value-number text-[color:var(--sp-neutral-900)]">{pendientes}</p>
-              </div>
+        {/* Filtros rápidos y orden (solo tabla) */}
+        {vistaActiva === 'tabla' && (
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <div className="flex items-center gap-1 text-sm">
+              <span className="text-[color:var(--sp-neutral-600)]">Estado:</span>
+              {['todos', ESTADOS_PEDIDO.RECIBIDO, ESTADOS_PEDIDO.COCINANDO, ESTADOS_PEDIDO.LISTO, ESTADOS_PEDIDO.ENVIADO, ESTADOS_PEDIDO.ENTREGADO, ESTADOS_PEDIDO.PAGADO].map(e => (
+                <button
+                  key={e}
+                  className={`px-2 py-1 border rounded-md text-xs ${String(filtros.estado)===e ? 'bg-[color:var(--sp-neutral-100)] font-medium' : ''}`}
+                  onClick={()=> updateFiltros({ estado: e as any })}
+                >{e}</button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1 text-sm">
+              <span className="text-[color:var(--sp-neutral-600)]">Ordenar por:</span>
+              <SortControls value={{ key: sortKey, dir: sortDir }} onChange={(v)=> { setSortKey(v.key); setSortDir(v.dir); }} />
             </div>
           </div>
+        )}
 
-      <div className="bg-[--sp-surface-elevated] rounded-lg shadow-sm p-4">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-[color:var(--sp-info-100)]">
-                <Truck className="h-6 w-6 text-[color:var(--sp-info-600)]" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-[color:var(--sp-neutral-600)]">En Ruta</p>
-                <p className="value-number text-[color:var(--sp-neutral-900)]">{enRuta}</p>
-              </div>
-            </div>
-          </div>
+  <FiltersCompact
+          tab={tab}
+          filtros={{ estado: filtros.estado as string, domiciliario: filtros.domiciliario as string, fecha: filtros.fecha as string, buscar: (filtros as any).buscar }}
+          domiciliarios={domiciliarios}
+          onUpdateFiltros={(patch) => updateFiltros(patch as any)}
+        />
 
-      <div className="bg-[--sp-surface-elevated] rounded-lg shadow-sm p-4">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-[color:var(--sp-success-100)]">
-                <CheckCircle className="h-6 w-6 text-[color:var(--sp-success-600)]" />
+        <div
+          className="grid grid-cols-1 gap-6 items-start"
+          id={tab==='hoy' ? 'panel-hoy' : 'panel-historial'}
+          role="tabpanel"
+          aria-labelledby={tab==='hoy' ? 'tab-hoy' : 'tab-historial'}
+        >
+          <div className="space-y-5">
+            {vistaActiva === 'tabla' ? (
+              <PedidosTableOverview
+                pedidos={pedidos}
+                domiciliarios={domiciliarios}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                onChangeEstado={(id, estado) => actualizarEstado({ pedido_id: id, nuevo_estado: estado })}
+                onAsignarDomiciliario={(id, domId) => actualizarEstado({ pedido_id: id, nuevo_estado: ESTADOS_PEDIDO.ENVIADO, domiciliario_id: domId })}
+                onVerDetalle={(id)=> { setPedidoSeleccionado(id); setVistaActiva('detalle'); }}
+              />
+            ) : (
+              <PedidoDetailCard 
+                pedidos={pedidoSeleccionado ? pedidos.filter(p=>p.id===pedidoSeleccionado) : pedidos}
+                domiciliarios={domiciliarios}
+                onUpdateEstado={actualizarEstado}
+                onRegistrarPago={(data) => {
+                  registrarPago(data);
+                  setPedidoParaPago(null);
+                }}
+                loading={loadingStates}
+                hasOpenCajaSession={hasOpenCajaSession}
+              />
+            )}
+            {tab==='historial' && pedidos.length >= limit && (
+              <div className="flex justify-center pb-4">
+                <button
+                  onClick={loadMore}
+                  className="px-5 py-2 text-sm bg-[color:var(--sp-neutral-200)] hover:bg-[color:var(--sp-neutral-300)] rounded-md text-[color:var(--sp-neutral-800)]"
+                >
+                  Cargar más
+                </button>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-[color:var(--sp-neutral-600)]">Entregados</p>
-                <p className="value-number text-[color:var(--sp-neutral-900)]">{entregados}</p>
-              </div>
-            </div>
-          </div>
-
-      <div className="bg-[--sp-surface-elevated] rounded-lg shadow-sm p-4">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-[color:var(--sp-info-100)]">
-                <DollarSign className="h-6 w-6 text-[color:var(--sp-info-600)]" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-[color:var(--sp-neutral-600)]">Total Dia</p>
-                <p className="value-number text-[color:var(--sp-neutral-900)]">${Math.round(totalDia / 100).toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-
-      <div className="bg-[--sp-surface-elevated] rounded-lg shadow-sm p-4">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-[color:var(--sp-error-100)]">
-                <Users className="h-6 w-6 text-[color:var(--sp-error-600)]" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-[color:var(--sp-neutral-600)]">Disponibles</p>
-                <p className="value-number text-[color:var(--sp-neutral-900)]">{disponibles}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3 space-y-6">
-            <PedidosTable 
-              pedidos={pedidos}
-              domiciliarios={domiciliarios}
-              onUpdateEstado={actualizarEstado}
-              onRegistrarPago={(data) => {
-                registrarPago(data);
-                setPedidoParaPago(null);
-              }}
-              loading={loadingStates}
-            />
-          </div>
-
-          <div className="lg:col-span-1">
-            <DomiciliariosPanel 
-              domiciliarios={domiciliarios}
-              onUpdateStatus={actualizarEstadoDomiciliario}
-              onAddDomiciliario={agregarDomiciliario}
-              loading={loadingDomiciliarios}
-            />
+            )}
           </div>
         </div>
 
@@ -219,8 +268,9 @@ export default function DomiciliosPage() {
               <PedidoForm 
                 menu={menu}
                 onSubmit={async (nuevoPedido) => {
-                  await crearPedido(nuevoPedido);
-                  setMostrarFormulario(false);
+                  const ok = await crearPedido(nuevoPedido);
+                  if (ok) setMostrarFormulario(false);
+                  return ok;
                 }}
                 loading={loadingStates.creando_pedido}
                 onClose={() => setMostrarFormulario(false)}
@@ -240,6 +290,14 @@ export default function DomiciliosPage() {
             loading={loadingStates.registrando_pago}
           />
         )}
+        <DomiciliariosWizardSlideOver
+          isOpen={wizardOpen}
+          onClose={()=>setWizardOpen(false)}
+          domiciliarios={domiciliarios}
+          onAdd={agregarDomiciliario}
+          onUpdateStatus={actualizarEstadoDomiciliario}
+          loading={loadingDomiciliarios}
+        />
       </div>
     </div>
   );

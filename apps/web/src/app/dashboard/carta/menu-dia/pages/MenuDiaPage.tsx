@@ -2,6 +2,10 @@
 
 import React from 'react';
 import { Settings, Grid } from 'lucide-react';
+
+// Type casting for React type conflicts
+const SettingsComponent = Settings as any;
+const GridComponent = Grid as any;
 import { useMenuData } from '@spoon/shared/hooks/menu-dia/useMenuData';
 import { useMenuState } from '@spoon/shared/hooks/menu-dia/useMenuState';
 import { MenuCombinacion } from '@spoon/shared/types/menu-dia/menuTypes';
@@ -181,7 +185,7 @@ export default function MenuDiaPage() {
           : 'text-[color:var(--sp-neutral-600)] hover:text-[color:var(--sp-neutral-900)]'
               }`}
             >
-              <Settings className="h-4 w-4" />
+              <SettingsComponent className="h-4 w-4" />
               Configuración
             </button>
             <button
@@ -192,7 +196,7 @@ export default function MenuDiaPage() {
           : 'text-[color:var(--sp-neutral-600)] hover:text-[color:var(--sp-neutral-900)]'
               }`}
             >
-              <Grid className="h-4 w-4" />
+              <GridComponent className="h-4 w-4" />
               Combinaciones ({menuCombinations.length})
             </button>
           </div>

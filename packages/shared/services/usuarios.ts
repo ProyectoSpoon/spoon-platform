@@ -205,31 +205,63 @@ export class UsuariosService {
    * Obtener todos los roles del sistema
    */
   static async getRolesSistema(): Promise<{ data: RoleSistema[] | null; error: any }> {
-    try {
-      const { data, error } = await supabase
-        .from('system_roles')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        // Fallback si hay un problema de políticas recursivas
-        if ((error as any).code === '42P17') {
-          console.warn('Roles: políticas recursivas detectadas (42P17). Usando roles por defecto.');
-          return { data: this.defaultSystemRoles(), error: null };
-        }
-        console.error('Error obteniendo roles:', error);
-        return { data: null, error };
-      }
-
-      // Si no hay roles (o tabla vacía), devolvemos roles de sistema por defecto
-      if (!data || data.length === 0) {
-        return { data: this.defaultSystemRoles(), error: null };
-      }
-      return { data, error: null };
-    } catch (error) {
-      console.error('Error en getRolesSistema:', error);
-      return { data: null, error };
+    // Cache simple en memoria (módulo singleton) para evitar spam de llamadas fallidas
+    // y single-flight para peticiones concurrentes.
+    const now = Date.now();
+    const cacheTTLms = 60_000; // 1 min
+    // @ts-ignore attach ephemeral static props
+    if (!this._rolesCache) this._rolesCache = { data: null, ts: 0 };
+    // @ts-ignore
+    if (!this._rolesInFlight) this._rolesInFlight = null;
+    // @ts-ignore
+    if (this._rolesCache.data && (now - this._rolesCache.ts) < cacheTTLms) {
+      // @ts-ignore
+      return { data: this._rolesCache.data, error: null };
     }
+    // @ts-ignore prevent duplicate fetch
+    if (this._rolesInFlight) {
+      // @ts-ignore
+      return this._rolesInFlight;
+    }
+    // @ts-ignore
+    this._rolesInFlight = (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('system_roles')
+          .select('*')
+          .order('name');
+
+        if (error) {
+          if ((error as any).code === '42P17') {
+            // Throttle console: solo loggear cada 30s
+            // @ts-ignore
+            if (!this._lastRolesRecursionLog || now - this._lastRolesRecursionLog > 30_000) {
+              console.warn('Roles: políticas recursivas detectadas (42P17). Usando roles por defecto.');
+              // @ts-ignore
+              this._lastRolesRecursionLog = now;
+            }
+            const fallback = this.defaultSystemRoles();
+            // @ts-ignore
+            this._rolesCache = { data: fallback, ts: Date.now() };
+            return { data: fallback, error: null };
+          }
+          console.error('Error obteniendo roles:', error);
+          return { data: null, error };
+        }
+        const result = (!data || data.length === 0) ? this.defaultSystemRoles() : data;
+        // @ts-ignore
+        this._rolesCache = { data: result, ts: Date.now() };
+        return { data: result, error: null };
+      } catch (error) {
+        console.error('Error en getRolesSistema:', error);
+        return { data: null, error };
+      } finally {
+        // @ts-ignore
+        this._rolesInFlight = null;
+      }
+    })();
+    // @ts-ignore
+    return this._rolesInFlight;
   }
 
   /**
@@ -736,6 +768,24 @@ export class UsuariosService {
               .in('id', userIdList)
           : Promise.resolve({ data: [], error: null } as any),
       ]);
+
+      // Fallback específico: política recursiva en system_roles (42P17) -> usar catálogo por defecto
+      if (rolesRes?.error?.code === '42P17') {
+        console.warn('[usuarios:getHistorialCambios] RLS recursion (42P17) en system_roles; usando fallback estático');
+        try {
+          // Reemplazar error por datos de fallback (solo los campos requeridos en este contexto)
+            // defaultSystemRoles devuelve RoleSistema (incluye is_system, created_at que aquí no necesitamos)
+          const fallback = UsuariosService.defaultSystemRoles().map(r => ({
+            id: r.id,
+            name: r.name,
+            description: r.description
+          }));
+          (rolesRes as any).data = fallback;
+          (rolesRes as any).error = null;
+        } catch (e) {
+          console.error('[usuarios:getHistorialCambios] Error creando fallback system_roles', e);
+        }
+      }
 
       if (rolesRes.error || permsRes.error || usersRes.error) {
         const err = rolesRes.error || permsRes.error || usersRes.error;

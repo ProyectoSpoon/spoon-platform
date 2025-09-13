@@ -55,6 +55,10 @@ export * from './components/ui/Progress';
 export * from './components/ui/Tabs';
 export * from './components/ui/components/FormCard';
 export * from './components/ui/components/InlineEditButton';
+export * from './components/ui/components/UbicacionForm';
+export * from './components/ui/components/MapPreview';
+export * from './components/ui/components/InteractiveMap';
+export * from './components/ui/components/DynamicMap';
 // ToastV2: exportado arriba desde './components/ui/Toast'
 
 // Types (when we add more)

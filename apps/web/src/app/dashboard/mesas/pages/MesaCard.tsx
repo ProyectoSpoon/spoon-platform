@@ -4,6 +4,14 @@ import { TEXTOS_ESTADO, COLORES_ESTADO } from '@spoon/shared/constants/mesas/mes
 import { getEstadoDisplay } from '@spoon/shared/utils/mesas';
 import { Users, MapPin, AlertCircle, Clock, DollarSign, Sparkles } from 'lucide-react';
 
+// Type casting para componentes de lucide-react
+const UsersCast = Users as any;
+const MapPinCast = MapPin as any;
+const AlertCircleCast = AlertCircle as any;
+const ClockCast = Clock as any;
+const DollarSignCast = DollarSign as any;
+const SparklesCast = Sparkles as any;
+
 // ========================================
 // INTERFACES EXTENDIDAS
 // ========================================
@@ -237,7 +245,7 @@ const MesaCard: React.FC<MesaCardProps> = ({
           </h3>
   {(estadoMesa && estadoMesa !== 'libre') && (elapsedMinutes !== null || tiempoOcupada) && (
             <div className="flex items-center gap-1 text-xs text-[color:var(--sp-neutral-600)] bg-[color:var(--sp-surface-elevated)]/70 px-2 py-0.5 rounded-full border border-[color:var(--sp-border)]/60">
-              <Clock className="h-3 w-3" />
+              <ClockCast className="h-3 w-3" />
         {elapsedMinutes !== null ? `${elapsedMinutes} min` : `${tiempoOcupada}m`}
             </div>
           )}
@@ -252,7 +260,7 @@ const MesaCard: React.FC<MesaCardProps> = ({
         {/* Zona */}
         {zona && zona !== 'Principal' && (
           <div className="flex items-center justify-center gap-1 text-xs text-[color:var(--sp-neutral-600)]">
-            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <MapPinCast className="h-3 w-3 flex-shrink-0" />
             <span className="truncate">{zona}</span>
           </div>
         )}
@@ -260,7 +268,7 @@ const MesaCard: React.FC<MesaCardProps> = ({
          {/* Ocupación actual y capacidad */}
          {(typeof comensales === 'number') && (
            <div className="flex items-center justify-center gap-1 text-xs text-[color:var(--sp-neutral-700)]">
-             <Users className="h-3 w-3 flex-shrink-0" />
+             <UsersCast className="h-3 w-3 flex-shrink-0" />
              <span>👥 {comensales} persona{comensales === 1 ? '' : 's'}</span>
            </div>
          )}
@@ -284,15 +292,15 @@ const MesaCard: React.FC<MesaCardProps> = ({
     <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium bg-[color:var(--sp-surface-elevated)]/70`}
       style={{ color: baseColor, border: `1px solid ${baseColor}` }}
           >
-            {estadoMesa === 'inactiva' && <AlertCircle className="h-3 w-3" />}
-            {estadoMesa === 'mantenimiento' && <AlertCircle className="h-3 w-3" />}
-            {(isOcupada || estadoMesa === 'en_cocina' || estadoMesa === 'servida' || estadoMesa === 'por_cobrar') && <Sparkles className="h-3 w-3" />}
+            {estadoMesa === 'inactiva' && <AlertCircleCast className="h-3 w-3" />}
+            {estadoMesa === 'mantenimiento' && <AlertCircleCast className="h-3 w-3" />}
+            {(isOcupada || estadoMesa === 'en_cocina' || estadoMesa === 'servida' || estadoMesa === 'por_cobrar') && <SparklesCast className="h-3 w-3" />}
             <span>{getTextoEstado()}</span>
           </div>
 
           {isOcupada && total ? (
             <div className="flex items-center gap-1 text-sm font-semibold text-[color:var(--sp-success-700)]">
-              <DollarSign className="h-4 w-4 text-[color:var(--sp-success-600)]" />
+              <DollarSignCast className="h-4 w-4 text-[color:var(--sp-success-600)]" />
               <span>{formatCurrency(total)}</span>
               {items && <span className="text-xs text-[color:var(--sp-neutral-500)] ml-1">({items})</span>}
             </div>

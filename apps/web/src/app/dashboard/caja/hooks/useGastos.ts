@@ -10,7 +10,7 @@ import { useCajaSesion } from './useCajaSesion';
 import { GASTOS_MESSAGES } from '../../caja/constants/cajaConstants';
 
 export const useGastos = () => {
-  const { sesionActual } = useCajaSesion();
+  const { sesionActual, requiereSaneamiento } = useCajaSesion();
   const [gastos, setGastos] = useState<GastoCaja[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +56,10 @@ export const useGastos = () => {
     try {
       if (!sesionActual) {
         throw new Error('No hay sesión de caja abierta');
+      }
+
+      if (requiereSaneamiento) {
+        throw new Error('Operación bloqueada: primero cierra la sesión previa antes de registrar gastos.');
       }
 
       setLoading(true);

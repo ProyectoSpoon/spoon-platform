@@ -9,11 +9,19 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  globals: {
+    'ts-jest': {
+      tsconfig: '<rootDir>/tsconfig.jest.json',
+    },
+  },
   transform: {
-    '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
+    '^.+\\.(ts|tsx)$': 'ts-jest',
   },
   transformIgnorePatterns: [
     '/node_modules/(?!@supabase|isows|@testing-library|lucide-react)'
+  ],
+  modulePathIgnorePatterns: [
+    '<rootDir>/packages/shared/__tests__/caja/__mocks__'
   ],
   moduleNameMapper: {
     '^@spoon/shared/(.*)$': '<rootDir>/packages/shared/$1',
@@ -21,7 +29,7 @@ module.exports = {
   },
   testMatch: [
     '**/packages/shared/__tests__/**/*.test.@(ts|tsx|js|jsx)',
-    '**/apps/web/**/__tests__/**/*.test.@(ts|tsx|js|jsx)'
+  '**/apps/web/**/__tests__/**/*.test.@(ts|tsx)'
   ],
   collectCoverage: isFullCoverage,
   coverageReporters: ['text', 'lcov', 'json', 'clover'],

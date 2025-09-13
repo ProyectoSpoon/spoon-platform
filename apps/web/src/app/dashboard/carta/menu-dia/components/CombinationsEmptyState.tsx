@@ -3,6 +3,9 @@
 import React from 'react';
 import { Grid } from 'lucide-react';
 
+// Type casting for React type conflicts
+const GridComponent = Grid as any;
+
 interface Props {
   hasActiveMenu: boolean;
   hasCombinations: boolean;
@@ -16,7 +19,7 @@ export default function CombinationsEmptyState({ hasActiveMenu, hasCombinations,
     <div className="text-center py-16">
       <div className="max-w-md mx-auto">
         <div className="w-24 h-24 bg-[color:var(--sp-neutral-100)] rounded-full flex items-center justify-center mx-auto mb-6">
-          <Grid className="w-12 h-12 text-[color:var(--sp-neutral-400)]" />
+          <GridComponent className="w-12 h-12 text-[color:var(--sp-neutral-400)]" />
         </div>
         <h3 className="heading-section text-[color:var(--sp-neutral-900)] mb-4">
           {isNoData ? 'No hay combinaciones disponibles' : 'No se encontraron combinaciones'}

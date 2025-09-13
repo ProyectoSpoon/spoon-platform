@@ -1,10 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getUserProfile, getUserRestaurant, supabase } from "@spoon/shared";
-import { Button, Card, CardHeader, CardTitle, CardContent, toast } from "@spoon/shared";
+import { Button, Card, CardHeader, CardTitle, CardContent, toast, DynamicMap, InputV2 } from "@spoon/shared";
 import { UbicacionForm } from "@spoon/shared/components/ui/components/UbicacionForm";
+import { useGeographicData } from "@spoon/shared/hooks/useGeographicData";
+
+// Type casting for React type conflicts
+const ButtonComponent = Button as any;
+const CardComponent = Card as any;
+const CardHeaderComponent = CardHeader as any;
+const CardTitleComponent = CardTitle as any;
+const CardContentComponent = CardContent as any;
+const UbicacionFormComponent = UbicacionForm as any;
+const InputV2Component = InputV2 as any;
 
 interface UbicacionData {
   address: string;
@@ -66,10 +76,10 @@ export default function UbicacionPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<UbicacionData>({
     address: "",
-    country_id: "",
+    country_id: "", // Se establecerá automáticamente cuando carguen los países
     department_id: "",
     city_id: "",
-    latitude: 4.6097102,
+    latitude: 4.6097102, // Coordenadas por defecto de Bogotá
     longitude: -74.081749,
   });
   const [loading, setLoading] = useState(true);
@@ -77,10 +87,25 @@ export default function UbicacionPage() {
   const [saving, setSaving] = useState(false);
   const [userInfo, setUserInfo] = useState<any>(null);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
-  const [loadingGeoData, setLoadingGeoData] = useState(false);
+
+  // Usar el hook para datos geográficos reales
+  const { countries, departments, cities, loading: loadingGeoData } = useGeographicData();
+  const [resolvedCityName, setResolvedCityName] = useState<string | undefined>(undefined);
+
+  // Función optimizada para manejar cambios en el formulario
+  const handleFormChange = useCallback((field: any, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  // Logger para detectar cambios inesperados de coordenadas
+  useEffect(() => {
+    console.log('�️ Coordenadas actuales:', {
+      lat: formData.latitude,
+      lng: formData.longitude,
+      city: cities.find(c => c.id === formData.city_id)?.name,
+      trigger: 'formData change'
+    });
+  }, [formData.latitude, formData.longitude]);
 
   // Seguridad: timeout para evitar loading infinito
   useEffect(() => {
@@ -93,39 +118,131 @@ export default function UbicacionPage() {
     return () => clearTimeout(timeout);
   }, [loading]);
 
-  // Ejemplo de fetch simulado (reemplaza por tu lógica real)
+  // Cargar datos reales del usuario y restaurante
   useEffect(() => {
+    let isMounted = true;
     async function fetchData() {
       try {
-        // ...aquí tu lógica real de fetch de usuario, restaurante, países, etc...
-        // Si todo sale bien:
-        setLoading(false);
+        console.log('🚀 Iniciando carga de perfil y restaurante');
+        const [profile, restaurant] = await Promise.all([
+          getUserProfile().catch((e) => { console.warn('Perfil no disponible', e); return null; }),
+          getUserRestaurant().catch((e) => { console.warn('Restaurante no disponible', e); return null; })
+        ]);
+        if (!isMounted) return;
+        setUserInfo(profile);
+        if (restaurant) {
+          setRestaurantId(restaurant.id);
+          console.log('🏪 Restaurante encontrado:', restaurant.id);
+          setFormData(prev => ({
+            ...prev,
+            address: restaurant.address || prev.address,
+            country_id: restaurant.country_id || prev.country_id,
+            department_id: restaurant.department_id || prev.department_id,
+            city_id: restaurant.city_id || prev.city_id,
+            latitude: restaurant.latitude ?? prev.latitude,
+            longitude: restaurant.longitude ?? prev.longitude,
+          }));
+        } else {
+          console.log('ℹ️ Usuario sin restaurante asociado');
+        }
       } catch (err: any) {
-        setError("Error al cargar los datos. Intenta nuevamente.");
-        setLoading(false);
-        console.error("Error de carga:", err);
+        console.error('❌ Error cargando datos de usuario/restaurante:', err);
+        if (isMounted) setError('Error al cargar los datos. Intenta nuevamente.');
+      } finally {
+        if (isMounted) setLoading(false);
       }
     }
     fetchData();
+    return () => { isMounted = false; };
   }, []);
 
   // ...existing code for loading countries, departments, cities, and restaurant data...
 
   // Validación y handlers
   const validateForm = (): boolean => {
-    if (!formData.address.trim()) return toast.error("La dirección es requerida"), false;
-    if (!formData.country_id) return toast.error("Selecciona un país"), false;
+    if (!formData.address.trim()) return toast.error("Ingresa la dirección completa"), false;
+    // Colombia ya está configurado por defecto, no necesitamos validar país
     if (!formData.department_id) return toast.error("Selecciona un departamento"), false;
     if (!formData.city_id) return toast.error("Selecciona una ciudad"), false;
     return true;
   };
 
+  // Función para validar consistencia entre dirección y coordenadas
+  const [isValidatingConsistency, setIsValidatingConsistency] = useState(false);
+  const [consistencyWarning, setConsistencyWarning] = useState<string | null>(null);
+
+  const validateAddressConsistency = async () => {
+    if (!formData.address || formData.latitude === 4.6097102 || isValidatingConsistency) return;
+    
+    setIsValidatingConsistency(true);
+    setConsistencyWarning(null);
+    
+    try {
+      // Hacer geocodificación inversa para verificar qué dirección corresponde a las coordenadas actuales
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${formData.latitude}&lon=${formData.longitude}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.address) {
+        const reverseAddress = data.address;
+        const currentSearchAddress = formData.address.toLowerCase().trim();
+        
+        // Verificar si la dirección actual es consistente con las coordenadas
+        const isConsistent = 
+          (reverseAddress.road && currentSearchAddress.includes(reverseAddress.road.toLowerCase())) ||
+          (reverseAddress.house_number && currentSearchAddress.includes(reverseAddress.house_number)) ||
+          data.display_name.toLowerCase().includes(currentSearchAddress.split(' ')[0].toLowerCase());
+        
+        if (!isConsistent) {
+          const suggestedAddress = reverseAddress.road && reverseAddress.house_number 
+            ? `${reverseAddress.road} # ${reverseAddress.house_number}`
+            : reverseAddress.road || data.display_name.split(',')[0];
+            
+          setConsistencyWarning(
+            `La dirección "${formData.address}" podría no coincidir exactamente con la ubicación del marcador. ` +
+            `La dirección más cercana es: "${suggestedAddress}"`
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error validating address consistency:', error);
+    } finally {
+      setIsValidatingConsistency(false);
+    }
+  };
+
+  // Validar consistencia cuando cambien las coordenadas
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      validateAddressConsistency();
+    }, 1000); // Debounce de 1 segundo
+    
+    return () => clearTimeout(timeout);
+  }, [formData.latitude, formData.longitude, formData.address]);
+
   const handleSave = async () => {
-    if (!validateForm()) return;
+    console.log('🔄 Iniciando handleSave');
+    console.log('📋 Datos del formulario:', formData);
+    console.log('✅ Formulario válido:', isFormValid);
+    
+    if (!validateForm()) {
+      console.log('❌ Validación de formulario falló');
+      return;
+    }
+    
     try {
       setSaving(true);
-      if (!restaurantId) return toast.error("No se encontró información del restaurante");
-      const { error } = await supabase.from("restaurants").update({
+      console.log('💾 Guardando en base de datos...');
+      
+      if (!restaurantId) {
+        console.log('❌ No hay restaurantId');
+        return toast.error("No se encontró información del restaurante");
+      }
+      
+      console.log('🏪 ID del restaurante:', restaurantId);
+      
+      const updateData = {
         address: formData.address,
         country_id: formData.country_id,
         department_id: formData.department_id,
@@ -136,22 +253,81 @@ export default function UbicacionPage() {
         state: departments.find((d) => d.id === formData.department_id)?.name || "",
         country: countries.find((c) => c.id === formData.country_id)?.name || "",
         updated_at: new Date().toISOString(),
-      }).eq("id", restaurantId);
-      if (error) throw error;
+      };
+      
+      console.log('📦 Datos a actualizar:', updateData);
+      
+      const { error } = await supabase.from("restaurants").update(updateData).eq("id", restaurantId);
+      
+      if (error) {
+        console.log('❌ Error de Supabase:', error);
+        throw error;
+      }
+      
+      console.log('✅ Datos guardados exitosamente');
       toast.success("Ubicación guardada correctamente");
+      
+      console.log('🔄 Navegando a horarios...');
       router.push("/config-restaurante/horario-comercial");
-    } catch {
+      
+    } catch (error) {
+      console.log('❌ Error en catch:', error);
       toast.error("Error al guardar la ubicación");
     } finally {
       setSaving(false);
+      console.log('🏁 handleSave terminado');
     }
   };
 
   const handleBack = () => router.push("/config-restaurante/informacion-general");
-  const isFormValid = formData.address.trim() && formData.country_id && formData.department_id && formData.city_id;
+
+  // Función temporal para limpiar datos inconsistentes
+  const handleResetLocation = () => {
+    console.log('🧹 Resetting location data');
+    setFormData(prev => ({
+      ...prev,
+      address: "",
+      latitude: 4.6097102,
+      longitude: -74.081749
+    }));
+  };
+
+  // Forzar booleano real (antes devolvía el último valor truthy: city_id)
+  const isFormValid = Boolean(
+    formData.address.trim() &&
+    formData.department_id &&
+    formData.city_id
+  );
+
+  // Debug para isFormValid (ahora debe mostrar true/false)
+  console.log('🔍 Estado de validación del formulario:', {
+    address: formData.address.trim(),
+    department_id: formData.department_id,
+    city_id: formData.city_id,
+    isFormValid
+  });
   const selectedCountry = countries.find((c) => c.id === formData.country_id);
   const selectedDepartment = departments.find((d) => d.id === formData.department_id);
   const selectedCity = cities.find((c) => c.id === formData.city_id);
+
+  // Resolver nombre de ciudad si el hook local no la tiene (porque el formulario usa otra instancia del hook)
+  useEffect(() => {
+    let cancelled = false;
+    async function resolveCity() {
+      if (selectedCity) {
+        setResolvedCityName(selectedCity.name);
+        return;
+      }
+      if (formData.city_id && !selectedCity) {
+        try {
+          const { data, error } = await supabase.from('cities').select('name').eq('id', formData.city_id).single();
+          if (!cancelled && !error && data) setResolvedCityName(data.name);
+        } catch {/* noop */}
+      }
+    }
+    resolveCity();
+    return () => { cancelled = true; };
+  }, [formData.city_id, selectedCity]);
 
   if (loading) {
     return (
@@ -169,7 +345,7 @@ export default function UbicacionPage() {
         <div className="text-center">
       <div className="text-[color:var(--sp-error-500)] text-2xl mb-2">⚠️</div>
       <p className="text-[color:var(--sp-error-700)] font-semibold mb-2">{error}</p>
-          <Button onClick={() => window.location.reload()} variant="outline">Recargar página</Button>
+          <ButtonComponent onClick={() => window.location.reload()} variant="outline">Recargar página</ButtonComponent>
         </div>
       </div>
     );
@@ -179,106 +355,180 @@ export default function UbicacionPage() {
     <div className="min-h-screen bg-[--sp-surface] p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <Card>
-          <CardHeader>
+        <CardComponent>
+          <CardHeaderComponent>
             <div className="flex items-center justify-between mb-4">
-              <Button variant="outline" onClick={handleBack} className="flex items-center gap-2">← Volver</Button>
+              <ButtonComponent variant="outline" onClick={handleBack} className="flex items-center gap-2">← Volver</ButtonComponent>
               <div className="text-center flex-1">
                 <span className="text-sm text-[color:var(--sp-neutral-500)] font-medium">Paso 2 de 4</span>
               </div>
-              <div className="w-20"></div>
+              {/* Botón temporal de reset */}
+              <ButtonComponent variant="outline" onClick={handleResetLocation} className="text-xs px-2 py-1">🧹 Reset</ButtonComponent>
             </div>
-            <CardTitle>Ubicación del Restaurante</CardTitle>
+            <CardTitleComponent>Ubicación del Restaurante</CardTitleComponent>
             <p className="text-[color:var(--sp-neutral-600)]">¿Dónde está ubicado tu restaurante?</p>
             {userInfo && (
               <p className="text-xs text-[color:var(--sp-info-600)] mt-2">👤 {userInfo.email} • {restaurantId ? `ID: ${restaurantId.slice(0, 8)}...` : "Configurando..."}</p>
             )}
-          </CardHeader>
-        </Card>
-        {/* Formulario y mapa */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card>
-            <CardContent>
-              <UbicacionForm
-                formData={formData}
-                onChange={(field, value) => setFormData((prev) => ({ ...prev, [field]: value }))}
-                onSubmit={handleSave}
-                saving={saving}
-                countries={countries}
-                departments={departments}
-                cities={cities}
-                loadingGeoData={loadingGeoData}
+          </CardHeaderComponent>
+        </CardComponent>
+        {/* Formulario de ubicación - sin título redundante */}
+        <CardComponent>
+          <CardContentComponent>
+            <UbicacionFormComponent
+              formData={formData}
+              onChange={handleFormChange}
+              onSubmit={handleSave}
+              saving={saving}
+              showSave={false}
+            />
+          </CardContentComponent>
+        </CardComponent>
+
+        {/* Campo de dirección (requerido para habilitar continuar) */}
+        <CardComponent>
+          <CardContentComponent>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[color:var(--sp-neutral-700)]">Dirección exacta *</label>
+              <InputV2Component
+                value={formData.address}
+                placeholder="Ej: Calle 123 # 45-67 Local 2"
+                onChange={(e: any) => handleFormChange('address', e.target.value)}
               />
-              {isFormValid && (
-                <div className="bg-[color:var(--sp-success-50)] border border-[color:var(--sp-success-200)] rounded-lg p-4 mt-4">
-                  <div className="text-[color:var(--sp-success-800)] font-semibold text-sm mb-2">✅ Ubicación configurada</div>
-                  <div className="text-[color:var(--sp-success-700)] text-sm space-y-1">
-                    <p><strong>Dirección:</strong> {formData.address}</p>
-                    <p><strong>Ciudad:</strong> {selectedCity?.name}, {selectedDepartment?.name}</p>
-                    <p><strong>País:</strong> {selectedCountry?.name}</p>
-                    <p><strong>Coordenadas:</strong> {formData.latitude?.toFixed(4)}, {formData.longitude?.toFixed(4)}</p>
+              <p className="text-xs text-[color:var(--sp-neutral-500)]">Escribe la dirección completa como quieres que aparezca. Puedes afinarla moviendo el marcador en el mapa.</p>
+            </div>
+          </CardContentComponent>
+        </CardComponent>
+
+        {/* Alerta de consistencia de dirección */}
+        {consistencyWarning && (
+          <CardComponent>
+            <CardContentComponent>
+              <div className="flex items-start gap-3 p-4 bg-[color:var(--sp-warning-100)] border border-[color:var(--sp-warning-300)] rounded-lg">
+                <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-[color:var(--sp-warning-600)] mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-[color:var(--sp-warning-800)] mb-1">
+                    Verificación de Dirección
+                  </h4>
+                  <p className="text-sm text-[color:var(--sp-warning-700)]">
+                    {consistencyWarning}
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <ButtonComponent 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => validateAddressConsistency()}
+                      disabled={isValidatingConsistency}
+                    >
+                      {isValidatingConsistency ? 'Verificando...' : 'Verificar de nuevo'}
+                    </ButtonComponent>
+                    <ButtonComponent 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setConsistencyWarning(null)}
+                    >
+                      Ignorar
+                    </ButtonComponent>
+                  </div>
+                </div>
+              </div>
+            </CardContentComponent>
+          </CardComponent>
+        )}
+
+        {/* Mapa principal - sin título */}
+        <CardComponent>
+          <CardContentComponent className="p-0">
+            {/* Mapa interactivo a pantalla completa */}
+            <div className="h-96 w-full">
+              {formData.latitude && formData.longitude ? (
+                <DynamicMap
+                  latitude={formData.latitude}
+                  longitude={formData.longitude}
+                  address={formData.address}
+                  cityName={selectedCity?.name || resolvedCityName}
+                  cityLat={selectedCity?.latitude}
+                  cityLng={selectedCity?.longitude}
+                  strictCitySearch={true}
+                  height="h-96"
+                  searchable={true}
+                  onLocationChange={(lat: number, lng: number) => {
+                    setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+                  }}
+                  onAddressChange={(address: string) => {
+                    setFormData(prev => ({ ...prev, address }));
+                  }}
+                  className="rounded-t-none"
+                />
+              ) : (
+                <div className="h-96 w-full bg-[color:var(--sp-surface-variant)] rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-4xl mb-2">🗺️</div>
+                    <p className="text-[color:var(--sp-on-surface-variant)]">Selecciona una ciudad para ver el mapa</p>
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Previsualización del Mapa</CardTitle>
-              <p className="text-sm text-[color:var(--sp-neutral-600)]">Las coordenadas se obtienen automáticamente de la base de datos geográfica</p>
-            </CardHeader>
-            <CardContent>
-              <MapaSimple
-                lat={formData.latitude || 4.6097102}
-                lng={formData.longitude || -74.081749}
-                address={formData.address ? `${formData.address}${selectedCity ? `, ${selectedCity.name}` : ""}` : ""}
-              />
-              {selectedCity && (
-                <div className="mt-4 p-3 bg-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded-lg">
-                  <h4 className="font-semibold text-[color:var(--sp-info-800)] text-sm">📍 {selectedCity.name}</h4>
-                  <div className="text-xs text-[color:var(--sp-info-700)] mt-1 space-y-1">
-                    {selectedCity.is_capital && <p>🏛️ Capital del departamento</p>}
-                    {selectedCity.population && <p>👥 Población: {selectedCity.population.toLocaleString()} habitantes</p>}
-                    <p>🌐 Lat: {selectedCity.latitude?.toFixed(6)}, Lng: {selectedCity.longitude?.toFixed(6)}</p>
-                  </div>
+            </div>
+          </CardContentComponent>
+        </CardComponent>
+
+        {/* Información adicional */}
+        <CardComponent>
+          <CardContentComponent>
+            
+            {/* Información de la ubicación seleccionada */}
+            {selectedCity && formData.latitude && formData.longitude && (
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded-lg p-4">
+                  <h4 className="font-semibold text-[color:var(--sp-info-800)] text-sm mb-2">📍 Ubicación</h4>
+                  <p className="text-xs text-[color:var(--sp-info-700)]">{selectedCity.name}</p>
+                  <p className="text-xs text-[color:var(--sp-info-600)]">{selectedDepartment?.name}</p>
+                  {selectedCity.is_capital && <p className="text-xs text-[color:var(--sp-info-600)]">🏛️ Capital</p>}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                
+                <div className="bg-[color:var(--sp-success-50)] border border-[color:var(--sp-success-200)] rounded-lg p-4">
+                  <h4 className="font-semibold text-[color:var(--sp-success-800)] text-sm mb-2">🌐 Coordenadas</h4>
+                  <p className="text-xs text-[color:var(--sp-success-700)]">Lat: {formData.latitude.toFixed(4)}</p>
+                  <p className="text-xs text-[color:var(--sp-success-700)]">Lng: {formData.longitude.toFixed(4)}</p>
+                </div>
+                
+                {selectedCity.population && (
+                  <div className="bg-[color:var(--sp-warning-50)] border border-[color:var(--sp-warning-200)] rounded-lg p-4">
+                    <h4 className="font-semibold text-[color:var(--sp-warning-800)] text-sm mb-2">👥 Población</h4>
+                    <p className="text-xs text-[color:var(--sp-warning-700)]">{selectedCity.population.toLocaleString()}</p>
+                    <p className="text-xs text-[color:var(--sp-warning-600)]">habitantes</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContentComponent>
+        </CardComponent>
         {/* Botones de navegación */}
-        <Card>
-          <CardContent>
+        <CardComponent>
+          <CardContentComponent>
             <div className="flex justify-between items-center">
-              <Button variant="outline" onClick={handleBack} className="flex items-center gap-2">← Información General</Button>
-              <Button
-                onClick={handleSave}
+              <ButtonComponent variant="outline" onClick={handleBack} className="flex items-center gap-2">← Información General</ButtonComponent>
+              <ButtonComponent
+                onClick={() => {
+                  console.log('🖱️ Botón "Continuar a Horarios" clickeado');
+                  console.log('📊 Estado actual:', { saving, isFormValid, formData });
+                  handleSave();
+                }}
                 disabled={saving || !isFormValid}
                 variant={isFormValid ? "default" : "secondary"}
                 className="flex items-center gap-2"
               >
                 {saving ? "Guardando..." : isFormValid ? "Continuar a Horarios →" : "Completa la ubicación"}
-              </Button>
+              </ButtonComponent>
             </div>
-          </CardContent>
-        </Card>
-        {/* Info de ayuda */}
-        <Card className="bg-[color:var(--sp-info-50)] border-[color:var(--sp-info-200)]">
-          <CardContent>
-            <div className="flex items-center gap-3">
-              <svg className="w-8 h-8 text-[color:var(--sp-info-600)]" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" />
-              </svg>
-              <div>
-                <h3 className="font-bold text-[color:var(--sp-info-800)]">Ubicación Geográfica</h3>
-                <p className="text-sm text-[color:var(--sp-info-700)]">Esta información ayudará a los clientes a encontrar tu restaurante fácilmente.</p>
-                <p className="text-xs text-[color:var(--sp-info-600)] mt-1">💡 Los datos geográficos se cargan desde nuestra base de datos actualizada de Colombia</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        {/* ...existing code... */}
+          </CardContentComponent>
+        </CardComponent>
       </div>
     </div>
   );
 }
+

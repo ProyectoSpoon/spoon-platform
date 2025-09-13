@@ -4,8 +4,19 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@spoon/shared/components/ui/Card';
 import { Button } from '@spoon/shared/components/ui/Button';
 import { Input } from '@spoon/shared/components/ui/Input';
+
+// Type casting to fix React version conflicts in monorepo
+const CardComponent = Card as any;
+const CardContentComponent = CardContent as any;
+const CardHeaderComponent = CardHeader as any;
+const CardTitleComponent = CardTitle as any;
+const ButtonComponent = Button as any;
+const InputComponent = Input as any;
 import { OrdenPendiente, MetodoPago } from '../../types/cajaTypes';
 import { formatCurrency, METODOS_PAGO, CAJA_CONFIG } from '../../constants/cajaConstants';
+// Seguridad
+import { useSecurityLimits } from '../../hooks/useSecurityLimits';
+import { SecurityAlert } from '../../components/SecurityAlert';
 
 interface ModalProcesarPagoProps {
   orden: OrdenPendiente | null;
@@ -32,6 +43,13 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagoExitoso, setPagoExitoso] = useState<{ cambio: number } | null>(null);
+  // Seguridad
+  const { limits, validarMonto } = useSecurityLimits();
+  const [securityState, setSecurityState] = useState<{
+    valid: boolean;
+    warnings: string[];
+    requiresAuth: boolean;
+  } | null>(null);
 
   // Reset modal al abrir/cerrar
   useEffect(() => {
@@ -54,6 +72,20 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
     }
   }, [montoRecibido, metodoPago, orden]);
 
+  // Validación de seguridad contextual según límite por método de pago
+  useEffect(() => {
+    if (!orden) {
+      setSecurityState(null);
+      return;
+    }
+    try {
+      const validation = validarMonto ? validarMonto(orden.monto_total, metodoPago) : { valid: true, warnings: [], requiresAuth: false };
+      setSecurityState(validation);
+    } catch {
+      setSecurityState({ valid: true, warnings: [], requiresAuth: false });
+    }
+  }, [orden, metodoPago, validarMonto]);
+
   const handleConfirmarPago = async () => {
     if (!orden) return;
 
@@ -61,6 +93,16 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
     if (metodoPago === 'efectivo' && montoRecibido < orden.monto_total) {
       setError('El monto recibido no puede ser menor al total');
       return;
+    }
+
+    // Seguridad: bloquear si inválido, confirmar si requiere autorización
+    if (securityState && !securityState.valid) {
+      setError(securityState.warnings.join(', ') || 'Transacción bloqueada por seguridad');
+      return;
+    }
+    if (securityState?.requiresAuth) {
+      const proceed = window.confirm('Esta transacción requiere autorización de supervisor. ¿Desea continuar?');
+      if (!proceed) return;
     }
 
     try {
@@ -131,8 +173,8 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
   if (pagoExitoso) {
     return (
       <div className="fixed inset-0 bg-[color:var(--sp-neutral-950)]/50 flex items-center justify-center z-50">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
+        <CardComponent className="w-full max-w-md">
+          <CardContentComponent className="p-8 text-center">
             <div className="mb-4">
               <div className="w-16 h-16 bg-[color:var(--sp-success-100)] rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">✅</span>
@@ -156,33 +198,33 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
               </div>
             )}
 
-            <Button onClick={handleClose} className="w-full">
+            <ButtonComponent onClick={handleClose} className="w-full">
               Continuar
-            </Button>
-          </CardContent>
-        </Card>
+            </ButtonComponent>
+          </CardContentComponent>
+        </CardComponent>
       </div>
     );
   }
 
   return (
   <div className="fixed inset-0 bg-[color:var(--sp-neutral-950)]/50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+      <CardComponent className="w-full max-w-lg">
+        <CardHeaderComponent>
+          <CardTitleComponent className="flex items-center justify-between">
             <span>Procesar Pago</span>
-            <Button
+            <ButtonComponent
               variant="outline"
               size="sm"
               onClick={handleClose}
               disabled={procesando}
             >
               ✕
-            </Button>
-          </CardTitle>
-        </CardHeader>
+            </ButtonComponent>
+          </CardTitleComponent>
+        </CardHeaderComponent>
         
-        <CardContent className="space-y-6">
+        <CardContentComponent className="space-y-6">
           {/* Información de la orden */}
       <div className="bg-[color:var(--sp-neutral-50)] rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
@@ -203,12 +245,30 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
             )}
           </div>
 
+          {/* Alerta de seguridad contextual */}
+      {securityState && limits && (
+            <SecurityAlert
+              type={!securityState.valid ? 'error' : securityState.requiresAuth ? 'warning' : securityState.warnings.length ? 'info' : 'info'}
+              title={!securityState.valid ? 'Transacción bloqueada' : securityState.requiresAuth ? 'Autorización requerida' : 'Verificación de seguridad'}
+              messages={securityState.warnings.length ? securityState.warnings : [
+                metodoPago === 'efectivo'
+                  ? 'Aplican límites especiales para efectivo.'
+                  : 'Validación de límites aplicada.'
+              ]}
+              limits={{
+        current: (orden.monto_total || 0),
+        limit: (metodoPago === 'efectivo' ? limits.limite_transaccion_efectivo : limits.limite_transaccion_normal),
+                label: metodoPago === 'efectivo' ? 'Límite por transacción (efectivo)' : 'Límite por transacción'
+              }}
+            />
+          )}
+
           {/* Selección de método de pago */}
           <div className="space-y-3">
             <label className="text-sm font-medium">Método de pago</label>
             <div className="grid grid-cols-3 gap-2">
               {METODOS_PAGO.map((metodo) => (
-                <Button
+                <ButtonComponent
                   key={metodo.value}
                   variant={metodoPago === metodo.value ? "default" : "outline"}
                   onClick={() => setMetodoPago(metodo.value)}
@@ -217,7 +277,7 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
                 >
                   <span className="text-lg mb-1">{metodo.icon}</span>
                   <span className="text-xs">{metodo.label}</span>
-                </Button>
+                </ButtonComponent>
               ))}
             </div>
           </div>
@@ -226,13 +286,13 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
           {metodoPago === 'efectivo' && (
             <div className="space-y-3">
               <label className="text-sm font-medium">Monto recibido</label>
-              <Input
+              <InputComponent
                 type="number"
-                value={montoRecibido / 100}
-                onChange={(e) => setMontoRecibido(Math.round(parseFloat(e.target.value || '0') * 100))}
+                value={montoRecibido}
+                onChange={(e: any) => setMontoRecibido(Math.round(parseFloat(e.target.value || '0')))}
                 className="text-right"
                 disabled={procesando}
-                min={orden.monto_total / 100}
+                min={orden.monto_total}
               />
 
               {/* Montos sugeridos */}
@@ -240,7 +300,7 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
                 <label className="text-xs text-[color:var(--sp-neutral-500)]">Montos sugeridos</label>
                 <div className="grid grid-cols-2 gap-2">
                   {getMontosSugeridos().map((monto) => (
-                    <Button
+                    <ButtonComponent
                       key={monto}
                       variant="outline"
                       size="sm"
@@ -249,7 +309,7 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
                       className="text-sm"
                     >
                       {formatCurrency(monto)}
-                    </Button>
+                    </ButtonComponent>
                   ))}
                 </div>
               </div>
@@ -286,19 +346,20 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
 
           {/* Botones de acción */}
           <div className="flex space-x-3">
-            <Button
+            <ButtonComponent
               variant="outline"
               onClick={handleClose}
               disabled={procesando}
               className="flex-1"
             >
               Cancelar
-            </Button>
-            <Button
+            </ButtonComponent>
+            <ButtonComponent
               onClick={handleConfirmarPago}
               disabled={
                 procesando || 
-                (metodoPago === 'efectivo' && montoRecibido < orden.monto_total)
+                (metodoPago === 'efectivo' && montoRecibido < orden.monto_total) ||
+                (securityState && !securityState.valid)
               }
               className="flex-1 bg-[color:var(--sp-info-600)] hover:bg-[color:var(--sp-info-700)]"
             >
@@ -310,10 +371,10 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
               ) : (
                 `Confirmar Pago`
               )}
-            </Button>
+            </ButtonComponent>
           </div>
-        </CardContent>
-      </Card>
+        </CardContentComponent>
+      </CardComponent>
     </div>
   );
 };

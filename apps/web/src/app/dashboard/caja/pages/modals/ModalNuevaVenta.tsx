@@ -13,35 +13,28 @@ import { X, Pencil, Search, ShoppingCart, Trash2 } from 'lucide-react';
 
 // Cast temporales para evitar conflicto de múltiples definiciones de React en monorepo
 // TODO: remover cuando se unifiquen versiones de react & @types/react
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Button = ButtonRaw as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Input = InputRaw as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const XIcon = X as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const PencilIcon = Pencil as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SearchIcon = Search as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ShoppingCartIcon = ShoppingCart as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Trash2Icon = Trash2 as any;
 
 export interface ItemSeleccionado {
   id: string;
   nombre: string;
-  precio: number; // centavos
+  precio: number; // pesos
   cantidad: number;
 }
 
 export interface NuevaVentaPayload {
   items: ItemSeleccionado[];
-  deliveryFee: number; // centavos
-  packagingFee: number; // centavos
+  deliveryFee: number; // pesos
+  packagingFee: number; // pesos
   metodoPago: MetodoPago;
-  montoRecibido?: number; // centavos si efectivo
-  total: number; // centavos
+  montoRecibido?: number; // pesos si efectivo
+  total: number; // pesos
   notas?: string;
 }
 
@@ -64,7 +57,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
   const [isAnimating, setIsAnimating] = React.useState(false);
   const [seleccion, setSeleccion] = React.useState<Record<string, ItemSeleccionado>>({});
   const [deliveryFee, setDeliveryFee] = React.useState<number>(DEFAULT_DELIVERY_FEE);
-  const [packagingFee, setPackagingFee] = React.useState<number>(DEFAULT_PACKAGING_FEE); // 1.000 COP en centavos
+  const [packagingFee, setPackagingFee] = React.useState<number>(DEFAULT_PACKAGING_FEE); // 1.000 COP en pesos
   const [includeDelivery, setIncludeDelivery] = React.useState<boolean>(false);
   const [includePackaging, setIncludePackaging] = React.useState<boolean>(false);
   const [showDeliveryModal, setShowDeliveryModal] = React.useState<boolean>(false);
@@ -82,7 +75,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
       setIsAnimating(true);
       setSeleccion({});
       setDeliveryFee(DEFAULT_DELIVERY_FEE);
-  setPackagingFee(DEFAULT_PACKAGING_FEE); // reset 1.000 COP en centavos
+  setPackagingFee(DEFAULT_PACKAGING_FEE); // reset 1.000 COP en pesos
       setIncludeDelivery(false);
       setIncludePackaging(false);
       setShowDeliveryModal(false);
@@ -131,7 +124,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
   };
 
   const incrementar = (id: string, nombre: string, precioPesos: number) => {
-    const precio = Math.round((precioPesos || 0) * 100);
+    const precio = Math.round(precioPesos || 0);
     setSeleccion(prev => {
       const actual = prev[id] || { id, nombre, precio, cantidad: 0 };
       return { ...prev, [id]: { ...actual, precio, cantidad: actual.cantidad + 1 } };
@@ -220,10 +213,10 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
           </Button>
         </div>
 
-        {/* Main Content - 2 Columns */}
-        <div className="flex h-[calc(100%-80px)]">
+        {/* Main Content - Responsive (stack en móvil, columnas en md+) */}
+        <div className="flex flex-col md:flex-row h-[calc(100%-80px)]">
           {/* Left Column - Menu */}
-          <div className="flex-1 flex flex-col bg-[color:var(--sp-surface)]">
+          <div className="flex-1 flex flex-col min-h-0 bg-[color:var(--sp-surface)]">
             {/* Menu Header */}
             <div className="p-5 border-b">
               <div className="flex items-center justify-between mb-4">
@@ -277,53 +270,53 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                   {combinacionesFiltradas.map((comb: any) => {
                     const cantidad = seleccion[comb.id]?.cantidad || 0;
                     const isSelected = cantidad > 0;
-                    
+                    const precioCents = Math.round(comb.combination_price || 0);
                     return (
-                      <div 
-                        key={comb.id} 
-                        className={`flex items-center p-3 border rounded-lg bg-[color:var(--sp-surface-elevated)] transition-all duration-200 hover:border-[color:var(--sp-primary-300)] hover:shadow-sm ${
+                      <div
+                        key={comb.id}
+                        className={`group flex flex-col justify-between h-full p-3 border rounded-lg bg-[color:var(--sp-surface-elevated)] transition-all duration-200 hover:border-[color:var(--sp-primary-300)] hover:shadow-sm ${
                           isSelected ? 'border-[color:var(--sp-primary-300)] bg-[color:var(--sp-primary-50)]' : 'border-[color:var(--sp-neutral-200)]'
                         }`}
                       >
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm text-[color:var(--sp-neutral-900)] mb-1">
+                          <div className="font-medium text-[13px] text-[color:var(--sp-neutral-900)] mb-1 line-clamp-2">
                             {comb.combination_name}
                           </div>
                           {comb.combination_description && (
-                            <div className="text-xs text-[color:var(--sp-neutral-600)] line-clamp-2">
+                            <div className="text-[11px] text-[color:var(--sp-neutral-600)] line-clamp-3 mb-2">
                               {comb.combination_description}
                             </div>
                           )}
                         </div>
-                        
-                        <div className="text-sm font-semibold text-[color:var(--sp-neutral-900)] mx-4">
-                          {formatCurrency(Math.round((comb.combination_price || 0) * 100))}
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => decrementar(comb.id)}
-                            className="w-8 h-8 p-0"
-                            disabled={cantidad === 0}
-                          >
-                            -
-                          </Button>
-                          <span className="w-6 text-center text-sm font-medium">
-                            {cantidad}
+                        <div className="mt-1 flex items-center justify-between">
+                          <span className="text-sm font-semibold text-[color:var(--sp-neutral-900)]">
+                            {formatCurrency(precioCents)}
                           </span>
-                          <Button 
-                            size="sm" 
-                            onClick={() => incrementar(comb.id, comb.combination_name, comb.combination_price)}
-                            className="w-8 h-8 p-0 bg-[color:var(--sp-warning-600)] hover:bg-[color:var(--sp-warning-700)]"
-                          >
-                            +
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => decrementar(comb.id)}
+                              className="w-7 h-7 p-0"
+                              disabled={cantidad === 0}
+                            >
+                              -
+                            </Button>
+                            <span className="w-6 text-center text-[13px] font-medium">
+                              {cantidad}
+                            </span>
+                            <Button
+                              size="sm"
+                              onClick={() => incrementar(comb.id, comb.combination_name, comb.combination_price)}
+                              className="w-7 h-7 p-0 bg-[color:var(--sp-warning-600)] hover:bg-[color:var(--sp-warning-700)]"
+                            >
+                              +
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -333,15 +326,13 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
             </div>
           </div>
 
-          {/* Right Column - Order Summary */}
-          <div className="w-80 border-l bg-[color:var(--sp-surface-elevated)] flex flex-col">
+          {/* Right Column - Order Summary (full width en móvil) */}
+          <div className="w-full md:w-80 border-t md:border-t-0 md:border-l bg-[color:var(--sp-surface-elevated)] flex flex-col shrink-0">
             {/* Order Header */}
-            <div className="p-5 border-b">
+            <div className="p-4 md:p-5 border-b">
               <div className="flex items-center gap-2 mb-4">
                 <ShoppingCartIcon className="w-4 h-4 text-[color:var(--sp-neutral-600)]" />
-                <h3 className="text-base font-semibold text-[color:var(--sp-neutral-900)]">
-                  Resumen de orden
-                </h3>
+                <h3 className="text-sm md:text-base font-semibold text-[color:var(--sp-neutral-900)]">Resumen de orden</h3>
               </div>
               
               {/* Delivery Options */}
@@ -373,7 +364,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
                 </button>
               </div>
               
-              <div className="flex justify-center gap-4 mt-2">
+              <div className="flex justify-center gap-3 md:gap-4 mt-2">
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -405,7 +396,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
             </div>
 
             {/* Order Items */}
-            <div className="flex-1 overflow-y-auto p-5">
+            <div className="flex-1 overflow-y-auto p-4 md:p-5">
               {itemsSeleccionados.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-32 text-center">
                   <div className="text-sm text-[color:var(--sp-neutral-600)]">
@@ -448,7 +439,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
 
             {/* Order Summary */}
             {itemsSeleccionados.length > 0 && (
-              <div className="p-5 border-t bg-[color:var(--sp-neutral-50)]">
+              <div className="p-4 md:p-5 border-t bg-[color:var(--sp-neutral-50)]">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-[color:var(--sp-neutral-600)]">Subtotal</span>
@@ -483,7 +474,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
             )}
 
             {/* Payment Section */}
-            <div className="p-5 border-t">
+            <div className="p-4 md:p-5 border-t">
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-[color:var(--sp-neutral-900)] mb-3 block">
@@ -514,12 +505,23 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
                         $
                       </span>
                       <Input
-                        type="number"
-                        min={total / 100}
-                        value={montoRecibido / 100}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMontoRecibido(Math.round(parseFloat(e.target.value || '0') * 100))}
+                        type="text"
+                        inputMode="numeric"
+                        value={montoRecibido ? montoRecibido.toLocaleString('es-CO') : ''}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          // Permitir miles: eliminar todo excepto dígitos
+                          const raw = e.target.value.replace(/[^0-9]/g, '');
+                          // Mantener 0 si el usuario limpia
+                          const valor = raw ? parseInt(raw, 10) : 0;
+                          setMontoRecibido(valor);
+                        }}
+                        onBlur={() => {
+                          // Si quedó vacío, asegurar 0
+                          if (!montoRecibido) setMontoRecibido(0);
+                        }}
                         className="h-10 pl-8 text-right font-medium"
-                        placeholder="0"
+                        placeholder="$ 0"
+                        aria-label="Monto recibido"
                       />
                     </div>
                     {montoRecibido < total && (
@@ -584,7 +586,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
                   Cancelar
                 </Button>
                 <Button onClick={() => { 
-                  setDeliveryFee(Math.max(0, Math.round((deliveryEditValue || 0) * 100))); 
+                  setDeliveryFee(Math.max(0, Math.round(deliveryEditValue || 0))); 
                   setShowDeliveryModal(false); 
                 }}>
                   Guardar
@@ -615,7 +617,7 @@ const ModalNuevaVenta: React.FC<ModalNuevaVentaProps> = ({
                   Cancelar
                 </Button>
                 <Button onClick={() => { 
-                  setPackagingFee(Math.max(0, Math.round((packagingEditValue || 0) * 100))); 
+                  setPackagingFee(Math.max(0, Math.round(packagingEditValue || 0))); 
                   setShowPackagingModal(false); 
                 }}>
                   Guardar

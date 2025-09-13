@@ -19,6 +19,17 @@ import {
 import { Mesa } from '@spoon/shared/types/mesas';
 import { getAccionesDisponibles } from '@spoon/shared/utils/mesas';
 
+// Type casting para componentes
+const ButtonCast = Button as any;
+const PlusCast = Plus as any;
+const Edit3Cast = Edit3 as any;
+const Trash2Cast = Trash2 as any;
+const CalendarCast = Calendar as any;
+const AlertCircleCast = AlertCircle as any;
+const CheckCircleCast = CheckCircle as any;
+const XCast = X as any;
+const SettingsCast = Settings as any;
+
 interface MesaDetailsActionsProps {
   mesa: Mesa;
   loading?: boolean;
@@ -58,40 +69,40 @@ export const MesaDetailsActions: React.FC<MesaDetailsActionsProps> = ({
     case 'libre':
       return (
         <div className="p-4 space-y-3">
-          <Button 
+          <ButtonCast 
             onClick={onCrearOrden}
             className="w-full bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)] text-[--sp-on-primary] justify-start"
           >
-            <Plus className="h-4 w-4 mr-3" />
+            <PlusCast className="h-4 w-4 mr-3" />
             Crear Nueva Orden
-          </Button>
+          </ButtonCast>
           
-          <Button 
+          <ButtonCast 
             onClick={onReservarMesa}
             variant="outline"
             className="w-full justify-start"
           >
-            <Calendar className="h-4 w-4 mr-3" />
+            <CalendarCast className="h-4 w-4 mr-3" />
             Reservar Mesa
-          </Button>
+          </ButtonCast>
 
-          <Button 
+          <ButtonCast 
             onClick={onPonerMantenimiento}
             variant="outline"
             className="w-full justify-start text-[color:var(--sp-warning-600)] border-[color:var(--sp-warning-300)] hover:bg-[color:var(--sp-warning-50)]"
           >
-            <AlertCircle className="h-4 w-4 mr-3" />
+            <AlertCircleCast className="h-4 w-4 mr-3" />
             Poner en Mantenimiento
-          </Button>
+          </ButtonCast>
 
-          <Button 
+          <ButtonCast 
             onClick={onInactivarMesa}
             variant="outline"
             className="w-full justify-start text-[color:var(--sp-neutral-600)] border-[color:var(--sp-neutral-300)] hover:bg-[color:var(--sp-neutral-50)]"
           >
-            <X className="h-4 w-4 mr-3" />
+            <XCast className="h-4 w-4 mr-3" />
             Inactivar Mesa
-          </Button>
+          </ButtonCast>
         </div>
       );
 
@@ -99,24 +110,24 @@ export const MesaDetailsActions: React.FC<MesaDetailsActionsProps> = ({
       return (
         <div className="p-4">
           <div className="grid grid-cols-2 gap-2 mb-4">
-            <Button 
+            <ButtonCast 
               onClick={onEditarOrden}
               variant="outline" 
               size="sm"
               className="text-[color:var(--sp-primary-600)] border-[color:var(--sp-primary-300)] hover:bg-[color:var(--sp-primary-50)]"
             >
-              <Edit3 className="h-3 w-3 mr-1" />
+              <Edit3Cast className="h-3 w-3 mr-1" />
               Editar
-            </Button>
-            <Button 
+            </ButtonCast>
+            <ButtonCast 
               onClick={onEliminarOrden}
               variant="outline" 
               size="sm"
               className="text-[color:var(--sp-error-600)] border-[color:var(--sp-error-300)] hover:bg-[color:var(--sp-error-50)]"
             >
-              <Trash2 className="h-3 w-3 mr-1" />
+              <Trash2Cast className="h-3 w-3 mr-1" />
               Eliminar
-            </Button>
+            </ButtonCast>
           </div>
         </div>
       );
@@ -124,53 +135,53 @@ export const MesaDetailsActions: React.FC<MesaDetailsActionsProps> = ({
     case 'reservada':
       return (
         <div className="p-4 space-y-2">
-          <Button 
+          <ButtonCast 
             onClick={onCrearOrden}
             className="w-full bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)] text-[--sp-on-primary]"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <PlusCast className="h-4 w-4 mr-2" />
             Crear Orden (Liberar Reserva)
-          </Button>
-          <Button 
+          </ButtonCast>
+          <ButtonCast 
             onClick={onLiberarReserva}
             variant="outline"
             className="w-full"
           >
             Solo Liberar Reserva
-          </Button>
+          </ButtonCast>
         </div>
       );
 
     case 'inactiva':
       return (
         <div className="p-4">
-          <Button 
+          <ButtonCast 
             onClick={onActivarMesa}
             className="w-full bg-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-700)] text-[--sp-on-success]"
           >
-            <CheckCircle className="h-4 w-4 mr-2" />
+            <CheckCircleCast className="h-4 w-4 mr-2" />
             Activar Mesa
-          </Button>
+          </ButtonCast>
         </div>
       );
 
     case 'mantenimiento':
       return (
         <div className="p-4 space-y-2">
-          <Button 
+          <ButtonCast 
             onClick={onActivarMesa}
             className="w-full bg-[color:var(--sp-success-600)] hover:bg-[color:var(--sp-success-700)] text-[--sp-on-success]"
           >
             Finalizar Mantenimiento
-          </Button>
-          <Button 
+          </ButtonCast>
+          <ButtonCast 
             variant="outline" 
             className="w-full"
             onClick={onActualizarNotas}
           >
-            <Settings className="h-4 w-4 mr-2" />
+            <SettingsCast className="h-4 w-4 mr-2" />
             Actualizar Notas
-          </Button>
+          </ButtonCast>
         </div>
       );
 

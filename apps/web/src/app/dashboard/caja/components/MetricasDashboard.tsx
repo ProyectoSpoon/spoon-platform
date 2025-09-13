@@ -21,6 +21,7 @@ interface MetricasData {
   totalEfectivo?: number;
   totalTarjeta?: number;
   totalDigital?: number;
+  gastosDelPeriodo?: any[]; // para fallback si gastosTotales viene en 0
 }
 
 interface MetricasDashboardProps {
@@ -40,7 +41,7 @@ const MetricCard: React.FC<{
   format?: 'currency' | 'number';
 }> = ({ icon, label, value, subtitle, color, trend, badges = [], format = 'currency' }) => {
   
-  const formatCurrency = (centavos: number) => formatCurrencyCOP(centavos);
+  const formatCurrency = (pesos: number) => formatCurrencyCOP(pesos);
   const formatValue = (val: number) => (format === 'currency' ? formatCurrency(val) : new Intl.NumberFormat('es-CO').format(val));
 
   const colorClasses = {
@@ -225,14 +226,28 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
       />
 
       {/* Gastos Totales */}
-      <MetricCard
-  icon={<ReceiptIcon />}
-        label="Gastos totales"
-        value={metricas.gastosTotales}
-        subtitle={metricas.gastosTotales > 0 ? "Egresos del día" : "Sin gastos registrados"}
-        color="red"
-        trend={metricas.gastosTotales > 0 ? 'down' : 'neutral'}
-      />
+      {(() => {
+        let gastosValue = metricas.gastosTotales || 0;
+        // Fallback: si viene 0 pero hay gastosDelPeriodo con montos
+        if (gastosValue === 0 && Array.isArray(metricas.gastosDelPeriodo) && metricas.gastosDelPeriodo.length > 0) {
+          const suma = metricas.gastosDelPeriodo.reduce((s, g) => s + (g.monto || g.monto_total || 0), 0);
+          if (suma > 0) {
+            console.warn('[MetricasDashboard][debug] Fallback calculando gastosTotales localmente. API=0 suma=', suma);
+            gastosValue = suma;
+          }
+        }
+        const subtitle = gastosValue > 0 ? 'Egresos del día' : 'Sin gastos registrados';
+        return (
+          <MetricCard
+            icon={<ReceiptIcon />}
+            label="Gastos totales"
+            value={gastosValue}
+            subtitle={subtitle}
+            color="red"
+            trend={gastosValue > 0 ? 'down' : 'neutral'}
+          />
+        );
+      })()}
 
       {/* Órdenes (KPI) */}
       <MetricCard

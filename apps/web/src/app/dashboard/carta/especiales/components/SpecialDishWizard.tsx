@@ -295,7 +295,7 @@ export default function SpecialDishWizard({
                     <div className="flex-1">
                       {bucketExists === false && (
                         <div className="mb-3 text-xs rounded-md border border-[color:var(--sp-error-300)] bg-[color:var(--sp-error-50)] p-3 text-[color:var(--sp-error-700)]">
-                          <p className="font-medium mb-1">Bucket faltante: "special-dishes"</p>
+                          <p className="font-medium mb-1">Bucket faltante: &quot;special-dishes&quot;</p>
                           <p>Crea el bucket público en Supabase Storage para habilitar las subidas. Mientras tanto el especial se guardará sin imagen.</p>
                         </div>
                       )}

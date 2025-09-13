@@ -77,26 +77,57 @@ export const useMesas = (): UseMesasReturn => {
 
   // Rama maestro (feature-flag)
   if (useSistemaMaestro) {
-    const mesasCompletasM = maestro.mesas.map((m) => ({
-      numero: m.numero,
-      nombre: m.nombre,
-      zona: m.zona,
-      capacidad: m.capacidad_personas,
-      estado: getEstadoDisplay({ estado_mesa: m.estado_mesa, orden_activa: m.orden_activa }).estado,
-      ocupada: m.estado_mesa === 'ocupada',
-      detallesOrden: m.orden_activa
-        ? {
-            total: m.orden_activa.total,
-            items: m.orden_activa.items,
-            comensales: m.orden_activa.comensales,
-            fechaCreacion: m.orden_activa.created_at,
-          }
-        : null,
-      created_at: m.created_at,
-      updated_at: m.updated_at,
-    }));
+  // Reutilizamos mesaActions (ya instanciado abajo) para exponer acciones reales también en modo maestro
+  // Esto permite que crearOrden desde el wizard funcione y actualice el estado
+  const mesasCompletasM = maestro.mesas.map((m): any => {
+      // Normalizar items para asegurar precio_unitario correcto
+      const normalizarItems = (items: any[] = []) =>
+        items.map((it) => {
+          const precioUnit =
+            it.precio_unitario ??
+            it.precioUnitario ??
+            it.precio ??
+            (it.generated_combination?.precio_total ?? it.generated_combination?.precio ?? 0) ??
+            0;
+          const cantidad = it.cantidad ?? 1;
+          const subtotal = precioUnit * cantidad;
+          return {
+            ...it,
+            precio_unitario: precioUnit,
+            cantidad,
+            subtotal,
+          };
+        });
 
-    const mesasOcupadasM = mesasCompletasM
+      const itemsNormalizados = normalizarItems(m.orden_activa?.items || []);
+
+      const totalCalculado = itemsNormalizados.length
+        ? itemsNormalizados.reduce((sum: number, it: any) => sum + (it.subtotal ?? 0), 0)
+        : 0;
+      const totalOrden = m.orden_activa?.total && m.orden_activa.total > 0 ? m.orden_activa.total : totalCalculado;
+
+      return {
+        numero: m.numero,
+        nombre: m.nombre,
+        zona: m.zona,
+        capacidad: m.capacidad_personas,
+        estado: getEstadoDisplay({ estado_mesa: m.estado_mesa, orden_activa: m.orden_activa }).estado,
+        ocupada: m.estado_mesa === 'ocupada' || itemsNormalizados.length > 0,
+        detallesOrden: m.orden_activa
+          ? {
+              id: m.orden_activa.id,
+              total: totalOrden,
+              items: itemsNormalizados,
+              comensales: m.orden_activa.comensales,
+              fechaCreacion: m.orden_activa.created_at,
+            }
+          : null,
+        created_at: m.created_at,
+        updated_at: m.updated_at,
+      };
+    });
+
+  const mesasOcupadasM = mesasCompletasM
       .filter((m) => m.estado !== 'libre' && m.detallesOrden)
       .reduce((acc, m) => {
         acc[m.numero] = { numero: m.numero, total: m.detallesOrden!.total, items: m.detallesOrden!.items };
@@ -107,7 +138,7 @@ export const useMesas = (): UseMesasReturn => {
       ? { ...maestro.configuracion, zonas: [] as string[] }
       : { configuradas: false, totalMesas: 0, zonas: [] as string[] };
 
-    return {
+  return {
       mesasOcupadas: mesasOcupadasM,
       loading: maestro.loading,
       restaurantId,
@@ -118,14 +149,26 @@ export const useMesas = (): UseMesasReturn => {
         totalPendiente: mesasCompletasM.reduce((s, m) => s + (m.detallesOrden?.total || 0), 0),
       },
       cargarMesas: maestro.actions.cargarMesas,
-      procesarCobro: async (_n: number): Promise<boolean> => true,
+      procesarCobro: async (numeroMesa: number): Promise<boolean> => {
+        try {
+          const { cobrarMesaConTransaccion } = await import('../../lib/supabase');
+          const res = await cobrarMesaConTransaccion(restaurantId!, numeroMesa);
+          // refrescar mesas después del cobro
+          await maestro.actions.cargarMesas();
+          return !!res?.success;
+        } catch (e) {
+          console.error('Error procesando cobro (maestro):', e);
+          return false;
+        }
+      },
       configurarMesasIniciales: async (total: number, distribucion?: any): Promise<boolean> =>
         (await maestro.actions.configurarMesas({ totalMesas: total, distribucion })).success,
-      crearOrden: () => {},
-      reservarMesa: () => {},
-      activarMesa: () => {},
-      inactivarMesa: () => {},
-      eliminarOrden: () => {},
+  // Acciones reales (provenientes de mesaActions legacy, pero compatibles)
+  crearOrden: mesaActions.crearOrden,
+  reservarMesa: mesaActions.reservarMesa,
+  activarMesa: mesaActions.activarMesa,
+  inactivarMesa: mesaActions.inactivarMesa,
+  eliminarOrden: mesaActions.eliminarOrden,
     } as any;
   }
 
@@ -164,6 +207,7 @@ export const useMesas = (): UseMesasReturn => {
     ocupada: mesa.estado === 'ocupada',
     detallesOrden: mesa.ordenActiva
       ? {
+          id: (mesa.ordenActiva as any).id,
           total: mesa.ordenActiva.total,
           items: mesa.ordenActiva.items,
           comensales: mesa.ordenActiva.comensales,

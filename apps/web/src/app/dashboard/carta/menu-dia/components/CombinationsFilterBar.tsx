@@ -4,6 +4,13 @@ import React from 'react';
 import { Heart, Star, RefreshCw, Edit3, Plus } from 'lucide-react';
 import { ComboFilters, LoadingStates } from '@spoon/shared/types/menu-dia/menuTypes';
 
+// Type casting for React type conflicts
+const HeartComponent = Heart as any;
+const StarComponent = Star as any;
+const RefreshCwComponent = RefreshCw as any;
+const Edit3Component = Edit3 as any;
+const PlusComponent = Plus as any;
+
 interface Props {
   filters: ComboFilters;
   setFilters: (updater: (prev: ComboFilters) => ComboFilters) => void;
@@ -61,7 +68,7 @@ export default function CombinationsFilterBar({
                 : 'bg-[--sp-surface] border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-50)]'
             }`}
           >
-            <Heart className={`w-4 h-4 mr-2 ${filters.favorites ? 'fill-current' : ''}`} />
+            <HeartComponent className={`w-4 h-4 mr-2 ${filters.favorites ? 'fill-current' : ''}`} />
             Favoritos
           </button>
 
@@ -73,7 +80,7 @@ export default function CombinationsFilterBar({
                 : 'bg-[--sp-surface] border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] hover:bg-[color:var(--sp-neutral-50)]'
             }`}
           >
-            <Star className={`w-4 h-4 mr-2 ${filters.specials ? 'fill-current' : ''}`} />
+            <StarComponent className={`w-4 h-4 mr-2 ${filters.specials ? 'fill-current' : ''}`} />
             Especiales
           </button>
 
@@ -95,11 +102,11 @@ export default function CombinationsFilterBar({
                 className="flex items-center px-4 py-2 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] rounded-lg hover:bg-[color:var(--sp-primary-700)] disabled:opacity-50 transition-colors"
               >
                 {loadingStates.loading ? (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  <RefreshCwComponent className="w-4 h-4 mr-2 animate-spin" />
                 ) : hasActiveMenu ? (
-                  <Edit3 className="w-4 h-4 mr-2" />
+                  <Edit3Component className="w-4 h-4 mr-2" />
                 ) : (
-                  <Plus className="w-4 h-4 mr-2" />
+                  <PlusComponent className="w-4 h-4 mr-2" />
                 )}
                 {loadingStates.loading ? 'Cargando...' : hasActiveMenu ? 'Editar Menú' : 'Nuevo Menú'}
               </button>
@@ -110,3 +117,4 @@ export default function CombinationsFilterBar({
     </div>
   );
 }
+

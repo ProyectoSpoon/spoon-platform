@@ -4,6 +4,16 @@ import { Input } from '@spoon/shared/components/ui/Input';
 import { Card, CardContent } from '@spoon/shared/components/ui/Card';
 import { Filter, Search, Calendar, Download } from 'lucide-react';
 
+// Type casting for React type conflicts
+const ButtonComponent = Button as any;
+const InputComponent = Input as any;
+const CardComponent = Card as any;
+const CardContentComponent = CardContent as any;
+const FilterComponent = Filter as any;
+const SearchComponent = Search as any;
+const CalendarComponent = Calendar as any;
+const DownloadComponent = Download as any;
+
 type TabActiva = 'movimientos' | 'arqueo' | 'reportes';
 
 interface FiltrosToolbarProps {
@@ -41,22 +51,22 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
     <div className="space-y-4">
       {/* Navegación principal */}
       <div className="flex items-center justify-between">
-    <nav className="flex space-x-1 bg-[color:var(--sp-neutral-100)] rounded-lg p-1" role="tablist" aria-label="Navegación de transacciones">
-          <Button
+        <nav className="flex space-x-1 bg-[color:var(--sp-neutral-100)] rounded-lg p-1" role="tablist" aria-label="Navegación de transacciones">
+          <ButtonComponent
             variant="ghost"
             size="sm"
             onClick={() => onTabChange('movimientos')}
-      role="tab"
-      aria-selected={tabActiva === 'movimientos'}
+            role="tab"
+            aria-selected={tabActiva === 'movimientos'}
             className={
               tabActiva === 'movimientos'
-        ? 'bg-[color:var(--sp-surface)] text-[color:var(--sp-on-surface)] shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 active:ring-2 active:ring-[color:var(--sp-focus)] active:ring-offset-2'
-        : 'text-[color:var(--sp-on-surface)]/80 hover:text-[color:var(--sp-on-surface)] focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 active:ring-2 active:ring-[color:var(--sp-focus)] active:ring-offset-2'
+                ? 'bg-[color:var(--sp-surface)] text-[color:var(--sp-on-surface)] shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 active:ring-2 active:ring-[color:var(--sp-focus)] active:ring-offset-2'
+                : 'text-[color:var(--sp-on-surface)]/80 hover:text-[color:var(--sp-on-surface)] focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 active:ring-2 active:ring-[color:var(--sp-focus)] active:ring-offset-2'
             }
           >
             Transacciones
-          </Button>
-          <Button
+          </ButtonComponent>
+          <ButtonComponent
             variant="ghost"
             size="sm"
             onClick={() => onTabChange('arqueo')}
@@ -69,19 +79,19 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
             }
           >
             Cierres de caja
-          </Button>
+          </ButtonComponent>
         </nav>
       </div>
 
       {/* Barra de filtros */}
-      <Card>
-        <CardContent className="p-4">
+      <CardComponent>
+        <CardContentComponent className="p-4">
           <div className="flex items-center space-x-4">
             {/* Botón filtrar */}
-            <Button variant="outline" size="sm">
-              <Filter className="w-4 h-4 mr-2" />
+            <ButtonComponent variant="outline" size="sm">
+              <FilterComponent className="w-4 h-4 mr-2" />
               Filtrar
-            </Button>
+            </ButtonComponent>
             
             {/* Selector de período */}
             <select 
@@ -97,20 +107,20 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
 
             {/* Selector de fecha(s) */}
             <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-[color:var(--sp-neutral-500)]" />
-              <Input
+              <CalendarComponent className="w-4 h-4 text-[color:var(--sp-neutral-500)]" />
+              <InputComponent
                 type="date"
                 value={filtroFecha}
-                onChange={(e) => onFiltroFechaChange?.(e.target.value)}
+                onChange={(e: any) => onFiltroFechaChange?.(e.target.value)}
                 className="w-40"
               />
               {filtroTiempo === 'personalizado' && (
                 <>
                   <span className="text-sm text-[color:var(--sp-neutral-600)]">a</span>
-                  <Input
+                  <InputComponent
                     type="date"
                     value={filtroFechaFin || filtroFecha}
-                    onChange={(e) => onFiltroFechaFinChange?.(e.target.value)}
+                    onChange={(e: any) => onFiltroFechaFinChange?.(e.target.value)}
                     className="w-40"
                   />
                 </>
@@ -119,39 +129,40 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
 
             {/* Buscador */}
             <div className="flex-1 relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-[color:var(--sp-neutral-400)]" />
-              <Input
+              <SearchComponent className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-[color:var(--sp-neutral-400)]" />
+              <InputComponent
                 placeholder="Buscar concepto..."
                 value={busqueda}
-                onChange={(e) => onBusquedaChange?.(e.target.value)}
+                onChange={(e: any) => onBusquedaChange?.(e.target.value)}
                 className="pl-10"
               />
             </div>
 
             {/* Acciones */}
             <div className="flex items-center space-x-2">
-              <Button 
+              <ButtonComponent 
                 variant="outline" 
                 size="sm"
                 onClick={onDescargar}
                 disabled={loading}
               >
-                <Download className="w-4 h-4 mr-2" />
+                <DownloadComponent className="w-4 h-4 mr-2" />
                 Descargar reporte
-              </Button>
+              </ButtonComponent>
               
-              <Button 
+              <ButtonComponent 
                 variant="outline" 
                 size="sm"
                 onClick={onRefresh}
                 disabled={loading}
               >
                 {loading ? '🔄' : '↻'}
-              </Button>
+              </ButtonComponent>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </CardContentComponent>
+      </CardComponent>
     </div>
   );
 };
+
