@@ -2,6 +2,21 @@
   "name": "spoon-platform",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "npm@10.0.0",
+  "workspaces": [
+    "apps/web",
+    "apps/admin", 
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=@spoon/web",
+    "build:shared": "npm run build --workspace=@spoon/shared",
+    "build:all": "npm run build:shared && npm run build",
+    "lint": "npm run lint -w apps/web",
+    "typecheck": "npm run typecheck -w apps/web",
+    "test": "jest",
+    "test:all": "jest"
+  },
   "devDependencies": {
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
@@ -9,16 +24,5 @@
     "@testing-library/react": "^14.3.1",
     "@types/jest": "^29.5.12",
     "ts-jest": "^29.2.5"
-  },
-  "scripts": {
-  "lint": "npm run lint -w apps/web",
-  "typecheck": "npm run typecheck -w apps/web",
-  "test": "jest",
-  "test:all": "jest"
-  },
-  "workspaces": [
-    "apps/web",
-    "apps/admin",
-    "packages/*"
-  ]
+  }
 }
