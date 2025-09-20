@@ -1,13 +1,20 @@
 # Orphan Files Report
 
-Generado: 2025-09-20T22:05:08.124Z
+Generado: 2025-09-20T22:09:19.998Z
 
-- Archivos de código escaneados: 300
-- Entradas (roots): 34
-- Alcanzables: 133
-- Huérfanos: 167
+- Archivos de código escaneados: 294
+- Entradas (roots): 51
+- Alcanzables: 205
+- Huérfanos: 89
 
 ## Entradas detectadas
+- apps/web/src/app/auth/page.tsx
+- apps/web/src/app/config-restaurante/horario-comercial/page.tsx
+- apps/web/src/app/config-restaurante/informacion-general/page.tsx
+- apps/web/src/app/config-restaurante/logo-portada/page.tsx
+- apps/web/src/app/config-restaurante/page.tsx
+- apps/web/src/app/config-restaurante/ubicacion/page.tsx
+- apps/web/src/app/dashboard/caja/page.tsx
 - apps/web/src/app/dashboard/caja/pages/CajaPage.tsx
 - apps/web/src/app/dashboard/caja/pages/OrdenPendiente.tsx
 - apps/web/src/app/dashboard/caja/pages/modals/GastoWizardSlideOver.tsx
@@ -16,15 +23,20 @@ Generado: 2025-09-20T22:05:08.124Z
 - apps/web/src/app/dashboard/caja/pages/modals/ModalNuevaVenta.tsx
 - apps/web/src/app/dashboard/caja/pages/modals/ModalNuevoGasto.tsx
 - apps/web/src/app/dashboard/caja/pages/modals/ModalProcesarPago.tsx
+- apps/web/src/app/dashboard/carta/especiales/page.tsx
 - apps/web/src/app/dashboard/carta/especiales/pages/SpecialesPage.tsx
 - apps/web/src/app/dashboard/carta/especiales/pages/SpecialesWizardPage.tsx
 - apps/web/src/app/dashboard/carta/especiales/pages/index.ts
+- apps/web/src/app/dashboard/carta/menu-dia/page.tsx
 - apps/web/src/app/dashboard/carta/menu-dia/pages/MenuAnalyticsPage.tsx
 - apps/web/src/app/dashboard/carta/menu-dia/pages/MenuCombinationsPage.tsx
 - apps/web/src/app/dashboard/carta/menu-dia/pages/MenuConfigurationPage.tsx
 - apps/web/src/app/dashboard/carta/menu-dia/pages/MenuDiaPage.tsx
 - apps/web/src/app/dashboard/carta/menu-dia/pages/MenuFavoritesPage.tsx
 - apps/web/src/app/dashboard/carta/menu-dia/pages/MenuWizardPage.tsx
+- apps/web/src/app/dashboard/configuracion/page.tsx
+- apps/web/src/app/dashboard/configuracion/usuarios/page.tsx
+- apps/web/src/app/dashboard/domicilios/page.tsx
 - apps/web/src/app/dashboard/domicilios/pages/DomiciliarioAssignment.tsx
 - apps/web/src/app/dashboard/domicilios/pages/DomiciliariosPanel.tsx
 - apps/web/src/app/dashboard/domicilios/pages/DomiciliosPage.tsx
@@ -39,20 +51,16 @@ Generado: 2025-09-20T22:05:08.124Z
 - apps/web/src/app/dashboard/domicilios/pages/steps/ClienteStep.tsx
 - apps/web/src/app/dashboard/domicilios/pages/steps/MenuStep.tsx
 - apps/web/src/app/dashboard/domicilios/pages/steps/ResumenStep.tsx
+- apps/web/src/app/dashboard/layout.tsx
+- apps/web/src/app/dashboard/mesas/page.tsx
 - apps/web/src/app/dashboard/mesas/pages/MesaCard.tsx
 - apps/web/src/app/dashboard/mesas/pages/MesaDetallesPanel.tsx
 - apps/web/src/app/dashboard/mesas/pages/MesasPage.tsx
+- apps/web/src/app/dashboard/page.tsx
+- apps/web/src/app/layout.tsx
+- apps/web/src/app/page.tsx
 
 ## Archivos potencialmente huérfanos
-- apps/web/src/app/auth/page.tsx
-- apps/web/src/app/auth/useLogin.ts
-- apps/web/src/app/auth/usePasswordRecovery.ts
-- apps/web/src/app/auth/useRegister.ts
-- apps/web/src/app/config-restaurante/horario-comercial/page.tsx
-- apps/web/src/app/config-restaurante/informacion-general/page.tsx
-- apps/web/src/app/config-restaurante/logo-portada/page.tsx
-- apps/web/src/app/config-restaurante/page.tsx
-- apps/web/src/app/config-restaurante/ubicacion/page.tsx
 - apps/web/src/app/dashboard/DashboardClient.tsx
 - apps/web/src/app/dashboard/caja/components/AccionesPrincipales.tsx
 - apps/web/src/app/dashboard/caja/components/CajaTerminal.tsx
@@ -61,27 +69,11 @@ Generado: 2025-09-20T22:05:08.124Z
 - apps/web/src/app/dashboard/caja/components/SidebarResumen.tsx
 - apps/web/src/app/dashboard/caja/components/panels/ArqueoPanel.tsx
 - apps/web/src/app/dashboard/caja/components/panels/ReportesPanel.tsx
-- apps/web/src/app/dashboard/caja/page.tsx
-- apps/web/src/app/dashboard/carta/especiales/page.tsx
-- apps/web/src/app/dashboard/carta/menu-dia/index.ts
-- apps/web/src/app/dashboard/carta/menu-dia/page.tsx
 - apps/web/src/app/dashboard/carta/menu-dia/sections/FavoriteCombinationsSection.tsx
 - apps/web/src/app/dashboard/carta/menu-dia/sections/MenuTemplatesSection.tsx
-- apps/web/src/app/dashboard/configuracion/HorariosForm.tsx
-- apps/web/src/app/dashboard/configuracion/ImagenesForm.tsx
-- apps/web/src/app/dashboard/configuracion/page.tsx
-- apps/web/src/app/dashboard/configuracion/usuarios/components/AuditoriaTab.tsx
-- apps/web/src/app/dashboard/configuracion/usuarios/components/ConfiguracionRolesTab.tsx
-- apps/web/src/app/dashboard/configuracion/usuarios/components/EstadisticasUsuarios.tsx
-- apps/web/src/app/dashboard/configuracion/usuarios/components/UsuariosTab.tsx
 - apps/web/src/app/dashboard/configuracion/usuarios/components/index.ts
-- apps/web/src/app/dashboard/configuracion/usuarios/page.tsx
 - apps/web/src/app/dashboard/domicilios/components/DomiciliariosSummaryCard.tsx
 - apps/web/src/app/dashboard/domicilios/index.ts
-- apps/web/src/app/dashboard/domicilios/page.tsx
-- apps/web/src/app/dashboard/hooks/useDashboardSnapshot.ts
-- apps/web/src/app/dashboard/hooks/useRestaurantSetupStatus.ts
-- apps/web/src/app/dashboard/layout.tsx
 - apps/web/src/app/dashboard/mesas/components/EditarMesaModal.tsx
 - apps/web/src/app/dashboard/mesas/components/MesaDetailsActions.tsx
 - apps/web/src/app/dashboard/mesas/components/MesaDetailsContent.tsx
@@ -89,17 +81,6 @@ Generado: 2025-09-20T22:05:08.124Z
 - apps/web/src/app/dashboard/mesas/components/MesaDetailsHeader.tsx
 - apps/web/src/app/dashboard/mesas/components/MesaDetailsPanel.tsx
 - apps/web/src/app/dashboard/mesas/components/index.ts
-- apps/web/src/app/dashboard/mesas/page.tsx
-- apps/web/src/app/dashboard/page.tsx
-- apps/web/src/app/debug-supabase/page.tsx
-- apps/web/src/app/layout.tsx
-- apps/web/src/app/page.tsx
-- apps/web/src/app/server-test/page.tsx
-- apps/web/src/app/simple-test/page.tsx
-- apps/web/src/app/test-connection/page.tsx
-- apps/web/src/app/test-ubicacion-final/page.tsx
-- apps/web/src/app/test-ubicacion/page.tsx
-- packages/shared/Context/user-context.tsx
 - packages/shared/__mocks__/supabase.mock.ts
 - packages/shared/caja/constants/index.ts
 - packages/shared/caja/hooks/index.ts
@@ -112,8 +93,6 @@ Generado: 2025-09-20T22:05:08.124Z
 - packages/shared/components/mesas/ConfiguracionMesasWizard.tsx
 - packages/shared/components/ui/ActionBarV2/action-bar.tsx
 - packages/shared/components/ui/ActionBarV2/index.ts
-- packages/shared/components/ui/AlertV2/alert.tsx
-- packages/shared/components/ui/AlertV2/index.ts
 - packages/shared/components/ui/AvatarV2/avatar.tsx
 - packages/shared/components/ui/AvatarV2/index.ts
 - packages/shared/components/ui/BadgeV2/badge.tsx
@@ -121,8 +100,6 @@ Generado: 2025-09-20T22:05:08.124Z
 - packages/shared/components/ui/BreadcrumbV2/breadcrumb.tsx
 - packages/shared/components/ui/BreadcrumbV2/index.ts
 - packages/shared/components/ui/Button/button.types.ts
-- packages/shared/components/ui/ButtonV2/button.tsx
-- packages/shared/components/ui/ButtonV2/index.ts
 - packages/shared/components/ui/CheckboxGroupV2/checkbox-group.tsx
 - packages/shared/components/ui/CheckboxGroupV2/index.ts
 - packages/shared/components/ui/CheckboxV2/checkbox.tsx
@@ -137,10 +114,6 @@ Generado: 2025-09-20T22:05:08.124Z
 - packages/shared/components/ui/EmptyStateV2/index.ts
 - packages/shared/components/ui/FileInputV2/file-input.tsx
 - packages/shared/components/ui/FileInputV2/index.ts
-- packages/shared/components/ui/Grid/Grid.tsx
-- packages/shared/components/ui/Grid/index.ts
-- packages/shared/components/ui/InputV2/index.ts
-- packages/shared/components/ui/InputV2/input.tsx
 - packages/shared/components/ui/MenuV2/index.ts
 - packages/shared/components/ui/MenuV2/menu.tsx
 - packages/shared/components/ui/MetricCardV2/index.ts
@@ -149,8 +122,6 @@ Generado: 2025-09-20T22:05:08.124Z
 - packages/shared/components/ui/PaginationV2/pagination.tsx
 - packages/shared/components/ui/PopoverV2/index.ts
 - packages/shared/components/ui/PopoverV2/popover.tsx
-- packages/shared/components/ui/Progress/index.ts
-- packages/shared/components/ui/Progress/progress.tsx
 - packages/shared/components/ui/Progress/types.ts
 - packages/shared/components/ui/ProgressV2/index.ts
 - packages/shared/components/ui/ProgressV2/progress.tsx
@@ -158,52 +129,20 @@ Generado: 2025-09-20T22:05:08.124Z
 - packages/shared/components/ui/RadioGroupV2/radio-group.tsx
 - packages/shared/components/ui/RadioV2/index.ts
 - packages/shared/components/ui/RadioV2/radio.tsx
-- packages/shared/components/ui/SelectV2/index.ts
-- packages/shared/components/ui/SelectV2/select.tsx
-- packages/shared/components/ui/SinPermisos.tsx
 - packages/shared/components/ui/SkeletonV2/index.ts
 - packages/shared/components/ui/SkeletonV2/skeleton.tsx
-- packages/shared/components/ui/SpinnerV2/index.ts
-- packages/shared/components/ui/SpinnerV2/spinner.tsx
-- packages/shared/components/ui/SwitchV2/index.ts
-- packages/shared/components/ui/SwitchV2/switch.tsx
 - packages/shared/components/ui/TableV2/index.ts
 - packages/shared/components/ui/TableV2/table.tsx
-- packages/shared/components/ui/Tabs/index.ts
-- packages/shared/components/ui/Tabs/tabs.tsx
 - packages/shared/components/ui/TabsV2/index.ts
 - packages/shared/components/ui/TabsV2/tabs.tsx
-- packages/shared/components/ui/TextareaV2/index.ts
-- packages/shared/components/ui/TextareaV2/textarea.tsx
 - packages/shared/components/ui/TimePickerV2/index.ts
 - packages/shared/components/ui/TimePickerV2/time-picker.tsx
-- packages/shared/components/ui/components/DynamicMap.tsx
-- packages/shared/components/ui/components/FormCard.tsx
-- packages/shared/components/ui/components/GeneralInfoForm.tsx
-- packages/shared/components/ui/components/InlineEditButton.tsx
-- packages/shared/components/ui/components/InteractiveMap.tsx
 - packages/shared/components/ui/components/MapPreview.tsx
 - packages/shared/components/ui/components/UbicacionForm-new.tsx
-- packages/shared/components/ui/components/UbicacionForm.tsx
-- packages/shared/components/ui/hooks/useRestaurantForm.ts
 - packages/shared/components/ui/utils/useSaveFeedback.ts
 - packages/shared/constants/index.ts
-- packages/shared/hooks/useGeographicData.ts
-- packages/shared/hooks/usePermissions.ts
 - packages/shared/index.ts
 - packages/shared/lib/errorHandling.ts
-- packages/shared/patterns/FormControlV2/FormControlV2.tsx
-- packages/shared/patterns/FormControlV2/index.ts
-- packages/shared/patterns/FormFieldsV2/index.ts
-- packages/shared/patterns/FormFieldsV2/presets/EmailField.tsx
-- packages/shared/patterns/FormFieldsV2/presets/InputFieldV2.tsx
-- packages/shared/patterns/FormFieldsV2/presets/PasswordField.tsx
-- packages/shared/patterns/FormFieldsV2/presets/SelectFieldV2.tsx
-- packages/shared/patterns/FormFieldsV2/presets/TextareaFieldV2.tsx
-- packages/shared/patterns/FormSection/FormSection.tsx
-- packages/shared/patterns/FormSection/index.ts
-- packages/shared/services/restaurant.ts
-- packages/shared/services/usuarios.ts
 - packages/shared/tokens/colors.ts
 - packages/shared/tokens/index.ts
 - packages/shared/tokens/spacing.ts
