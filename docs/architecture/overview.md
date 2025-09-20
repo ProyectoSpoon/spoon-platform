@@ -7,6 +7,15 @@ lastUpdated: 2025-09-20
 
 Este documento vivo consolida una visión general de la arquitectura, enlazando con documentos especializados (DB, UI, módulos) y sirviendo como punto de partida para nuevos contribuidores.
 
+## Índice
+- [Monorepo y paquetes](#monorepo-y-paquetes)
+- [Plataforma y datos](#plataforma-y-datos)
+- [Frontend](#frontend)
+- [Módulos principales](#módulos-principales)
+- [Patrones clave](#patrones-clave)
+- [Testing y calidad](#testing-y-calidad)
+- [Roadmap técnico (alto nivel)](#roadmap-técnico-alto-nivel)
+
 ## Monorepo y paquetes
 - Apps: `apps/web`, `apps/mobile`, `apps/admin` (Next.js/React Native)
 - Shared: `packages/shared` (componentes UI V2, hooks, tipos, servicios a Supabase)
