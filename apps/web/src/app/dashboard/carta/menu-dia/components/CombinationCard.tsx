@@ -2,11 +2,9 @@
 
 import React from 'react';
 import { MenuCombinacion, LoadingStates } from '@spoon/shared/types/menu-dia/menuTypes';
-import { Heart, Star, Edit3, RefreshCw, Check, X, Trash2 } from 'lucide-react';
+import { Edit3, RefreshCw, Check, X, Trash2 } from 'lucide-react';
 
 // Type casting for React type conflicts
-const HeartComponent = Heart as any;
-const StarComponent = Star as any;
 const Edit3Component = Edit3 as any;
 const RefreshCwComponent = RefreshCw as any;
 const CheckComponent = Check as any;
@@ -24,6 +22,7 @@ interface Props {
   onToggleSpecial: (id: string) => void;
   onAskDelete: (id: string) => void;
   onDraftChange: (id: string, patch: Partial<MenuCombinacion>) => void;
+  onSaveAsFavorite?: (combo: MenuCombinacion) => void;
 }
 
 export default function CombinationCard({
@@ -36,7 +35,8 @@ export default function CombinationCard({
   onToggleFavorite,
   onToggleSpecial,
   onAskDelete,
-  onDraftChange
+  onDraftChange,
+  onSaveAsFavorite
 }: Props) {
   return (
     <div
@@ -59,24 +59,7 @@ export default function CombinationCard({
               combo.nombre || `Combinación #${index + 1}`
             )}
           </h3>
-          <div className="flex gap-1">
-            <button
-              onClick={() => onToggleFavorite(combo.id)}
-              className={`p-1 hover:bg-[color:var(--sp-error-100)] rounded transition-colors ${
-                combo.favorito ? 'text-[color:var(--sp-error-600)]' : 'text-[color:var(--sp-neutral-400)]'
-              }`}
-            >
-              <HeartComponent className={`h-4 w-4 ${combo.favorito ? 'fill-current' : ''}`} />
-            </button>
-            <button
-              onClick={() => onToggleSpecial(combo.id)}
-              className={`p-1 hover:bg-[color:var(--sp-warning-100)] rounded transition-colors ${
-                combo.especial ? 'text-[color:var(--sp-warning-600)]' : 'text-[color:var(--sp-neutral-400)]'
-              }`}
-            >
-              <StarComponent className={`h-4 w-4 ${combo.especial ? 'fill-current' : ''}`} />
-            </button>
-          </div>
+          {/* Íconos de favorito/especial eliminados del header según solicitud */}
         </div>
 
         {/* Descripción */}
@@ -130,6 +113,7 @@ export default function CombinationCard({
             >
               {combo.disponible ? 'Disponible' : 'No disponible'}
             </span>
+            {/* Favorito badge removed to avoid duplication with bottom action button */}
             {combo.especial && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-800)]">
                 Especial
@@ -160,6 +144,18 @@ export default function CombinationCard({
               </>
             ) : (
               <>
+                <button
+                  onClick={() => onToggleFavorite(combo.id)}
+                  className={[
+                    'px-2 py-1 text-xs rounded inline-flex items-center gap-1 transition-colors',
+                    combo.favorito
+                      ? 'bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-800)]'
+                      : 'bg-[color:var(--sp-neutral-100)] hover:bg-[color:var(--sp-neutral-200)] text-[color:var(--sp-neutral-700)]'
+                  ].join(' ')}
+                  title={combo.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}
+                >
+                  Favorito
+                </button>
                 <button
                   onClick={() => onEdit(combo.id)}
                   className="p-1 text-[color:var(--sp-info-600)] hover:bg-[color:var(--sp-info-100)] rounded transition-colors"

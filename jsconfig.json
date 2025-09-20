@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@spoon/shared": ["packages/shared"],
+      "@spoon/shared/*": ["packages/shared/*"],
+      "@/*": ["apps/web/src/*"]
+    }
+  },
+  "exclude": ["node_modules"]
+}

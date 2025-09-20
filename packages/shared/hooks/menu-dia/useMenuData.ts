@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { getUserProfile, getUserRestaurant, supabase } from '@spoon/shared';
+import { useState, useEffect, useCallback, Dispatch, SetStateAction } from 'react';
+import { getUserProfile, getUserRestaurant, supabase } from '@spoon/shared/lib/supabase';
 
 import { MenuApiService } from '../../services/menu-dia/menuApiService';
 import { Producto, MenuCombinacion, LoadingStates } from '../../types/menu-dia/menuTypes';
@@ -9,7 +9,7 @@ import { DEFAULT_MENU_PRICE, DEFAULT_FILTERS, DEFAULT_COMBO_FILTERS, CATEGORIAS_
 
 export const useMenuData = () => {
   // ✅ ESTADOS PRINCIPALES
-  const [currentView, setCurrentView] = useState<'creation' | 'combinations'>('creation');
+  const [currentView, setCurrentView] = useState<'creation' | 'combinations' | 'analytics'>('creation');
   const [currentMenu, setCurrentMenu] = useState<any>(null);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<{[categoryId: string]: Producto[]}>({});
@@ -181,7 +181,7 @@ export const useMenuData = () => {
   }, [loadInitialData]);
 
   // ✅ RETORNAR ESTADO Y FUNCIONES
-  return {
+  const api = {
     // Estados principales
     currentView,
     setCurrentView,
@@ -221,6 +221,12 @@ export const useMenuData = () => {
     showNotification,
     loadProductsForCategory,
     loadInitialData
+  };
+
+  // Afirmar tipos explícitos para las vistas soportadas
+  return api as typeof api & {
+    currentView: 'creation' | 'combinations' | 'analytics';
+    setCurrentView: Dispatch<SetStateAction<'creation' | 'combinations' | 'analytics'>>;
   };
 };
 

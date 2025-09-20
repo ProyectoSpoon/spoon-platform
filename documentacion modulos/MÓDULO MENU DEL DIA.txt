@@ -999,6 +999,260 @@ const {
 } = menuData;
 ```
 
+---
+
+## 🗺️ Mapa técnico detallado (por archivo)
+
+Esta sección enumera, por archivo, variables de estado, funciones clave, componentes, rutas y contratos de datos, junto con los servicios exactos de Supabase utilizados y dónde se invocan.
+
+### Rutas principales del módulo
+- Ruta de página: `/dashboard/carta/menu-dia` → archivo `apps/web/src/app/dashboard/carta/menu-dia/page.tsx` (App Router)
+- Barrel del módulo: `apps/web/src/app/dashboard/carta/menu-dia/index.ts`
+
+---
+
+### 1) packages/shared/services/menu-dia/menuApiService.ts
+- Propósito: Capa de acceso a datos (Repository) + caché ligera en memoria.
+- Utilidades internas:
+  - `_cache: Map<string, { value; ts }>`; `_inFlight: Map<string, Promise>`; `_withCache(name, key, ttlMs, factory)`; `_invalidate(name, key?)`.
+- Métodos y servicios Supabase:
+  - getProductsByCategory(categoryId)
+    - Tabla: `universal_products`
+    - Filtros: `eq('category_id', uuid categoría)`, `eq('is_verified', true)`; `order('name')`.
+    - TTL caché: 60s. Mapea a tipo `Producto` añadiendo `price`, `available`, `is_favorite`, `is_special`.
+  - getTodayMenu(restaurantId)
+    - Tabla: `daily_menus`
+    - Filtros: `restaurant_id`, `status = 'active'`, `menu_date = today`.
+    - Nota: usa `new Date().toISOString().split('T')[0]` (UTC). Recomendado: helper Bogotá (ver Gaps).
+    - Retorno: `maybeSingle()`; ignora PGRST116.
+    - TTL caché: 15s. Invalida con `_invalidate('getTodayMenu', key)`.
+  - getMenuCombinations(dailyMenuId)
+    - Tabla: `generated_combinations` → `select('*').eq('daily_menu_id', id).order('generated_at')`
+    - TTL caché: 15s.
+  - getMenuSelections(dailyMenuId)
+    - Tabla: `daily_menu_selections` → selección ordenada por `category_name`, `selection_order`.
+    - TTL caché: 30s.
+  - createDailyMenu(restaurantId, menuPrice, _selectedProducts, _proteinQuantities)
+    - Tabla: `daily_menus` → `upsert` con `onConflict: 'restaurant_id,menu_date'`.
+    - Estado por defecto: `status = 'active'`, `menu_date = today` (UTC), `updated_at`.
+    - Invalida cachés relacionadas (`getTodayMenu`, `getMenuCombinations`, `getMenuSelections`).
+  - updateDailyMenu(menuId, menuPrice)
+    - Tabla: `daily_menus` → `update({ menu_price, updated_at })`.
+    - Invalida `getTodayMenu`.
+  - insertMenuSelections(dailyMenuId, selectedProducts)
+    - Tabla: `daily_menu_selections` → reemplazo idempotente: `delete().eq('daily_menu_id', ...)` y `insert(selections)`.
+    - Invalida `getMenuSelections` y `getMenuCombinations` para ese `dailyMenuId`.
+  - insertProteinQuantities(dailyMenuId, proteinQuantities)
+    - Tabla: `protein_quantities` → reemplazo idempotente (delete → insert).
+    - Invalida `getTodayMenu`.
+  - insertCombinations(dailyMenuId, combinations)
+    - Tabla: `generated_combinations` → reemplazo idempotente (delete → insert(rows con `daily_menu_id`)). Devuelve filas creadas.
+    - Invalida `getMenuCombinations` (clave específica de `dailyMenuId`).
+  - updateCombination(combinationId, updates)
+    - Tabla: `generated_combinations` → `update({ ...updates, updated_at })`.
+    - Invalida `getMenuCombinations`.
+  - deleteCombination(combinationId)
+    - Tabla: `generated_combinations` → `delete().eq('id', ...)`.
+    - Invalida `getMenuCombinations`.
+  - deleteMenuSelections(dailyMenuId), deleteProteinQuantities(dailyMenuId), deleteCombinations(dailyMenuId)
+    - Limpieza selectiva por `daily_menu_id` con invalidaciones correspondientes.
+  - saveDailyMenuWithItems({ restaurantId, menuPrice, selectedProducts, proteinQuantities, combinations })
+    - Orquestador: createDailyMenu → insertMenuSelections → insertProteinQuantities → insertCombinations. Devuelve conteos.
+- Realtime: No usa realtime actualmente.
+- Storage: No aplica.
+- Errores: Propaga errores de Supabase; maneja `maybeSingle` not-found; invalidaciones consistentes.
+- Gaps recomendados:
+  - Timezone: reemplazar `new Date().toISOString().split('T')[0]` por helper Bogotá (p. ej. `getBogotaDateISO('dateOnly')`).
+  - Invalidación: en `updateCombination`/`deleteCombination` pasar clave específica (`dailyMenuId`) para granularidad.
+
+---
+
+### 2) packages/shared/hooks/menu-dia/useMenuData.ts
+- Propósito: Estado principal y lógica de negocio de Menú del Día.
+- Estados principales:
+  - `currentView`, `currentMenu`, `restaurantId`, `selectedProducts`, `menuCombinations`, `availableProducts`, `hasUnsavedChanges`, `menuPrice`, `proteinQuantities`.
+  - Loading: `initialLoading`, `loadingProducts`, `loadingStates { saving, generating, deleting, updating, loading }`.
+  - Filtros: `searchTerm`, `searchTermCombo`, `filters`, `filtersCombo`.
+- Funciones clave:
+  - `showNotification(message, type)` → implementación simple con `alert` y `console` (migrar a toasts compartidos).
+  - `loadProductsForCategory(categoryId)` → evita recargas; usa `MenuApiService.getProductsByCategory` y actualiza `availableProducts`.
+  - `loadInitialData()` → obtiene perfil/restaurante (`getUserProfile`, `getUserRestaurant`), carga menú vigente (`MenuApiService.getTodayMenu`), combinaciones (`getMenuCombinations`), reconstruye `selectedProducts` desde `daily_menu_selections`, carga `protein_quantities`, decide `currentView`.
+- Servicios Supabase utilizados (directos):
+  - `daily_menu_selections` (select por `daily_menu_id`, `order category_name, selection_order`).
+  - `protein_quantities` (select por `daily_menu_id`).
+- Servicios compartidos utilizados:
+  - `getUserProfile`, `getUserRestaurant`, `supabase` (cliente), `MenuApiService` (varios métodos).
+- Realtime: No implementado.
+- Gaps recomendados:
+  - Unificar notificaciones con el sistema de toasts del proyecto (evitar `alert`).
+  - Manejar TZ Bogotá en la reconstrucción (si dependiera de `today`).
+
+---
+
+### 3) packages/shared/hooks/menu-dia/useMenuState.ts
+- Propósito: Estado de UI para wizard/modal.
+- Estados: `showSlideOver`, `isAnimating`, `currentStep`, `showDeleteConfirm`.
+- Funciones: `openSlideOver()`, `closeSlideOver(hasUnsavedChanges?)`, `handleNextStep()`, `handlePrevStep()`, `resetWizard()`, utilidades `handleProductSelect`, `clearSearch`, `resetFilters`.
+- Supabase: No aplica.
+
+---
+
+### 4) packages/shared/constants/menu-dia/menuConstants.ts
+- Propósito: Configuración y defaults.
+- Constantes:
+  - `CATEGORIAS_MENU_CONFIG`: mapeo id ↔ nombre ↔ uuid (FK a `universal_products.category_id`).
+  - `DEFAULT_MENU_PRICE`, `DEFAULT_PROTEIN_QUANTITY`, `WIZARD_STEPS_COUNT`.
+  - `DEFAULT_FILTERS`, `DEFAULT_COMBO_FILTERS`.
+  - `CATEGORY_ICONS`, `LOADING_MESSAGES`.
+- Supabase: No aplica (pero los UUID conectan con datos de `universal_products`).
+
+---
+
+### 5) packages/shared/types/menu-dia/menuTypes.ts
+- Propósito: Definiciones de tipos TS expuestas al UI.
+- Tipos: `Producto`, `MenuCombinacion`, `LoadingStates`, `MenuFilters`, `ComboFilters`, `MenuState`.
+- Notas: Campos opcionales y derivados para compatibilidad (`price`, `is_favorite`, `is_special`, `available`).
+
+---
+
+### 6) packages/shared/utils/menu-dia/adapters.ts
+- Propósito: Adaptador UI → DB para combinaciones.
+- Función: `mapCombinationUpdatesToDb(updates)` → mapea `nombre→combination_name`, `descripcion→combination_description`, `precio→combination_price`, `disponible→is_available`, `favorito→is_favorite`, `especial→is_special`; añade `updated_at`.
+- Usos: `MenuCombinationsPage` (guardar edición inline); testeado con Jest.
+- Supabase: Se usa combinado con `MenuApiService.updateCombination`.
+
+---
+
+### 7) packages/shared/__tests__/utils/menu-dia/adapters.test.ts
+- Propósito: Validar el mapeo del adaptador.
+- Casos: mapea campos básicos; mapea flags; omite claves no soportadas; asegura `updated_at`.
+
+---
+
+### 8) apps/web/src/app/dashboard/carta/menu-dia/page.tsx
+- Propósito: Página Next.js que hace dynamic import para reducir JS inicial.
+- Component: carga `MenuDiaPage` desde el barrel `index`.
+- Ruta: `/dashboard/carta/menu-dia`.
+
+---
+
+### 9) apps/web/src/app/dashboard/carta/menu-dia/index.ts
+- Propósito: Barrel export del submódulo.
+- Re-exporta: `MenuDiaPage`, `MenuConfigurationPage`, `MenuCombinationsPage`, `MenuWizardPage`, tipos y constantes, hooks y `MenuApiService`.
+
+---
+
+### 10) apps/web/src/app/dashboard/carta/menu-dia/pages/MenuDiaPage.tsx
+- Propósito: Orquestador de vistas y flujo de guardado completo.
+- Hooks: `useMenuData`, `useMenuState`.
+- Funciones destacadas:
+  - `handleCreateNewMenu()` → reinicia estado, limpia selecciones/combinaciones, abre wizard.
+  - `handleWizardComplete(combinations)` → prepara `combinationsForDB` (mapeo a columnas de `generated_combinations`) y delega a `MenuApiService.saveDailyMenuWithItems` para persistencia atómica (upsert menú, selecciones, cantidades, combinaciones). Actualiza estado local y cambia a vista `combinations`.
+- UI: Tabs de navegación; overlay de guardado; pasa callbacks y estado a subpáginas.
+- Supabase: Acceso indirecto a través de `MenuApiService`.
+
+---
+
+### 11) apps/web/src/app/dashboard/carta/menu-dia/pages/MenuWizardPage.tsx
+- Propósito: Wizard paso a paso de selección y configuración final.
+- Dependencias: `CATEGORIAS_MENU_CONFIG`, `DEFAULT_PROTEIN_QUANTITY`.
+- Generación de combinaciones: calcula producto cartesiano de `principios × proteinas`, arma objetos `MenuCombinacion` con precio `menuPrice` y cantidades por proteína.
+- Validaciones: requiere al menos 1 principio y 1 proteína; `menuPrice > 0`.
+- Persistencia: no guarda directamente; delega a `onComplete` (contenedor guarda vía servicio).
+- Supabase: No aplica directamente.
+
+---
+
+### 12) apps/web/src/app/dashboard/carta/menu-dia/pages/MenuConfigurationPage.tsx
+- Propósito: Gestión de productos seleccionados y utilidades (guardar simulado, exportar JSON, abrir wizard).
+- Funciones:
+  - `handleSaveMenu()` → marcador de posición (setTimeout 2s, notificación). No persiste en BD.
+  - `handleExportMenu()` → descarga un JSON con `selectedProducts`, `menuCombinations`, `menuPrice`.
+  - `handleRemoveProduct(categoryId, productId)` → actualiza `selectedProducts` y marca `hasUnsavedChanges`.
+- Supabase: No interactúa. Persistencia real ocurre en el wizard/servicio.
+- Gap: Implementar guardado real (p. ej., `MenuApiService.saveDailyMenuWithItems` o, si solo cambia precio, `updateDailyMenu`).
+
+---
+
+### 13) apps/web/src/app/dashboard/carta/menu-dia/pages/MenuCombinationsPage.tsx
+- Propósito: Gestión de combinaciones existentes (filtrar, editar inline, favoritos, especiales, eliminar) y re-edición del menú vigente.
+- Funciones y servicios Supabase (vía servicios):
+  - `handleEditExistingMenu()` → carga `daily_menu_selections` con `MenuApiService.getMenuSelections(currentMenu.id)`, agrupa por `category_id`, mapea UUID→ID local usando `CATEGORIAS_MENU_CONFIG`, prellena `selectedProducts` y abre wizard para re-edición.
+  - `handleSaveCombination(id, updates)` → usa `mapCombinationUpdatesToDb` y `MenuApiService.updateCombination` (tabla `generated_combinations`).
+  - `handleDeleteCombination(id)` → `MenuApiService.deleteCombination` (tabla `generated_combinations`).
+  - `handleToggleFavorite(id)` / `handleToggleSpecial(id)` → `updateCombination` con flags correspondientes.
+- Filtros UI: `searchTermCombo`, `filtersCombo { favorites, specials, availability, sortBy }`.
+- Realtime: No implementado (ver recomendaciones).
+
+---
+
+### 14) apps/web/src/app/dashboard/carta/menu-dia/components/*
+- `CombinationsFilterBar.tsx`: Barra de búsqueda y filtros; CTA contextual (Editar menú/Nuevo menú). Sin acceso a datos.
+- `CombinationsEmptyState.tsx`: Estado vacío con CTA (generar o limpiar filtros). Sin acceso a datos.
+- `CombinationCard.tsx`: Card de combinación con edición inline y toggles (favorito/especial). Delegado al contenedor.
+- `DeleteConfirmationModal.tsx`: Modal de confirmación de borrado. Sin acceso a datos.
+
+---
+
+## 🧩 Contratos de datos y mapeos relevantes
+- universal_products (lectura): `id, name, category_id, suggested_price_min, suggested_price_max, is_verified, popularity_score, image_url, ...` → adaptado a `Producto` (añadidos: `price`, `available`, flags iniciales).
+- daily_menus (lectura/escritura): `id, restaurant_id, menu_date, menu_price, status, created_at, updated_at`.
+- daily_menu_selections (lectura/escritura): `id, daily_menu_id, universal_product_id, category_id (UUID), category_name, product_name, selection_order, selected_at`.
+- protein_quantities (lectura/escritura): `id, daily_menu_id, protein_product_id, planned_quantity, unit_type, created_at`.
+- generated_combinations (lectura/escritura): `id, daily_menu_id, combination_name, combination_description, combination_price, principio_product_id, proteina_product_id, entrada_product_id, bebida_product_id, acompanamiento_products[], is_available, is_favorite, is_special, generated_at, updated_at`.
+
+---
+
+## 🔌 Mapa de uso de Supabase por archivo
+- Directos (cliente supabase):
+  - `useMenuData.ts`: `daily_menu_selections` (select), `protein_quantities` (select).
+- Indirectos (vía MenuApiService):
+  - `MenuDiaPage.tsx`: guardado completo `saveDailyMenuWithItems`.
+  - `MenuCombinationsPage.tsx`: `getMenuSelections`, `updateCombination`, `deleteCombination`.
+  - `MenuWizardPage.tsx`: none (delegado).
+  - `MenuConfigurationPage.tsx`: none (placeholder guardado).
+
+---
+
+## ⚠️ Gaps y recomendaciones
+1) Zona horaria (crítico)
+   - Problema: `getTodayMenu` y `createDailyMenu` usan fecha UTC. En Bogotá, puede adelantar o atrasar el día.
+   - Acción: Usar helper compartido de fechas (p. ej. `getBogotaDateISO()` desde `@spoon/shared/utils/datetime`) para calcular `menu_date` y llaves de caché.
+   - Lugares: `MenuApiService.getTodayMenu`, `createDailyMenu`, claves `_withCache` que dependen de la fecha.
+
+2) Persistencia desde Configuración (medio)
+   - Problema: `MenuConfigurationPage.handleSaveMenu` no persiste.
+   - Acción: Añadir guardado real: si existe `currentMenu`, `updateDailyMenu`; si es nuevo flujo, abrir wizard o llamar `saveDailyMenuWithItems` con selecciones/cantidades actuales.
+
+3) Realtime opcional (mejora UX)
+   - Caso: Ver cambios en `generated_combinations`/`daily_menu_selections` en vivo cuando varios usuarios editan.
+   - Acción: Suscribirse con `supabase.channel('...').on('postgres_changes', { event: '*', schema: 'public', table: 'generated_combinations', filter: `daily_menu_id=eq.${currentMenu.id}` }, handler)` y refrescar estado/invalidad caché.
+
+4) Notificaciones (consistencia)
+   - Problema: `alert()` bloqueante; inconsistente con otros módulos.
+   - Acción: Migrar a toast/notifier compartido (contexto o utilidad en `@spoon/shared`).
+
+5) Invalidaciones de caché (granularidad)
+   - Problema: algunos `_invalidate('getMenuCombinations')` sin clave pueden ser globales.
+   - Acción: pasar la clave específica (`dailyMenuId`) cuando sea posible.
+
+6) Tests adicionales (calidad)
+   - Agregar unit tests para `MenuApiService.saveDailyMenuWithItems` (mock Supabase); `getTodayMenu` con helper de TZ; adaptadores de selecciones (UUID→ID local) en `MenuCombinationsPage`.
+
+7) Accesibilidad y rendimiento (UI)
+   - Debounce de búsqueda en filtros; `aria-labels` en controles; paginación si la lista de combinaciones crece; memoización de listas.
+
+---
+
+## ✅ Checklist de verificación rápida
+- [ ] getTodayMenu/createDailyMenu usan TZ Bogotá
+- [ ] Guardado real desde Configuración (opcional)
+- [ ] Realtime en combinaciones (opcional)
+- [ ] Notificaciones migradas a toasts
+- [ ] Invalidaciones de caché con claves específicas
+- [ ] Tests clave agregados
+
+
 ### Funciones Principales
 
 #### 1. **handleSaveMenu()** - Guardado Manual

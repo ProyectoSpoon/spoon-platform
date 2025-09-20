@@ -8,6 +8,7 @@ export * from './lib/supabase';
 
 // Utils
 export * from './lib/utils';
+export * from './lib/storage';
 
 // Design tokens
 export * as SpoonTokens from './tokens';

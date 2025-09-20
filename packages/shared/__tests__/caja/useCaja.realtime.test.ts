@@ -32,7 +32,7 @@ describe('useCaja - realtime updates', () => {
     });
   };
 
-  it('aplica INSERT transacción sumando totales y balance', async () => {
+  it('aplica INSERT transacción en efectivo sumando totales y balance', async () => {
     setupListQueries();
     const { result } = renderHook(() => useCaja());
     await act(async () => {});
@@ -52,7 +52,7 @@ describe('useCaja - realtime updates', () => {
     expect(result.current.metricas.balance).toBe(250);
   });
 
-  it('aplica INSERT tarjeta y digital actualizando totales por método', async () => {
+  it('aplica INSERT tarjeta y digital actualizando totales por método, sin cambiar balance', async () => {
     setupListQueries();
     const { result } = renderHook(() => useCaja());
     await act(async () => {});
@@ -70,7 +70,8 @@ describe('useCaja - realtime updates', () => {
     expect(result.current.metricas.totalTarjeta).toBe(300);
     expect(result.current.metricas.totalDigital).toBe(150);
     expect(result.current.metricas.ventasTotales).toBe(450);
-    expect(result.current.metricas.balance).toBe(450);
+    // Balance no cambia porque no hubo efectivo
+    expect(result.current.metricas.balance).toBe(0);
   });
 
   it('aplica INSERT gasto restando balance y sumando gastos', async () => {

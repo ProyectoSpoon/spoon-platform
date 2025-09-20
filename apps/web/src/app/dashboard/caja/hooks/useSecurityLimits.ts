@@ -1,5 +1,5 @@
 // packages/shared/caja/hooks/useSecurityLimits.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase, getUserProfile } from '@spoon/shared/lib/supabase';
 import { SecurityLimits } from '@spoon/shared/caja/types/security';
 
@@ -46,7 +46,7 @@ export const useSecurityLimits = () => {
     }).format(pesos);
   };
 
-  const validarMonto = (montoPesos: number, metodoPago: string): {
+  const validarMonto = useCallback((montoPesos: number, metodoPago: string): {
     valid: boolean;
     warnings: string[];
     requiresAuth: boolean;
@@ -75,7 +75,7 @@ export const useSecurityLimits = () => {
     }
 
     return { valid: true, warnings, requiresAuth };
-  };
+  }, [limits]);
 
   return {
     limits,

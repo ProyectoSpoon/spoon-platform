@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Clock, Plus, Trash2, AlertTriangle } from 'lucide-react';
-import { getUserProfile, getUserRestaurant, updateRestaurant } from '@spoon/shared';
+import { getUserProfile, getUserRestaurant, updateRestaurant } from '@spoon/shared/lib/supabase';
 import toast from 'react-hot-toast';
 import { Grid } from '@spoon/shared/components/ui/Grid';
 

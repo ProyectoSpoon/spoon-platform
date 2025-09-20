@@ -1,13 +1,19 @@
+const path = require('path');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-  './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-  // Monorepo shared packages (para generar clases usadas fuera de src)
-  '../../packages/shared/**/*.{js,ts,jsx,tsx,mdx}',
-  '../../packages/**/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/pages/**/*.{ts,tsx,mdx}',
+    './src/components/**/*.{ts,tsx,mdx}',
+    './src/app/**/*.{ts,tsx,mdx}',
+    // Monorepo shared packages (solo fuentes TS/TSX, evitar JS compilados)
+    path.join(__dirname, '../../packages/shared/**/*.{ts,tsx,mdx}').replace(/\\/g, '/'),
+    path.join(__dirname, '../../packages/shared/components/**/*.{ts,tsx,mdx}').replace(/\\/g, '/'),
+    // Exclusiones explícitas para performance
+    '!**/node_modules/**',
+    '!**/.next/**',
+    '!**/dist/**',
   ],
   theme: {
     extend: {

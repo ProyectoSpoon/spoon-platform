@@ -1,0 +1,229 @@
+MÓDULO MENÚ ESPECIAL — Mapa técnico detallado (por archivo)
+
+Última actualización: generado automáticamente a partir del código actual.
+
+Resumen ejecutivo
+- Objetivo: permitir crear, editar, listar, activar “para hoy” y eliminar platos especiales (precio fijo), con selección opcional de productos informativos e imagen en Storage.
+- Alcance UI: página de lista, wizard lateral de 4 pasos, modales de detalle y confirmación.
+- Backend: Supabase (Auth, Postgres con RLS, RPCs y Storage). Tablas involucradas (inferencia): special_dishes, special_dish_selections, generated_special_combinations, daily_special_activations, universal_products. RPCs: get_available_specials_today, toggle_special_today.
+- Dependencias clave compartidas: constants de Menú del Día para categorías, tipos compartidos (Producto), cliente Supabase compartido.
+
+Arquitectura y flujo
+1) El usuario navega a Dashboard → Carta → Especiales.
+2) La página principal usa el hook useSpecialData para cargar restaurante y platos especiales.
+3) Desde la lista: puede
+   - Crear: abre SpecialDishWizard (lateral). Al completar, crea el especial, inserta selecciones y actualiza métricas.
+   - Editar: carga selecciones actuales y abre el wizard con datos; guarda cambios con update + reinserción de selecciones.
+   - Activar/Desactivar “para hoy”: llama RPC toggle_special_today y sincroniza estado local.
+   - Ver detalle: modal que agrupa selecciones por categoría.
+   - Eliminar: confirmación + borrado total del especial.
+4) Imagen: opcional, sube a Storage (bucket “special-dishes”); si no existe el bucket, el wizard permite continuar sin imagen y muestra diagnóstico.
+
+Mapa técnico detallado por archivo
+
+1) apps/web/src/app/dashboard/carta/especiales/page.tsx
+- Responsabilidad: Orquestador de la sección. Resuelve vistas (lista vs wizard), muestra métricas rápidas y estados iniciales.
+- Principales props/estado (provenientes del hook useSpecialData):
+  - initialLoading, restaurantId, currentView ('list' | 'wizard' | 'creation' | 'combinations'), currentSpecialDish
+  - specialDishes, specialImages, availableProducts, loadingProducts
+  - dishName, dishDescription, dishPrice, selectedProducts
+  - createNewSpecialDish, editSpecialDish, saveEditedSpecialDish, openWizard, setCurrentView
+- Render condicional:
+  - Loading inicial (spinner + copy)
+  - Error si no hay restaurantId
+  - Vista actual → SpecialesPage (lista) o SpecialDishWizard (wizard)
+- Eventos principales:
+  - onComplete del wizard:
+    - si editing: saveEditedSpecialDish(image, imageAlt)
+    - caso nuevo: createNewSpecialDish(name, description, price, selectedProducts, image, imageAlt)
+
+2) apps/web/src/app/dashboard/carta/especiales/pages/SpecialesPage.tsx
+- Responsabilidad: Listado de platos, acciones rápidas y modales (detalle y confirmación de borrado).
+- Entradas: specialData (any por ahora). Extrae:
+  - specialDishes, specialImages, setCurrentView, setCurrentSpecialDish
+  - toggleSpecialForToday, deleteSpecialDishComplete, loadingStates
+- Acciones:
+  - Crear → specialData.openWizard()
+  - Editar → specialData.editSpecialDish(dish) (prefiere la función del hook; fallback: setCurrentSpecialDish + openWizard)
+  - Act/Desact hoy → toggleSpecialForToday(dish.id, !is_active) (requiere setup_completed && status === 'active')
+  - Eliminar → confirm modal → deleteSpecialDishComplete(dish.id)
+  - Detalle → modal; carga agrupada via specialData.fetchSpecialDishSelectionsGrouped(dish.id)
+- UI notable:
+  - Tarjetas con imagen (img con fallback), badges de estado (Activo hoy / Activo / Borrador / Inactivo), precio $COP (toLocaleString('es-CO'))
+  - Métricas por tarjeta: total_products_selected, categories_configured, setup_completed
+
+3) apps/web/src/app/dashboard/carta/especiales/components/SpecialDishWizard.tsx
+- Responsabilidad: Wizard lateral (4 pasos) para crear/editar especiales, con imagen y selección opcional de productos.
+- Props:
+  - isOpen, onClose, onComplete(SpecialDishData)
+  - loadProductsForCategory(categoryId) → carga productos desde universal_products
+  - availableProducts: Record<categoryId, Producto[]>
+  - loadingProducts?: boolean
+  - existingSpecial?: SpecialDishData | null (edición)
+- Estado interno:
+  - currentStep, isAnimating, searchTerm, selectedCategory
+  - specialData { name, description, price, selectedProducts, image?, imageAlt? }
+  - imageFile, imagePreview, uploading, uploadErrorMsg
+  - wantsAdditionalProducts: boolean | null (controla si se agregan productos)
+  - bucketExists: boolean | null (verifica Storage bucket 'special-dishes')
+- Lógica destacada:
+  - Verifica bucket al abrir: supabase.storage.from('special-dishes').list('', { limit: 1 })
+  - handleImageChange: valida tipo/tamaño, usa URL.createObjectURL, permite quitar imagen, guarda alt text
+  - handleComplete: si hay imageFile y preview blob, intenta uploadSpecialDishImage(file) y usa la URL resultante; si falla, diagnostica (bucket inexistente) y persiste sin imagen
+  - Validación por paso: básicos obligatorios; productos opcionales con gating explícito (Sí/No)
+  - Formato de precio: input tipo texto numérico, visualiza toLocaleString('es-CO')
+- Contrato de salida (onComplete): SpecialDishData { name, description, price, selectedProducts, image?, imageAlt? }
+
+4) packages/shared/hooks/special-dishes/useSpecialData.ts
+- Responsabilidad: Orquestación de estado, efectos y operaciones sobre platos especiales.
+- Estados principales:
+  - currentView, currentSpecialDish, restaurantId
+  - specialDishes: SpecialDish[]; specialImages: Record<specialDishId, url>
+  - selectedProducts: Record<categoryId, Producto[]>
+  - specialCombinations: SpecialMenuCombination[] (compat; hoy no usado en UI de lista)
+  - availableProducts: Record<categoryId, Producto[]>
+  - hasUnsavedChanges, dishPrice, dishName, dishDescription
+  - loading flags: initialLoading, loadingProducts, loadingStates { saving, generating, deleting, updating, loading }
+  - wizard: currentStep, isAnimating, proteinQuantities
+  - filtros: searchTerm, searchTermCombo, filters, filtersCombo
+- Efectos:
+  - useEffect(loadInitialData) al montar
+- Funciones y servicios utilizados:
+  - showNotification(msg, type): usa alert/console para feedback (mejorable)
+  - loadProductsForCategory(categoryId):
+    - CATEGORIAS_MENU_CONFIG → uuid categoría
+    - supabase.from('universal_products').select('*').eq('category_id', uuid).eq('is_verified', true).order('name')
+    - Transforma a Producto (usa suggested_price_min, popularity_score)
+  - loadInitialData(): getUserProfile(), getUserRestaurant() → setRestaurantId → getRestaurantSpecialDishes(restaurantId) → setSpecialDishes
+  - createNewSpecialDish(name, description, price, selectedProducts, imageUrl?, imageAlt?):
+    1) createSpecialDish(restaurantId, { dish_name, dish_description, dish_price, image_url, image_alt })
+    2) insertSpecialDishSelections(newDish.id, selectedProducts)
+    3) updateSpecialDish(newDish.id, { total_products_selected, categories_configured, setup_completed: true, status: 'active', is_template: false })
+    4) Recarga: getRestaurantSpecialDishes(restaurantId)
+    5) Limpia formulario; setCurrentView('list'); si imageUrl, memoriza en specialImages y parchea en arreglo local
+  - editSpecialDish(specialDish): carga selecciones via getSpecialDishSelections → agrupa por categoría (mapeo inverso usando CATEGORIAS_MENU_CONFIG) → setSelectedProducts + hidrata campos → abre wizard
+  - saveEditedSpecialDish(imageUrl?, imageAlt?): updateSpecialDish(id, dish_* + image_*) → insertSpecialDishSelections(id, selectedProducts) → recalcula métricas (igual a crear) → recarga lista → memoriza imageUrl → setCurrentView('list')
+  - fetchSpecialDishSelectionsGrouped(specialDishId): getSpecialDishSelections() → { [categoryName]: string[] product_names }
+  - loadSpecialCombinations(specialDishId): getSpecialCombinations → transforma a SpecialMenuCombination (compat UI)
+  - toggleSpecialForToday(specialDishId, activate, maxQuantity?, notes?): toggleSpecialToday(restaurantId, specialDishId, activate, maxQuantity, notes) → sincroniza dish.is_active local y combina disponibleHoy en combos cargados
+  - deleteSpecialDishComplete(specialDishId): deleteSpecialDish → saca de la lista → limpia combos si era el actual → currentView='list'
+  - openWizard(): inicializa estados, setCurrentView('wizard'); closeWizard(force?): confirma si hay cambios sin guardar
+- Errores y notificaciones: showNotification → hoy usa alert/console; propenso a bloqueo/UX áspero. Ver recomendaciones.
+- Integraciones Supabase (importadas):
+  - getUserProfile, getUserRestaurant, supabase, getRestaurantSpecialDishes, getSpecialCombinations, getSpecialDishSelections, createSpecialDish,
+    insertSpecialDishSelections, generateSpecialCombinations, toggleSpecialToday, updateSpecialCombination, deleteSpecialCombination, deleteSpecialDish,
+    getAvailableSpecialsToday, updateSpecialDish
+
+5) packages/shared/constants/special-dishes/specialDishConstants.ts
+- Propósito: configuración de categorías, pasos, validaciones, límites y mensajes UX para especiales.
+- Claves:
+  - CATEGORIAS_ESPECIALES_CONFIG: hereda de CATEGORIAS_MENU_CONFIG; exige 'proteinas'; incluye 'info' y 'configuracion-final'.
+  - DEFAULT/MIN/MAX/SPECIAL_PRICE_STEP
+  - SPECIAL_WIZARD_STEPS(+_COUNT), iconos, estados, mensajes (loading/success/error)
+  - SPECIAL_VALIDATION_RULES (nombre/descripcion/precio; required_categories=['proteinas'], min_total_products=2)
+  - SPECIAL_PRODUCT_CONFIG, SPECIAL_COMBINATIONS_TEMPLATES (semillas sugeridas)
+  - SPECIAL_TIME_CONFIG (preparación, max diarios, horario)
+
+6) packages/shared/types/special-dishes/specialDishTypes.ts
+- Propósito: Tipos de entidades y UI para especiales.
+- Tipos relevantes (resumen):
+  - SpecialDishData (nombre, descripción, precio, imagen, etc.)
+  - SpecialCombinationData (compat)
+  - SpecialProductSelection
+  - DailyActivation
+  - Estados/UI props para wizard/lista
+- Nota: La UI también reusa Producto desde packages/shared/types/menu-dia/menuTypes.
+
+7) packages/shared/lib/supabase.ts (sección Especiales)
+- Funciones utilizadas por este módulo (mapeo observado en hook y wizard):
+  - Listado: getRestaurantSpecialDishes(restaurantId)
+  - Disponibles para hoy: getAvailableSpecialsToday(restaurantId) via RPC get_available_specials_today
+  - Crear: createSpecialDish(restaurantId, payload)
+  - Actualizar: updateSpecialDish(specialDishId, updates)
+  - Selecciones: getSpecialDishSelections(specialDishId), insertSpecialDishSelections(specialDishId, groupedSelections)
+  - Combinaciones: getSpecialCombinations(specialDishId), generateSpecialCombinations(specialDishId)
+  - Activar hoy: toggleSpecialToday(restaurantId, specialDishId, activate, maxQty?, notes?) via RPC toggle_special_today
+  - Eliminar: deleteSpecialDish(specialDishId)
+  - Storage: uploadSpecialDishImage(file) → URL pública; además wizard usa supabase.storage.list para verificar bucket
+- Invalidation: las funciones de escritura deberían invalidar caches donde aplique (algunas implementaciones ya lo hacen en shared/lib).
+
+Datos y tablas (referencia)
+- special_dishes: id, restaurant_id, dish_name, dish_description, dish_price, status ('draft'|'active'|'inactive'), image_url, image_alt,
+  total_products_selected, categories_configured, setup_completed, is_template, is_active (derivado del activation actual o flag local)
+- special_dish_selections: especial_id, universal_product_id, category_name, product_name
+- generated_special_combinations: opcional/compat para combos (hoy UI principal no los usa)
+- daily_special_activations: tracking de activación “hoy”, max_daily_quantity, notes, timestamps
+- universal_products: catálogo compartido (usa category_id uuid, is_verified; ordered by name)
+- RPCs:
+  - get_available_specials_today(restaurant_id)
+  - toggle_special_today(restaurant_id, special_dish_id, activate, max_quantity?, notes?)
+
+Reglas de negocio actuales
+- Un especial requiere al menos nombre, descripción y precio (> 0). Productos son opcionales y la única categoría estrictamente requerida en constants es 'proteinas', pero en el wizard actual la selección es opcional controlada por “¿Deseas agregar…?”
+- Solo puede activarse “para hoy” si: setup_completed === true y status === 'active' (UI aplica ese gating antes de mostrar el botón).
+- Precio mostrado en COP con toLocaleString('es-CO'). La entrada se normaliza removiendo separadores y parseando entero.
+- Imagen: opcional; si bucket 'special-dishes' no existe, se alerta y se prosigue sin imagen. En memoria, se guarda vista previa (blob) hasta subida.
+
+Contratos rápidos (inputs/outputs y errores)
+- createNewSpecialDish(name, description, price, selectedProducts, imageUrl?, imageAlt?) → Promise<SpecialDish | null>
+  - Error modes: sin restaurantId, error DB al crear, al insertar selecciones o al actualizar flags → notificación de error.
+- editSpecialDish(specialDish: SpecialDish) → Promise<void>
+  - Carga selecciones y abre wizard poblado.
+- saveEditedSpecialDish(imageUrl?, imageAlt?) → Promise<void>
+  - Error modes: fallos en update/insert; notifica error.
+- toggleSpecialForToday(specialDishId, activate, maxQty?, notes?) → Promise<void>
+  - RPC devuelve success/message; si ok, sincroniza estado local. Si falla, notificación.
+- deleteSpecialDishComplete(specialDishId) → Promise<void>
+  - Borrado en cascada según backend (asunción); actualiza lista local; errores notificados.
+- uploadSpecialDishImage(file) → Promise<string>
+  - Error modes: bucket inexistente o permisos → wizard muestra diagnóstico y permite continuar sin imagen.
+
+Gaps técnicos y recomendaciones
+1) UX mensajes
+   - Reemplazar alert/confirm por un sistema unificado de toasts y diálogos (ej. Headless UI/ Radix/ componente compartido). Exponer showNotification y showConfirm centralizados.
+2) Validación consistente
+   - Aplicar SPECIAL_VALIDATION_RULES en el wizard y en el hook (servidor y cliente). Evitar crear/guardar si no cumple min/max y campos requeridos. Mostrar errores inline.
+3) Tipado
+   - Tipar specialData en SpecialesPage en lugar de any. Exportar interfaces desde useSpecialData para consumo UI.
+4) Storage y políticas
+   - Documentar/automatizar la creación del bucket 'special-dishes' y sus reglas públicas (solo lectura pública; escritura restringida por RLS en Storage Policies). Mostrar CTA con instrucciones cuando bucketExists=false.
+5) Realtime (opcional)
+   - Suscribirse a cambios en daily_special_activations/special_dishes para reflejar activaciones y ediciones sin recargar (supabase.channel on tables).
+6) Accesibilidad
+   - Asegurar texto alternativo obligatorio cuando hay imagen. Limitar a 180 chars (ya implementado) y validar en cliente.
+7) Precio y moneda
+   - Extraer formateo y parseo a util compartido (COP). Agregar tests para edge cases (puntos/comas/pegado con símbolo $).
+8) Cargas y paginación
+   - Paginación/scroll virtual en lista si el número de especiales crece. Placeholders skeleton en lugar de spinners globales.
+9) Separación de capas
+   - Mover la consulta directa a universal_products a una función de repo en shared/lib (paridad con otras consultas) y cubrir con tests.
+10) Testing
+   - Añadir pruebas unitarias del hook (mocks Supabase) para create/edit/toggle/delete; pruebas de parsing de precio; snapshot de SpecialesPage; integración de wizard con subida fallida.
+11) Estados y banderas
+   - Centralizar loadingStates y añadir estados específicos (activatingToday) para feedback en botones.
+12) Seguridad
+   - Confirmar RLS para tablas especiales (solo restaurant del usuario). Revisar RPC toggle_special_today seguridad por restaurant_id del JWT.
+
+Pruebas sugeridas (mínimas)
+- Hook useSpecialData
+  - happy path createNewSpecialDish → crea, inserta selecciones, actualiza flags y refresca lista.
+  - toggleSpecialForToday activa/desactiva y sincroniza estado local
+  - deleteSpecialDishComplete remueve de la lista y limpia estado si era el actual
+- Wizard
+  - valida básicos y gating de productos (Sí/No), no permite continuar step 1 sin campos
+  - subida de imagen: bucket inexistente → muestra diagnóstico y persiste sin imagen
+  - parseo de precio con cadenas variadas ('35.000', '$35,000', '35000')
+- UI de lista
+  - Render de tarjetas con/ sin imagen, badges correctos por status
+  - Modal de detalle muestra grupos por categoría (vía fetch grouped)
+
+Checklist de aceptación
+- Crear especial con nombre, descripción, precio y sin productos funciona; aparece en lista con métricas calculadas y puede activarse hoy.
+- Editar especial actualiza nombre/desc./precio y selecciones; la imagen se puede cambiar o remover; lista refleja cambios sin refresh manual.
+- Activar y desactivar “para hoy” actualiza el badge y persiste en backend (verificable con RPC/DB).
+- Eliminar especial lo saca de la lista y borra datos asociados (selecciones/combinaciones) sin errores.
+- Si el bucket 'special-dishes' no existe, el wizard muestra aviso y permite completar sin imagen; si existe, sube y usa URL pública.
+
+Notas finales
+- El módulo mantiene paridad visual y lógica con Menú del Día para categorías, pero las selecciones son opcionales y el precio es fijo.
+- Los “combinations” están preparados en el hook para compatibilidad, aunque la UI de Especiales actual no los explota.

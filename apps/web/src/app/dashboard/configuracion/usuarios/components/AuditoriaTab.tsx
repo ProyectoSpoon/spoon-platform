@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FileText, Download, Calendar, User, Activity, Shield, UserPlus, UserX, Settings } from 'lucide-react';
-import { Button, SelectV2 as Select, Input } from '@spoon/shared';
+import { Button } from '@spoon/shared/components/ui/Button';
+import { Input } from '@spoon/shared/components/ui/Input';
+import { SelectV2 as Select } from '@spoon/shared/components/ui/SelectV2';
 import { UsuariosService, type CambioAuditoria } from '@spoon/shared/services/usuarios';
 
 // Type casting para componentes de lucide-react y @spoon/shared

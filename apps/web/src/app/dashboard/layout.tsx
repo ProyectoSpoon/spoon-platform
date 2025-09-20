@@ -3,7 +3,7 @@
 // src/app/dashboard/layout.tsx
 
 import React, { useEffect, useState, useRef } from 'react';
-import { preloadUserAndRestaurant, supabase } from '@spoon/shared';
+import { preloadUserAndRestaurant, supabase } from '@spoon/shared/lib/supabase';
 import { NotificationProvider } from '@spoon/shared/Context/notification-context';
 import { useRouter } from 'next/navigation';
 
@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 const NotificationProviderComponent = NotificationProvider as any;
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { 
   Home, 
@@ -31,6 +32,7 @@ const ChevronRightIcon = ChevronRight as any;
 const BellIcon = Bell as any;
 const LogOutIcon = LogOut as any;
 const LinkComponent = Link as any;
+const ImageComponent = Image as any;
 
 // ✅ ITEMS DEL MENÚ PRINCIPAL
 const menuItems = [
@@ -94,8 +96,15 @@ function Sidebar({ collapsed, onToggle, onSignOut }: { collapsed: boolean; onTog
         <div className="flex items-center justify-between">
           {!collapsed && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[color:var(--sp-primary-600)] rounded-lg flex items-center justify-center">
-                <span className="text-[color:var(--sp-on-primary)] font-bold text-sm">S</span>
+              <div className="w-8 h-8 rounded-lg overflow-hidden">
+                <ImageComponent
+                  src="/images/spoon-logo.jpg"
+                  alt="SPOON"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 object-cover"
+                  priority
+                />
               </div>
               <div>
                 <h1 className="font-semibold text-[color:var(--sp-neutral-900)]">SPOON</h1>

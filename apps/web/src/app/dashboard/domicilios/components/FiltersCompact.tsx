@@ -77,7 +77,7 @@ export default function FiltersCompact({ tab, filtros, domiciliarios, onUpdateFi
         <button
           type="button"
           onClick={() => onAplicar?.()}
-          className="px-3 py-2 text-sm rounded-md bg-[color:var(--sp-primary-600)] text-white hover:bg-[color:var(--sp-primary-700)] focus:outline-none focus:ring-2 focus:ring-[color:var(--sp-primary-500)]"
+          className="px-3 py-2 text-sm rounded-md bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] hover:bg-[color:var(--sp-primary-700)] focus:outline-none focus:ring-2 focus:ring-[color:var(--sp-primary-500)]"
         >
           Aplicar
         </button>

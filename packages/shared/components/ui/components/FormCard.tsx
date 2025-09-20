@@ -1,5 +1,8 @@
 import React from 'react';
-import { Card, CardHeader, CardContent, Button } from '@spoon/shared';
+import { Card } from '@spoon/shared/components/ui/Card';
+import { CardHeader } from '@spoon/shared/components/ui/Card';
+import { CardContent } from '@spoon/shared/components/ui/Card';
+import { Button } from '@spoon/shared/components/ui/Button';
 import { Pencil } from 'lucide-react';
 
 interface FormCardProps {

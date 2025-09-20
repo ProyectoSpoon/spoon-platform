@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { UbicacionForm } from '@spoon/shared';
+import { UbicacionForm } from '@spoon/shared/components/ui/components/UbicacionForm';
 
 // Ejemplo de página para probar el componente UbicacionForm actualizado
 export default function TestUbicacionPage() {
@@ -35,16 +35,16 @@ export default function TestUbicacionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-[color:var(--sp-neutral-50)] p-8">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-[color:var(--sp-surface)] rounded-lg shadow-lg p-6">
+          <h1 className="text-2xl font-bold text-[color:var(--sp-neutral-900)] mb-6">
             🧪 Test: Componente UbicacionForm v2
           </h1>
           
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h2 className="font-semibold text-blue-800 mb-2">✨ Nuevas características:</h2>
-            <ul className="text-sm text-blue-700 space-y-1">
+          <div className="mb-6 p-4 bg-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded-lg">
+            <h2 className="font-semibold text-[color:var(--sp-info-800)] mb-2">✨ Nuevas características:</h2>
+            <ul className="text-sm text-[color:var(--sp-info-700)] space-y-1">
               <li>• 🌍 Carga automática de datos reales de Colombia</li>
               <li>• 🔄 Dropdowns en cascada (País → Departamento → Ciudad)</li>
               <li>• 📍 Coordenadas automáticas al seleccionar ciudad</li>
@@ -61,9 +61,9 @@ export default function TestUbicacionPage() {
           />
 
           {/* Debug info */}
-          <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-            <h3 className="font-semibold text-gray-800 mb-2">🔍 Estado actual:</h3>
-            <pre className="text-xs text-gray-600 overflow-auto">
+          <div className="mt-6 p-4 bg-[color:var(--sp-neutral-100)] rounded-lg">
+            <h3 className="font-semibold text-[color:var(--sp-neutral-800)] mb-2">🔍 Estado actual:</h3>
+            <pre className="text-xs text-[color:var(--sp-neutral-600)] overflow-auto">
               {JSON.stringify(formData, null, 2)}
             </pre>
           </div>

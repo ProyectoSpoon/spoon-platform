@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Loader, Plus, Trash2, Save, Pencil } from 'lucide-react';
-import { Button } from '@spoon/shared';
-import { InlineEditButton } from '@spoon/shared';
-import { FormCard } from '@spoon/shared';
+import { Button } from '@spoon/shared/components/ui/Button';
+import { InlineEditButton } from '@spoon/shared/components/ui/components/InlineEditButton';
+import { FormCard } from '@spoon/shared/components/ui/components/FormCard';
 import toast from 'react-hot-toast';
-import { getUserRestaurant, updateRestaurant } from '@spoon/shared';
+import { getUserRestaurant, updateRestaurant } from '@spoon/shared/lib/supabase';
 
 // Type casting para componentes de lucide-react y @spoon/shared
 const LoaderCast = Loader as any;

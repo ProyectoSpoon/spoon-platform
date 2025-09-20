@@ -929,7 +929,7 @@ export class UsuariosService {
       const csvContent = [
         headers.join(','),
         ...cambios.map(cambio => [
-          new Date(cambio.fecha).toLocaleString('es-CO'),
+          require('@spoon/shared/utils/datetime').formatInBogota(cambio.fecha),
           cambio.accion,
           cambio.usuario,
           `"${cambio.detalles}"`,

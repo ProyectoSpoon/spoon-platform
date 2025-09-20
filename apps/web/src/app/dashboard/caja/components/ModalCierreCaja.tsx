@@ -110,7 +110,7 @@ export const ModalCierreCaja: React.FC<ModalCierreCajaProps> = ({
                   ${saldoCalculado.toLocaleString('es-CO')}
                 </p>
                 <p className="text-sm text-[color:var(--sp-primary-600)] mt-1">
-                  Basado en transacciones registradas
+                  Efectivo teórico (no incluye tarjeta ni pagos digitales)
                 </p>
               </div>
 

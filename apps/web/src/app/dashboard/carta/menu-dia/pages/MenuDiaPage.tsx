@@ -10,9 +10,11 @@ import { useMenuData } from '@spoon/shared/hooks/menu-dia/useMenuData';
 import { useMenuState } from '@spoon/shared/hooks/menu-dia/useMenuState';
 import { MenuCombinacion } from '@spoon/shared/types/menu-dia/menuTypes';
 import { MenuApiService } from '@spoon/shared/services/menu-dia/menuApiService';
-import MenuConfigurationPage from './MenuConfigurationPage';
-import MenuCombinationsPage from './MenuCombinationsPage';
-import MenuWizardPage from './MenuWizardPage';
+import MenuConfigurationPage from '@/app/dashboard/carta/menu-dia/pages/MenuConfigurationPage';
+import MenuCombinationsPage from '@/app/dashboard/carta/menu-dia/pages/MenuCombinationsPage';
+import MenuWizardPage from '@/app/dashboard/carta/menu-dia/pages/MenuWizardPage';
+import MenuAnalyticsPage from '@/app/dashboard/carta/menu-dia/pages/MenuAnalyticsPage';
+import MenuFavoritesPage from '@/app/dashboard/carta/menu-dia/pages/MenuFavoritesPage';
 
 export default function MenuDiaPage() {
   // ✅ HOOKS COMPARTIDOS
@@ -45,6 +47,12 @@ export default function MenuDiaPage() {
     menuData.setMenuCombinations([]);
     menuData.setHasUnsavedChanges(false);
     openSlideOver();
+  };
+
+  // ✅ REPROGRAMAR MENÚ (abre el wizard de creación cuando no hay menú activo)
+  const handleReprogramarMenu = () => {
+    // Reutilizamos el flujo de creación (incluye confirm de cambios no guardados)
+    handleCreateNewMenu();
   };
 
   // ✅ FUNCIÓN PARA COMPLETAR WIZARD - VERSIÓN COMPLETA CON GUARDADO EN SUPABASE
@@ -171,12 +179,22 @@ export default function MenuDiaPage() {
                 </div>
               )}
             </div> 
+            {!currentMenu && (
+              <div className="self-start lg:self-auto">
+                <button
+                  className="px-4 py-2 bg-[color:var(--sp-info-600)] text-[color:var(--sp-on-info)] rounded-lg hover:bg-[color:var(--sp-info-700)] transition-colors"
+                  onClick={handleReprogramarMenu}
+                >
+                  Reprogramar Menú
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* ✅ NAVEGACIÓN POR PESTAÑAS */}
         <div className="mb-8">
-      <div className="flex bg-[color:var(--sp-neutral-100)] rounded-lg p-1 max-w-sm">
+      <div className="flex bg-[color:var(--sp-neutral-100)] rounded-lg p-1 max-w-2xl">
             <button
               onClick={() => setCurrentView('creation')}
               className={`flex-1 px-4 py-2 rounded-md transition-colors text-sm font-medium flex items-center justify-center gap-2 ${
@@ -186,7 +204,7 @@ export default function MenuDiaPage() {
               }`}
             >
               <SettingsComponent className="h-4 w-4" />
-              Configuración
+              Productos Día
             </button>
             <button
               onClick={() => setCurrentView('combinations')}
@@ -199,21 +217,56 @@ export default function MenuDiaPage() {
               <GridComponent className="h-4 w-4" />
               Combinaciones ({menuCombinations.length})
             </button>
+            <button
+              onClick={() => setCurrentView('analytics')}
+              className={`flex-1 px-4 py-2 rounded-md transition-colors text-sm font-medium flex items-center justify-center gap-2 ${
+                currentView === 'analytics' 
+          ? 'bg-[--sp-surface] text-[color:var(--sp-neutral-900)] shadow-sm' 
+          : 'text-[color:var(--sp-neutral-600)] hover:text-[color:var(--sp-neutral-900)]'
+              }`}
+            >
+              <span className="h-4 w-4">📊</span>
+              Historial
+            </button>
+            <button
+              onClick={() => setCurrentView('favorites')}
+              className={`flex-1 px-4 py-2 rounded-md transition-colors text-sm font-medium flex items-center justify-center gap-2 ${
+                currentView === 'favorites' 
+          ? 'bg-[--sp-surface] text-[color:var(--sp-neutral-900)] shadow-sm' 
+          : 'text-[color:var(--sp-neutral-600)] hover:text-[color:var(--sp-neutral-900)]'
+              }`}
+            >
+              <span className="h-4 w-4">⭐</span>
+              Favoritos
+            </button>
           </div>
         </div>
 
         {/* ✅ CONTENIDO PRINCIPAL */}
-        {currentView === 'creation' ? (
+        {currentView === 'creation' && (
           <MenuConfigurationPage 
             menuData={menuData}
             onOpenWizard={openSlideOver}
             onCreateNewMenu={handleCreateNewMenu}
           />
-        ) : (
+        )}
+        {currentView === 'combinations' && (
           <MenuCombinationsPage 
             menuData={menuData}
             onOpenWizard={openSlideOver}
             onCreateNewMenu={handleCreateNewMenu}
+          />
+        )}
+        {currentView === 'analytics' && (
+          <MenuAnalyticsPage 
+            menuData={menuData}
+            onReprogramarMenu={handleReprogramarMenu}
+          />
+        )}
+        {currentView === 'favorites' && (
+          <MenuFavoritesPage 
+            menuData={menuData}
+            onUseTemplate={() => openSlideOver()}
           />
         )}
 
@@ -229,7 +282,7 @@ export default function MenuDiaPage() {
 
         {/* ✅ LOADING OVERLAY DURANTE GUARDADO */}
         {menuData.loadingStates?.saving && (
-          <div className="fixed inset-0 bg-[--sp-overlay] backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-[color:var(--sp-overlay)] backdrop-blur-sm z-50 flex items-center justify-center">
             <div className="bg-[--sp-surface-elevated] rounded-xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--sp-primary-600)] mx-auto mb-4"></div>
               <h3 className="text-lg font-semibold text-[color:var(--sp-neutral-900)] mb-2">

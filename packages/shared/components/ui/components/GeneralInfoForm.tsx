@@ -1,7 +1,10 @@
 import React from 'react';
-import { Input, Button, InputV2, FormSection } from '@spoon/shared';
-import { FormCard } from '@spoon/shared';
-import { InlineEditButton } from '@spoon/shared';
+import { Input } from '@spoon/shared/components/ui/Input';
+import { Button } from '@spoon/shared/components/ui/Button';
+import { InputV2 } from '@spoon/shared/components/ui/InputV2';
+import { FormSection } from '@spoon/shared/patterns/FormSection';
+import { FormCard } from '@spoon/shared/components/ui/components/FormCard';
+import { InlineEditButton } from '@spoon/shared/components/ui/components/InlineEditButton';
 import { RestaurantInfo } from '../hooks/useRestaurantForm';
 
 interface GeneralInfoFormProps {

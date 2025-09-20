@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useNotification } from '@spoon/shared/Context/notification-provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@spoon/shared/components/ui/Card';
 import { Button } from '@spoon/shared/components/ui/Button';
 import { Input } from '@spoon/shared/components/ui/Input';
@@ -37,6 +38,7 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
   onConfirmar,
   loading = false
 }) => {
+  const { confirm } = useNotification();
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
   const [montoRecibido, setMontoRecibido] = useState<number>(0);
   const [cambioCalculado, setCambioCalculado] = useState<number>(0);
@@ -101,7 +103,13 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
       return;
     }
     if (securityState?.requiresAuth) {
-      const proceed = window.confirm('Esta transacción requiere autorización de supervisor. ¿Desea continuar?');
+      const proceed = await confirm({
+        title: 'Autorización requerida',
+        description: 'Esta transacción requiere autorización de supervisor. ¿Desea continuar?',
+        confirmText: 'Continuar',
+        cancelText: 'Cancelar',
+        tone: 'warning',
+      });
       if (!proceed) return;
     }
 
@@ -289,7 +297,15 @@ export const ModalProcesarPago: React.FC<ModalProcesarPagoProps> = ({
               <InputComponent
                 type="number"
                 value={montoRecibido}
-                onChange={(e: any) => setMontoRecibido(Math.round(parseFloat(e.target.value || '0')))}
+                onChange={(e: any) => {
+                  const raw = e.target.value;
+                  let val = Math.round(parseFloat(raw || '0'));
+                  // Heurística UX: si el total es >= 1000 y el cajero tipea un número pequeño (<= 50), interpretarlo en centenas (15 => 1500)
+                  if (orden.monto_total >= 1000 && val > 0 && val <= 50) {
+                    val = val * 100;
+                  }
+                  setMontoRecibido(val);
+                }}
                 className="text-right"
                 disabled={procesando}
                 min={orden.monto_total}

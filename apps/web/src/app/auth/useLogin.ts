@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { signInUser } from '@spoon/shared';
+import { signInUser } from '@spoon/shared/lib/supabase';
 import toast from 'react-hot-toast';
 
 export function useLogin() {

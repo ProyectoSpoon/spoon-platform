@@ -2,8 +2,15 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { getUserProfile, getUserRestaurant, supabase } from "@spoon/shared";
-import { Button, Card, CardHeader, CardTitle, CardContent, toast, DynamicMap, InputV2 } from "@spoon/shared";
+import { getUserProfile, getUserRestaurant, supabase } from "@spoon/shared/lib/supabase";
+import { Button } from "@spoon/shared/components/ui/Button";
+import { Card } from "@spoon/shared/components/ui/Card";
+import { CardHeader } from "@spoon/shared/components/ui/Card";
+import { CardTitle } from "@spoon/shared/components/ui/Card";
+import { CardContent } from "@spoon/shared/components/ui/Card";
+import { toast } from "@spoon/shared/components/ui/Toast";
+import { DynamicMap } from "@spoon/shared/components/ui/components/DynamicMap";
+import { InputV2 } from "@spoon/shared/components/ui/InputV2";
 import { UbicacionForm } from "@spoon/shared/components/ui/components/UbicacionForm";
 import { useGeographicData } from "@spoon/shared/hooks/useGeographicData";
 

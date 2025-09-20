@@ -164,8 +164,8 @@ export const FILTROS_RAPIDOS = [
   {
     id: 'hoy',
     label: 'Hoy',
-    fechaInicio: () => new Date().toISOString().split('T')[0],
-    fechaFin: () => new Date().toISOString().split('T')[0]
+  fechaInicio: () => require('@spoon/shared/utils/datetime').getBogotaDateISO(),
+  fechaFin: () => require('@spoon/shared/utils/datetime').getBogotaDateISO()
   },
   {
     id: 'ayer',
@@ -173,12 +173,12 @@ export const FILTROS_RAPIDOS = [
     fechaInicio: () => {
       const ayer = new Date();
       ayer.setDate(ayer.getDate() - 1);
-      return ayer.toISOString().split('T')[0];
+  return require('@spoon/shared/utils/datetime').getBogotaDateISO(ayer as any);
     },
     fechaFin: () => {
       const ayer = new Date();
       ayer.setDate(ayer.getDate() - 1);
-      return ayer.toISOString().split('T')[0];
+  return require('@spoon/shared/utils/datetime').getBogotaDateISO(ayer as any);
     }
   },
   {
@@ -187,18 +187,18 @@ export const FILTROS_RAPIDOS = [
     fechaInicio: () => {
       const hoy = new Date();
       const lunes = new Date(hoy.setDate(hoy.getDate() - hoy.getDay() + 1));
-      return lunes.toISOString().split('T')[0];
+  return require('@spoon/shared/utils/datetime').getBogotaDateISO(lunes as any);
     },
-    fechaFin: () => new Date().toISOString().split('T')[0]
+  fechaFin: () => require('@spoon/shared/utils/datetime').getBogotaDateISO()
   },
   {
     id: 'mes',
     label: 'Este mes',
     fechaInicio: () => {
       const hoy = new Date();
-      return new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
+  return require('@spoon/shared/utils/datetime').getBogotaDateISO(new Date(hoy.getFullYear(), hoy.getMonth(), 1) as any);
     },
-    fechaFin: () => new Date().toISOString().split('T')[0]
+  fechaFin: () => require('@spoon/shared/utils/datetime').getBogotaDateISO()
   },
   {
     id: 'ultimos30',
@@ -206,9 +206,9 @@ export const FILTROS_RAPIDOS = [
     fechaInicio: () => {
       const fecha = new Date();
       fecha.setDate(fecha.getDate() - 30);
-      return fecha.toISOString().split('T')[0];
+  return require('@spoon/shared/utils/datetime').getBogotaDateISO(fecha as any);
     },
-    fechaFin: () => new Date().toISOString().split('T')[0]
+  fechaFin: () => require('@spoon/shared/utils/datetime').getBogotaDateISO()
   }
 ] as const;
 

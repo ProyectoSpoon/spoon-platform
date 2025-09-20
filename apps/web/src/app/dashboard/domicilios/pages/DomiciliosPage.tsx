@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus as PlusRaw, Truck as TruckRaw } from 'lucide-react';
+import { Plus as PlusRaw, Truck as TruckRaw, Lock as LockRaw } from 'lucide-react';
 const Plus: any = PlusRaw; // Cast temporal por duplicación de tipos React
 const Truck: any = TruckRaw;
+const Lock: any = LockRaw;
 const LinkAny: any = Link;
 import { ESTADOS_PEDIDO, REFRESH_INTERVAL } from '../constants/domiciliosConstants';
 import PedidoForm from './PedidoForm';
@@ -13,7 +14,6 @@ import PedidosTableOverview from './PedidosTableOverview';
 import DomiciliariosPanel from './DomiciliariosPanel';
 import DomiciliariosWizardSlideOver from './modals/DomiciliariosWizardSlideOver';
 import PagoModal from './PagoModal';
-import TopBannerCaja from '../components/TopBannerCaja';
 import HeaderTabsAndActions from '../components/HeaderTabsAndActions';
 import CompactMetrics from '../components/CompactMetrics';
 import FiltersCompact from '../components/FiltersCompact';
@@ -114,6 +114,32 @@ export default function DomiciliosPage() {
     );
   }
 
+  // Gate completo: si no hay caja abierta, bloquear la sección con una pantalla dedicada
+  if (!hasOpenCajaSession) {
+    return (
+      <div className="min-h-screen bg-[--sp-surface] flex items-center justify-center px-4">
+        <div className="bg-[--sp-surface-elevated] rounded-xl shadow-xl p-10 w-full max-w-xl text-center border border-[color:var(--sp-neutral-200)]">
+          <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-[color:var(--sp-primary-100)] flex items-center justify-center">
+            <Lock className="w-10 h-10 text-[color:var(--sp-primary-700)]" aria-hidden="true" />
+          </div>
+          <h1 className="heading-section text-[color:var(--sp-neutral-900)] mb-3">
+            Domicilios no está habilitado
+          </h1>
+          <p className="text-[color:var(--sp-neutral-600)] mb-8">
+            Para gestionar pedidos a domicilio necesitas abrir una caja. Una vez la abras, esta pantalla se actualizará automáticamente.
+          </p>
+          <LinkAny
+            href="/dashboard/caja"
+            className="inline-flex items-center justify-center px-5 py-3 rounded-lg bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] hover:bg-[color:var(--sp-primary-700)] transition-colors"
+          >
+            Ir a Caja para abrir
+          </LinkAny>
+          <div role="status" aria-live="polite" className="sr-only">Esperando apertura de caja para habilitar domicilios</div>
+        </div>
+      </div>
+    );
+  }
+
   if (!hayMenuHoy) {
     return (
     <div className="min-h-screen bg-[--sp-surface] p-6">
@@ -149,7 +175,6 @@ export default function DomiciliosPage() {
   return (
 	<div className="min-h-screen bg-[--sp-surface]">
       <div className={(isCompact ? 'max-w-5xl' : 'max-w-7xl') + ' mx-auto px-4 py-6 transition-[max-width]'}>
-  <TopBannerCaja visible={!hasOpenCajaSession} />
   {/* Error live region */}
   <div aria-live="assertive" className="sr-only" id="domicilios-aria-errors"></div>
         

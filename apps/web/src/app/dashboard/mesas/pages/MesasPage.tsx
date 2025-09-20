@@ -12,6 +12,7 @@ const DollarSign = Lucide.DollarSign as any;
 const Settings = Lucide.Settings as any;
 const AlertCircle = Lucide.AlertCircle as any;
 const Plus = Lucide.Plus as any;
+const Lock = Lucide.Lock as any;
 import { useMesas } from '@spoon/shared/hooks/mesas';
 import { useCajaSesion } from '../../caja/hooks/useCajaSesion';
 import MesaCard from './MesaCard';
@@ -230,19 +231,19 @@ const MesasPage: React.FC = () => {
     ? estadisticas.totalPendiente
     : Object.values(mesasOcupadas).reduce((sum, mesa) => sum + mesa.total, 0);
     
-  const mesasActivas = estadoCaja === 'cerrada'
+  const mesasActivas = estadoCaja !== 'abierta'
     ? 0
     : (configuracion.configuradas
       ? mesasCompletas.filter(m => ['ocupada', 'en_cocina', 'servida', 'por_cobrar'].includes(getEstadoDisplay(m).estado)).length
       : Object.keys(mesasOcupadas).length);
 
-  const ordenesEnCocina = estadoCaja === 'cerrada'
+  const ordenesEnCocina = estadoCaja !== 'abierta'
     ? 0
     : (configuracion.configuradas
       ? mesasCompletas.filter(m => getEstadoDisplay(m).estado === 'en_cocina').length
       : 0);
 
-  const totalPorCobrar = estadoCaja === 'cerrada'
+  const totalPorCobrar = estadoCaja !== 'abierta'
     ? 0
     : (configuracion.configuradas
       ? mesasCompletas
@@ -260,6 +261,32 @@ const MesasPage: React.FC = () => {
   <div className="bg-[color:var(--sp-surface-elevated)] p-6 border border-[color:var(--sp-border)] rounded-lg shadow-sm">
           <RefreshCw className="h-8 w-8 animate-spin text-[color:var(--sp-neutral-500)] mx-auto mb-2" />
           <p className="text-[color:var(--sp-neutral-600)]">Cargando mesas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Gate completo cuando la caja no está abierta
+  if (estadoCaja !== 'abierta') {
+    return (
+      <div className="min-h-screen bg-[--sp-surface] flex items-center justify-center px-4">
+        <div className="bg-[--sp-surface-elevated] rounded-xl shadow-xl p-10 w-full max-w-xl text-center border border-[color:var(--sp-neutral-200)]">
+          <div className="mx-auto mb-6 w-20 h-20 rounded-full bg-[color:var(--sp-primary-100)] flex items-center justify-center">
+            <Lock className="w-10 h-10 text-[color:var(--sp-primary-700)]" aria-hidden="true" />
+          </div>
+          <h1 className="heading-section text-[color:var(--sp-neutral-900)] mb-3">
+            Mesas no está habilitado
+          </h1>
+          <p className="text-[color:var(--sp-neutral-600)] mb-8">
+            Para gestionar mesas necesitas abrir una caja. Una vez la abras, esta pantalla se actualizará automáticamente.
+          </p>
+          <a
+            href="/dashboard/caja"
+            className="inline-flex items-center justify-center px-5 py-3 rounded-lg bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] hover:bg-[color:var(--sp-primary-700)] transition-colors"
+          >
+            Ir a Caja para abrir
+          </a>
+          <div role="status" aria-live="polite" className="sr-only">Esperando apertura de caja para habilitar mesas</div>
         </div>
       </div>
     );
@@ -337,7 +364,7 @@ const MesasPage: React.FC = () => {
           {configuracion.configuradas ? (
             <>
               {/* Grid de mesas - auto-fit */}
-              {estadoCaja === 'cerrada' && (
+              {estadoCaja !== 'abierta' && (
                 <div className="bg-[color:var(--sp-neutral-100)] border border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] rounded-lg p-4 mb-2 text-sm">
                   Caja cerrada: no hay servicio activo. Las mesas se muestran como libres (solo mantenimiento/inactivas si existieran).
                 </div>
@@ -348,7 +375,7 @@ const MesasPage: React.FC = () => {
                   const hasOrdenActiva = !!mesa.detallesOrden && ((mesa.detallesOrden.items?.length ?? 0) > 0 || (mesa.detallesOrden.total ?? 0) > 0);
                   // Si el display dice libre pero hay orden, forzamos ocupada visual
                   const estadoVisualAjustado = (display.estado === 'libre' && hasOrdenActiva) ? 'ocupada' : display.estado;
-                  const forzarLibre = estadoCaja === 'cerrada' && !['inactiva','mantenimiento'].includes(estadoVisualAjustado);
+                  const forzarLibre = estadoCaja !== 'abierta' && !['inactiva','mantenimiento'].includes(estadoVisualAjustado);
                   return (
                     <MesaCard
                       key={mesa.numero}

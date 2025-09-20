@@ -8,6 +8,9 @@ on:
 jobs:
   snapshot:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,7 +20,7 @@ jobs:
           node-version: '20'
       - name: Install deps
         run: npm ci
-      - name: Run snapshot
+      - name: Export DB env vars
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           PGHOST: ${{ secrets.PGHOST }}
@@ -25,9 +28,37 @@ jobs:
           PGDATABASE: ${{ secrets.PGDATABASE }}
           PGUSER: ${{ secrets.PGUSER }}
           PGPASSWORD: ${{ secrets.PGPASSWORD }}
-          PGSCHEMA: ${{ vars.PGSCHEMA || 'public' }}
+          PGSCHEMA: ${{ vars.PGSCHEMA }}
+        run: |
+          {
+            echo "DATABASE_URL=$DATABASE_URL";
+            echo "PGHOST=$PGHOST";
+            echo "PGPORT=$PGPORT";
+            echo "PGDATABASE=$PGDATABASE";
+            echo "PGUSER=$PGUSER";
+            echo "PGPASSWORD=$PGPASSWORD";
+            echo "PGSCHEMA=$PGSCHEMA";
+          } >> $GITHUB_ENV
+      - name: Validate required secrets
+        run: |
+          missing=()
+          [[ -z "$DATABASE_URL" ]] && missing+=(DATABASE_URL)
+          [[ -z "$PGHOST" ]] && missing+=(PGHOST)
+          [[ -z "$PGPORT" ]] && missing+=(PGPORT)
+          [[ -z "$PGDATABASE" ]] && missing+=(PGDATABASE)
+          [[ -z "$PGUSER" ]] && missing+=(PGUSER)
+          [[ -z "$PGPASSWORD" ]] && missing+=(PGPASSWORD)
+          # PGSCHEMA can be empty; we'll default to 'public' later
+          if (( ${#missing[@]} )); then
+            echo "❌ Missing required secrets: ${missing[*]}" >&2
+            exit 1
+          fi
+      - name: Run snapshot
+        env:
           PGSSLMODE: require
         run: |
+          # Default PGSCHEMA to 'public' if not provided
+          : "${PGSCHEMA:=public}"
           npm run db:snapshot:generate
           npm run db:snapshot:compare || true
       - name: Upload artifacts

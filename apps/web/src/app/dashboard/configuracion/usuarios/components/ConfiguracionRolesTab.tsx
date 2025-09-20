@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, RotateCcw, Shield, AlertTriangle, Check, X } from 'lucide-react';
-import { Button, SelectV2 as Select, SwitchV2 as Switch, Card } from '@spoon/shared';
+import { Button } from '@spoon/shared/components/ui/Button';
+import { SelectV2 as Select } from '@spoon/shared/components/ui/SelectV2';
+import { SwitchV2 as Switch } from '@spoon/shared/components/ui/SwitchV2';
+import { Card } from '@spoon/shared/components/ui/Card';
 import { UsuariosService, type RoleSistema, type PermisoRol } from '@spoon/shared/services/usuarios';
 
 // Type casting para componentes de lucide-react y @spoon/shared

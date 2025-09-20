@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.jest.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "packages/shared/**/*.ts",
+    "packages/shared/**/*.tsx",
+    "apps/web/src/**/*.ts",
+    "apps/web/src/**/*.tsx",
+    "jest.setup.js"
+  ]
+}

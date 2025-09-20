@@ -13,23 +13,29 @@ interface TopBannerCajaProps {
 export default function TopBannerCaja({ visible }: TopBannerCajaProps) {
   if (!visible) return null;
   return (
-    <div className="mb-6 rounded-lg border border-[color:var(--sp-warning-300)] bg-[color:var(--sp-warning-50)] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 p-2 rounded-md bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-700)]">
-          <DollarSign className="w-5 h-5" />
+    <div
+      role="status"
+      aria-live="polite"
+      className="mb-4 rounded-md border border-[color:var(--sp-warning-200)] bg-[color:var(--sp-warning-50)] px-4 py-2 flex items-center justify-between gap-3 shadow-[inset_4px_0_0_0_var(--sp-warning-400)]"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="p-1.5 rounded-md bg-[color:var(--sp-warning-100)] text-[color:var(--sp-warning-700)] shrink-0">
+          <DollarSign className="w-4 h-4" />
         </div>
-        <div>
-          <p className="font-medium text-[color:var(--sp-warning-800)] text-sm">No hay caja abierta</p>
-          <p className="text-[color:var(--sp-warning-700)] text-xs sm:text-sm leading-snug mt-0.5 max-w-prose">
-            Debes abrir una sesión de caja para poder registrar pagos de domicilios. Los botones de pago permanecerán deshabilitados hasta entonces.
+        <div className="min-w-0">
+          <p className="font-medium text-[color:var(--sp-warning-900)] text-sm truncate">
+            No hay caja abierta
+          </p>
+          <p className="text-[color:var(--sp-warning-800)] text-xs leading-snug mt-0.5 truncate">
+            Abre una sesión de caja para registrar pagos de domicilios.
           </p>
         </div>
       </div>
       <LinkAny
         href="/dashboard/caja"
-        className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md bg-[color:var(--sp-warning-600)] text-[--sp-on-warning] hover:bg-[color:var(--sp-warning-700)] transition-colors"
+        className="inline-flex items-center justify-center h-8 px-3 text-xs sm:text-sm font-medium rounded-md border border-[color:var(--sp-warning-300)] text-[color:var(--sp-warning-800)] bg-[color:var(--sp-warning-100)] hover:bg-[color:var(--sp-warning-200)] transition-colors shrink-0"
       >
-        Abrir Caja
+        Abrir caja
       </LinkAny>
     </div>
   );

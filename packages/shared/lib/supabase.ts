@@ -63,6 +63,344 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // ========================================
+// FAVORITOS Y PLANTILLAS (MENU DEL DÍA)
+// Helpers CRUD directos a tablas con RLS
+// ========================================
+
+// ===== COMBINACIONES FAVORITAS =====
+export async function createFavoriteCombination(data: {
+  restaurant_id: string;
+  combination_name: string;
+  combination_description?: string;
+  combination_price?: number | null;
+  entrada_product_id?: string;
+  principio_product_id: string;
+  proteina_product_id: string;
+  bebida_product_id?: string;
+  acompanamiento_products?: string[];
+}) {
+  // Some environments may not have certain optional columns (e.g., combination_price).
+  // Build an insert payload that omits fields likely to be absent to stay schema-compatible.
+  const {
+    combination_price: _omitPrice, // intentionally omitted
+    ...rest
+  } = data;
+
+  // Remove undefined fields to avoid sending nulls unintentionally
+  const insertRow: Record<string, any> = {};
+  for (const [k, v] of Object.entries(rest)) {
+    if (v !== undefined) insertRow[k] = v;
+  }
+
+  // Attempt insert; if Supabase complains about unknown columns (PGRST204),
+  // remove the offending column(s) and retry to support schema variations.
+  let workingRow: Record<string, any> = { ...insertRow };
+  let lastError: any = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data: result, error } = await supabase
+      .from('favorite_combinations')
+      .insert(workingRow)
+      .select()
+      .single();
+    if (!error) return result as any;
+    lastError = error;
+    const msg = String(error?.message || '');
+    // Try to extract the unknown column name from error message
+    const match = msg.match(/\'(.*?)\' column/i) || msg.match(/column \"(.*?)\"/i);
+    const unknownCol = match && match[1] ? match[1] : null;
+    if (unknownCol && unknownCol in workingRow) {
+      const { [unknownCol]: _removed, ...rest } = workingRow;
+      workingRow = rest;
+      continue; // retry without that column
+    }
+    break; // Unknown/unhandled error
+  }
+
+  // If we reach here, rethrow the last error
+  const { data: result, error } = await supabase
+    .from('favorite_combinations')
+    .insert(workingRow)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return result;
+}
+
+export async function getFavoriteCombinations(restaurant_id: string) {
+  const { data, error } = await supabase
+    .from('favorite_combinations')
+    .select('*')
+    .eq('restaurant_id', restaurant_id);
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function deleteFavoriteCombination(id: string) {
+  const { error } = await supabase
+    .from('favorite_combinations')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
+export async function updateFavoriteCombinationName(id: string, name: string) {
+  const { error } = await supabase
+    .from('favorite_combinations')
+    .update({ combination_name: name })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+/**
+ * Ensure a favorite combination exists for the given core components.
+ * If none found, it will create one (schema-compatible: omits optional columns).
+ * Matching rule: restaurant + principio + proteina + (entrada or null) + (bebida or null).
+ * Note: We ignore acompañamientos when matching to avoid array-order issues.
+ */
+export async function ensureFavoriteCombination(data: {
+  restaurant_id: string;
+  combination_name: string;
+  combination_description?: string | null;
+  combination_price?: number | null;
+  principio_product_id: string;
+  proteina_product_id: string;
+  entrada_product_id?: string | null;
+  bebida_product_id?: string | null;
+  acompanamiento_products?: string[];
+}) {
+  // Sanitize inputs
+  const principioId = data.principio_product_id || null;
+  const proteinaId = data.proteina_product_id || null;
+  const entradaId = data.entrada_product_id ?? null;
+  const bebidaId = data.bebida_product_id ?? null;
+
+  // If required core IDs are missing, skip ensuring
+  if (!principioId || !proteinaId) {
+    // eslint-disable-next-line no-console
+    console.warn('[ensureFavoriteCombination] Missing core IDs, skipping ensure.');
+    return null as any;
+  }
+
+  // Try to find an existing favorite with same core components
+  let q = supabase
+    .from('favorite_combinations')
+    .select('id')
+    .eq('restaurant_id', data.restaurant_id)
+    .eq('principio_product_id', principioId)
+    .eq('proteina_product_id', proteinaId);
+  if (entradaId) {
+    q = q.eq('entrada_product_id', entradaId);
+  } else {
+    q = q.is('entrada_product_id', null);
+  }
+  if (bebidaId) {
+    q = q.eq('bebida_product_id', bebidaId);
+  } else {
+    q = q.is('bebida_product_id', null);
+  }
+  const { data: found, error: findError } = await q.limit(1);
+  if (findError) throw findError;
+  if (Array.isArray(found) && found.length > 0) return found[0];
+  // Not found → create (will omit optional columns internally)
+  const created = await createFavoriteCombination({
+    restaurant_id: data.restaurant_id,
+    combination_name: data.combination_name,
+    combination_description: data.combination_description ?? null,
+    combination_price: data.combination_price ?? null,
+    principio_product_id: principioId,
+    proteina_product_id: proteinaId,
+    entrada_product_id: entradaId,
+    bebida_product_id: bebidaId,
+    acompanamiento_products: data.acompanamiento_products || [],
+  } as any);
+  return created;
+}
+
+/**
+ * Delete a favorite combination by its core components.
+ * Matching rule mirrors ensureFavoriteCombination: restaurant + principio + proteina + entrada/null + bebida/null.
+ */
+export async function deleteFavoriteCombinationByComponents(match: {
+  restaurant_id: string;
+  principio_product_id?: string | null;
+  proteina_product_id?: string | null;
+  entrada_product_id?: string | null;
+  bebida_product_id?: string | null;
+}) {
+  const principioId = match.principio_product_id || null;
+  const proteinaId = match.proteina_product_id || null;
+  const entradaId = match.entrada_product_id ?? null;
+  const bebidaId = match.bebida_product_id ?? null;
+
+  if (!principioId || !proteinaId) {
+    // eslint-disable-next-line no-console
+    console.warn('[deleteFavoriteCombinationByComponents] Missing core IDs, skipping delete.');
+    return;
+  }
+
+  let q = supabase
+    .from('favorite_combinations')
+    .select('id')
+    .eq('restaurant_id', match.restaurant_id)
+    .eq('principio_product_id', principioId)
+    .eq('proteina_product_id', proteinaId);
+  if (entradaId) {
+    q = q.eq('entrada_product_id', entradaId);
+  } else {
+    q = q.is('entrada_product_id', null);
+  }
+  if (bebidaId) {
+    q = q.eq('bebida_product_id', bebidaId);
+  } else {
+    q = q.is('bebida_product_id', null);
+  }
+  const { data: found, error } = await q.limit(1);
+  if (error) throw error;
+  const target = Array.isArray(found) && found.length > 0 ? found[0] : null;
+  if (target?.id) {
+    await deleteFavoriteCombination(target.id);
+  }
+}
+
+// ===== PLANTILLAS DE MENÚ =====
+export async function createMenuTemplate(
+  templateData: {
+    restaurant_id: string;
+    template_name: string;
+    template_description?: string;
+    menu_price?: number | null;
+  },
+  products: Array<{
+    universal_product_id: string;
+    category_id?: string | null;
+    category_name?: string | null;
+    product_name?: string | null;
+    selection_order?: number;
+  }>
+) {
+  // Only insert required fields to avoid schema mismatches across envs
+  const insertData = {
+    restaurant_id: templateData.restaurant_id,
+    template_name: templateData.template_name,
+  } as const;
+
+  const { data: template, error: templateError } = await supabase
+    .from('menu_templates')
+    .insert(insertData)
+    .select()
+    .single();
+
+  if (templateError) throw templateError;
+
+  if (products && products.length > 0) {
+    const productsWithTemplateId = products.map((p) => {
+      const row: any = {
+        template_id: template.id,
+        universal_product_id: p.universal_product_id,
+        // Populate descriptive fields when available
+        category_name: (p as any).category_name ?? null,
+        product_name: (p as any).product_name ?? null,
+      };
+      // Only send category_id where it's available to stay compatible with envs
+      if ((p as any).category_id) {
+        row.category_id = (p as any).category_id;
+      }
+      return row;
+    });
+
+    let productsError = null as any;
+    try {
+      const { error } = await supabase
+        .from('menu_template_products')
+        .insert(productsWithTemplateId);
+      productsError = error;
+    } catch (e: any) {
+      productsError = e;
+    }
+
+    // If insert failed due to unknown column 'category_id', retry without it
+    if (productsError) {
+      const msg = String(productsError?.message || productsError?.hint || '');
+      if (/category_id/i.test(msg) && /column/i.test(msg)) {
+        const fallbackRows = productsWithTemplateId.map((r: any) => {
+          const { category_id, ...rest } = r;
+          return rest;
+        });
+        const { error: retryError } = await supabase
+          .from('menu_template_products')
+          .insert(fallbackRows);
+        if (retryError) throw retryError;
+      } else {
+        throw productsError;
+      }
+    }
+  }
+  return template;
+}
+
+export async function getMenuTemplates(restaurant_id: string) {
+  const { data, error } = await supabase
+    .from('menu_templates')
+    .select('*')
+    .eq('restaurant_id', restaurant_id);
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getTemplateProducts(template_id: string) {
+  const { data, error } = await supabase
+    .from('menu_template_products')
+    .select('*')
+    .eq('template_id', template_id);
+
+  if (error) throw error;
+  const items = (data || []) as any[];
+  // If some rows are missing product_name or category_id, hydrate from universal_products
+  const missingInfoIds = items
+    .filter((it) => !it.product_name || !it.category_id)
+    .map((it) => it.universal_product_id);
+
+  if (missingInfoIds.length > 0) {
+    try {
+      const { data: products } = await supabase
+        .from('universal_products')
+        .select('id,name,category_id')
+        .in('id', Array.from(new Set(missingInfoIds)));
+      const infoMap = new Map<string, any>((products || []).map((p: any) => [p.id, p]));
+      for (const it of items) {
+        const info = infoMap.get(it.universal_product_id);
+        if (info) {
+          if (!it.product_name) it.product_name = info.name || it.product_name;
+          if (!it.category_id) it.category_id = info.category_id || it.category_id;
+        }
+      }
+    } catch {
+      // ignore hydration failures silently
+    }
+  }
+  return items;
+}
+
+export async function deleteMenuTemplate(id: string) {
+  // Primero eliminar los productos asociados para evitar conflictos de FK
+  const { error: childErr } = await supabase
+    .from('menu_template_products')
+    .delete()
+    .eq('template_id', id);
+  if (childErr) throw childErr;
+
+  const { error } = await supabase
+    .from('menu_templates')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// ========================================
 // INSTRUMENTACIÓN / WRAPPERS DE SEGURIDAD AUTH
 // ========================================
 
@@ -1097,7 +1435,7 @@ export const getSpecialsStatusToday = async (restaurantId: string) => {
     restaurantId,
     15_000,
     async () => {
-      const today = new Date().toISOString().split('T')[0];
+  const today = require('@spoon/shared/utils/datetime').getBogotaDateISO();
       const [{ data: activeSpecials, error: activeError }, { data: allSpecials, error: allError }] = await Promise.all([
         supabase
           .from('daily_special_activations')

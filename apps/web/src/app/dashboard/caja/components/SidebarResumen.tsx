@@ -20,7 +20,17 @@ export const SidebarResumen: React.FC<{
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-  <CardComponent><CardContentComponent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">BALANCE</p><p className="text-xl font-bold text-[color:var(--sp-info-700)]">{fmt(balance)}</p></CardContentComponent></CardComponent>
+  <CardComponent>
+    <CardContentComponent className="p-4">
+      <p className="text-xs text-[color:var(--sp-neutral-500)]">EFECTIVO EN CAJA</p>
+      <div className="flex items-center justify-between">
+        <p className={`text-xl font-bold ${balance >= 0 ? 'text-[color:var(--sp-info-700)]' : 'text-[color:var(--sp-error-700)]'}`}>{fmt(balance)}</p>
+        {balance < 0 && (
+          <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-700)] border border-[color:var(--sp-error-200)]">Saldo negativo</span>
+        )}
+      </div>
+    </CardContentComponent>
+  </CardComponent>
   <CardComponent><CardContentComponent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">VENTAS</p><p className="text-xl font-bold text-[color:var(--sp-success-700)]">{fmt(ventas)}</p></CardContentComponent></CardComponent>
   <CardComponent><CardContentComponent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">GASTOS</p><p className="text-xl font-bold text-[color:var(--sp-error-700)]">{fmt(gastos)}</p></CardContentComponent></CardComponent>
   <CardComponent><CardContentComponent className="p-4"><p className="text-xs text-[color:var(--sp-neutral-500)]">ÓRDENES</p><p className="text-xl font-bold text-[color:var(--sp-primary-700)]">{ordenes}</p></CardContentComponent></CardComponent>

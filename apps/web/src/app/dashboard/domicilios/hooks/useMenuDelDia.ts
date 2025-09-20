@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, getUserRestaurant } from '@spoon/shared';
+import { supabase, getUserRestaurant } from '@spoon/shared/lib/supabase';
 import { 
   MenuDelDiaSimple, 
   CombinacionSimple, 
   EstadoMenuDelDia 
 } from '../types/domiciliosTypes';
+import { getBogotaDateISO } from '@spoon/shared/utils/datetime';
 
 export const useMenuDelDia = () => {
   // ✅ ESTADO PRINCIPAL
@@ -51,7 +52,8 @@ export const useMenuDelDia = () => {
     try {
       setEstado(prev => ({ ...prev, loading: true, error: null }));
 
-      const fechaHoy = new Date().toISOString().split('T')[0];
+  // Fecha de hoy respetando zona America/Bogota
+  const fechaHoy = getBogotaDateISO();
 
       // Buscar menú del día actual
       const { data: menuData, error: menuError } = await supabase
@@ -59,7 +61,9 @@ export const useMenuDelDia = () => {
         .select('*')
         .eq('restaurant_id', restaurantId)
         .eq('menu_date', fechaHoy)
-        .eq('status', 'active')
+        .or('status.eq.active,status.eq.published')
+        .order('updated_at', { ascending: false })
+        .limit(1)
         .maybeSingle(); // evita 406 cuando no hay fila
 
       if (menuError) throw menuError;
@@ -163,8 +167,8 @@ export const useMenuDelDia = () => {
     comb => !comb.is_available
   ) || [];
 
-  // ✅ VERIFICAR SI HAY MENÚ PARA HOY
-  const hayMenuHoy = estado.menu !== null;
+  // ✅ VERIFICAR SI HAY MENÚ PARA HOY (debe haber al menos 1 combinación disponible)
+  const hayMenuHoy = (estado.menu?.combinaciones.filter(c => c.is_available).length || 0) > 0;
 
   // ✅ CARGAR DATOS AL INICIALIZAR
   useEffect(() => {
@@ -209,7 +213,7 @@ export const useMenuDelDia = () => {
     // Datos derivados
     combinacionesDisponibles,
     combinacionesAgotadas,
-    totalCombinaciones: estado.menu?.combinaciones.length || 0,
+  totalCombinaciones: estado.menu?.combinaciones.filter(c => c.is_available).length || 0,
 
     // Funciones
     cargarMenuDelDia,

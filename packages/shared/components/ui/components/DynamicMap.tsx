@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import React, { useEffect } from 'react';
-import { SpinnerV2 } from '@spoon/shared';
+import { SpinnerV2 } from '@spoon/shared/components/ui/SpinnerV2';
 
 // Import Leaflet CSS only when needed
 const loadLeafletCSS = () => {

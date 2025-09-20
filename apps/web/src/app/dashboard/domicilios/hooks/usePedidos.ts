@@ -37,6 +37,25 @@ export const usePedidos = () => {
   const [limit, setLimit] = useState<number>(150); // limite inicial para historial / vista
   const [hasOpenCajaSession, setHasOpenCajaSession] = useState(false);
 
+  // Utilidad para refrescar el estado de "caja abierta" (usada en efectos y subscripciones)
+  const refreshCajaSessionOpen = useCallback(async () => {
+    if (!restaurantId) return;
+    try {
+      const { data: sesionCheck } = await supabase
+        .from('caja_sesiones')
+        .select('id')
+        .eq('restaurant_id', restaurantId as string)
+        .eq('estado', 'abierta')
+        .order('abierta_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setHasOpenCajaSession(!!sesionCheck);
+    } catch (e) {
+      // En caso de error o RLS, marcar como cerrada para mostrar CTA de abrir
+      setHasOpenCajaSession(false);
+    }
+  }, [restaurantId]);
+
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     const prefix = type === 'success' ? '✅' : '❌';
     console[type === 'success' ? 'log' : 'error'](`${prefix} ${message}`);
@@ -62,6 +81,37 @@ export const usePedidos = () => {
       isMounted = false;
     };
   }, []);
+
+  // Chequeo inicial de sesión de caja abierta cuando tengamos restaurantId
+  useEffect(() => {
+    if (!restaurantId) return;
+    refreshCajaSessionOpen();
+  }, [restaurantId, refreshCajaSessionOpen]);
+
+  // Suscripción en tiempo real a cambios en caja_sesiones para este restaurante
+  useEffect(() => {
+    if (!restaurantId) return;
+    // Evitar crear la subscripción en SSR
+    const channel = supabase
+      .channel(`caja_sesiones_${restaurantId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'caja_sesiones', filter: `restaurant_id=eq.${restaurantId}` },
+        () => {
+          // Revalidar estado cuando haya cambios (apertura/cierre)
+          refreshCajaSessionOpen();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        /* no-op */
+      }
+    };
+  }, [restaurantId, refreshCajaSessionOpen]);
 
   // Utilidad para rango de fechas según filtro rápido
   const obtenerRangoFechas = useCallback((filtroFecha: string) => {
@@ -158,7 +208,7 @@ export const usePedidos = () => {
         .from('daily_menus')
         .select('id')
         .eq('restaurant_id', restaurantId)
-        .eq('menu_date', new Date().toISOString().split('T')[0])
+        .eq('menu_date', require('@spoon/shared/utils/datetime').getBogotaDateISO())
         .eq('status', 'active')
         .maybeSingle(); // evita 406 si aún no existe menú
 

@@ -189,3 +189,117 @@ Integración con WhatsApp para confirmaciones
 Sistema de inventario automático
 
 Este módulo es el corazón operativo del negocio de domicilios y requiere máxima estabilidad y precisión. Cualquier falla puede impactar directamente en ingresos y satisfacción del cliente.
+
+
+// =============================
+// Mapa técnico detallado (por archivo)
+// =============================
+
+Rutas principales
+- `apps/web/src/app/dashboard/domicilios/page.tsx`: Ruta Next.js, renderiza `pages/DomiciliosPage` (cliente) sin SSR.
+
+Página de alto nivel
+- `pages/DomiciliosPage.tsx`
+  - Estado local UI: `vistaActiva: 'tabla'|'detalle'`, `pedidoSeleccionado`, `sortKey`, `sortDir`.
+  - Usa `useDomiciliosPageController` para orquestar datos/actions.
+  - Gates:
+    - Bloquea si no hay caja abierta (`hasOpenCajaSession` del hook de pedidos).
+    - Bloquea si no hay menú para hoy (`hayMenuHoy` del hook de menú).
+  - Componentes usados: `HeaderTabsAndActions`, `CompactMetrics`, `FiltersCompact`, `PedidosTableOverview` y `PedidoDetailCard`, `PedidoForm`, `PagoModal`, `DomiciliariosWizardSlideOver`.
+  - Acciones: crear/actualizar pedido, registrar pago, asignar domiciliario, cargar más, cambiar pestaña/filtros.
+
+Hook controlador
+- `hooks/useDomiciliosPageController.ts`
+  - Orquesta 3 hooks: `usePedidos`, `useDomiciliarios`, `useMenuDelDia`.
+  - Deriva métricas (`pendientes`, `enRuta`, `entregados`, `totalDia`, `disponibles`) y `counts` (domiciliarios por estado).
+  - Expone estado UI (tab, modales) y acciones delegadas.
+
+Gestión de pedidos
+- `hooks/usePedidos.ts`
+  - Estado: `EstadoPedidos`, `loadingStates`, `restaurantId`, `limit`, `hasOpenCajaSession`.
+  - Funciones:
+    - `refreshCajaSessionOpen` (lee `caja_sesiones` con `estado='abierta'`).
+    - `cargarPedidos` (SELECT `delivery_orders` con joins a `delivery_personnel`, filtros por estado/domiciliario/fecha/buscar; paginado `limit`).
+    - `crearPedido` (valida items > 0; consulta `daily_menus` para hoy; inserta en `delivery_orders` con `order_items` y totales; `status=received`).
+    - `actualizarEstado` (UPDATE `delivery_orders`; marca `delivery_personnel.status='busy'` al enviar).
+    - `registrarPago` (valida auth; exige `caja_sesiones` abierta; intenta RPC `procesar_pago_atomico` y fallback a insert en `transacciones_caja`; marca `paid_at`).
+    - Real-time: canal en `caja_sesiones` para detectar aperturas/cierres y refrescar gate.
+  - Tablas/servicios Supabase:
+    - `delivery_orders`, `delivery_personnel`, `caja_sesiones`, `transacciones_caja`, RPC `procesar_pago_atomico`, `daily_menus`.
+
+Gestión de domiciliarios
+- `hooks/useDomiciliarios.ts`
+  - Estado: `EstadoDomiciliarios`, `restaurantId`.
+  - Funciones: `cargarDomiciliarios` (SELECT activos), `agregarDomiciliario` (INSERT), `actualizarEstado` (UPDATE), `desactivarDomiciliario` (UPDATE is_active=false).
+  - Real-time: canal `delivery_personnel` filtrado por `restaurant_id`.
+  - Tabla: `delivery_personnel`.
+
+Menú del día
+- `hooks/useMenuDelDia.ts`
+  - Estado: `{ menu, loading, error }`, `restaurantId`.
+  - Funciones: `cargarMenuDelDia` (fecha Bogotá con `getBogotaDateISO`; SELECT `daily_menus` y `generated_combinations`), `actualizarDisponibilidad` (UPDATE `generated_combinations`).
+  - Real-time: canal `generated_combinations` filtrado por `daily_menu_id=eq.${estado.menu.id}`.
+  - Tablas: `daily_menus`, `generated_combinations`.
+
+UI componentes clave
+- `components/HeaderTabsAndActions.tsx`: Tabs, acciones principales, counters.
+- `components/CompactMetrics.tsx`: KPIs compactos (pendientes, en ruta, entregados, total día, disponibles).
+- `components/FiltersCompact.tsx`: Filtros rápidos (estado, domiciliario, fecha, buscar).
+- `pages/PedidosTableOverview.tsx` + `pages/PedidoRow.tsx`: Tabla de pedidos con selección, batch actions, asignación y pasos de estado.
+- `pages/PedidoDetailCard.tsx`: Vista detallada por pedido con timeline y acción siguiente.
+- `pages/PedidoForm.tsx` + `pages/steps/*`: Wizard de nuevo pedido (Menú → Resumen → Cliente), cálculo de totales, validaciones.
+- `pages/PagoModal.tsx`: Selección de tipo de pago y submit a `registrarPago`.
+
+Contratos de datos (resumen por tabla)
+- delivery_orders: id, restaurant_id, daily_menu_id, customer_name, customer_phone, delivery_address, order_items(json), total_amount, delivery_fee, status, assigned_delivery_person_id, created_at, sent_at, delivered_at, paid_at, cooking_started_at, special_notes.
+- delivery_personnel: id, restaurant_id, name, phone, status('available'|'busy'|'offline'), is_active, created_at, updated_at.
+- daily_menus: id, restaurant_id, menu_date, status('active'|'published'), menu_price.
+- generated_combinations: id, daily_menu_id, combination_name, combination_description, combination_price, is_available.
+- caja_sesiones: id, restaurant_id, estado('abierta'|'cerrada'), abierta_at, cerrada_at, cajero_id.
+- transacciones_caja: id, caja_sesion_id, orden_id, tipo_orden('delivery'), metodo_pago('efectivo'|'digital'), monto_total, monto_recibido, monto_cambio, cajero_id, procesada_at.
+
+Servicios compartidos usados
+- `@spoon/shared/lib/supabase`:
+  - `supabase` client (auth, from, rpc, channel).
+  - `getUserRestaurant()` para obtener `restaurantId` en hooks.
+- `@spoon/shared/utils/datetime`: `getBogotaDateISO()` para TZ.
+- `@spoon/shared/Context/notification-context`: `useNotifications` en componentes de tabla para toasts.
+
+Rutas y navegación
+- Ruta principal: `/dashboard/domicilios` → render `DomiciliosPage`.
+- Deep links internos:
+  - Abrir formulario: botón “Nuevo Pedido”.
+  - Gestionar Domiciliarios: abre `DomiciliariosWizardSlideOver`.
+  - “Ir a Caja”: `/dashboard/caja` cuando no hay caja abierta.
+  - “Configurar Menú del Día”: `/dashboard/carta/menu-dia` cuando no hay menú activo.
+
+Gaps y mejoras específicas (por archivo)
+- `hooks/usePedidos.ts`:
+  - Notificaciones: usa `console`/`alert`; migrar a `useNotifications` compartido.
+  - Monto total: confirmar si precios están en pesos (no centavos) y estandarizar formateo (hay mezcla en UI). OK en este módulo (usa COP directos), pero documentar en shared si cambia.
+  - `registrarPago`: fallback directo a `transacciones_caja` depende de policies; idealmente, consolidar en RPC y mejorar manejo de errores/duplicados.
+- `hooks/useMenuDelDia.ts`:
+  - Bien: filtro realtime ya dinámico `daily_menu_id=eq.${estado.menu.id}` y TZ Bogotá.
+  - Mejora: consolidar notificaciones, y manejar “sin menú” con un estado informativo más rico.
+- `hooks/useDomiciliarios.ts`:
+  - Añadir validación de formato de teléfono y evitar nombres vacíos.
+- `pages/PedidosTable.tsx` y `pages/PedidoRow.tsx`:
+  - Validación de domiciliario al enviar: presente como guardas; mantener consistente entre overview y detalle.
+  - Unificar formateo de valores (crear `fmtCOP`).
+- `pages/PagoModal.tsx`:
+  - Actualmente no pide monto cuando es efectivo; delega al hook con monto por defecto. Evaluar ingresar monto recibido para calcular cambio.
+- `pages/DomiciliosPage.tsx`:
+  - Auto-refresh cada 30s; considerar realtime para `delivery_orders` si se requiere reactividad total.
+
+Checklist de cumplimiento (servicios y dónde se usan)
+- Supabase from() y rpc():
+  - `delivery_orders`: SELECT (listado), INSERT (crear), UPDATE (estado), JOIN a `delivery_personnel`.
+  - `delivery_personnel`: SELECT/INSERT/UPDATE (gestión y estado), realtime por `restaurant_id`.
+  - `daily_menus`: SELECT (id del menú de hoy) y status en activo/publicado.
+  - `generated_combinations`: SELECT (listar combinaciones) y UPDATE (disponibilidad), realtime por `daily_menu_id`.
+  - `caja_sesiones`: SELECT (detectar abierta), realtime por `restaurant_id`.
+  - `transacciones_caja`: INSERT (fallback) con `procesada_at` para dashboards.
+  - RPC `procesar_pago_atomico`: flujo recomendado para pago.
+
+Notas de seguridad y RLS
+- Políticas RLS de `delivery_orders`, `delivery_personnel`, `caja_sesiones` y `transacciones_caja` deben estar activas y alineadas con `auth.uid()`.

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, getUserRestaurant } from '@spoon/shared';
+import { supabase, getUserRestaurant } from '@spoon/shared/lib/supabase';
 import {
   Domiciliario,
   EstadoDomiciliario,

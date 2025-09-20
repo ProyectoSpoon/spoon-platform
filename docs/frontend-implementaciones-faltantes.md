@@ -1,4 +1,15 @@
-# 🔍 ANÁLISIS: IMPLEMENTACIONES FALTANTES EN EL FRONTEND
+---
+title: Estado frontend (Caja) – Actualización
+lastUpdated: 2025-09-20
+---
+
+# 🔍 ANÁLISIS: IMPLEMENTACIONES FALTANTES EN EL FRONTEND (Actualizado)
+
+Nota rápida (2025-09-20): Este documento queda como histórico. Las implementaciones críticas aquí listadas para el sistema de Caja ya fueron completadas. Consulta:
+- docs/modal-cierre-caja-implementacion.md (implementación final del modal profesional de cierre)
+- docs/db/MIGRACION_COMPLETADA.md (detalle de migración de BD, triggers, RLS y auditoría)
+
+A continuación se conserva el análisis original con anotaciones de estado actualizado.
 
 ## 📊 **ESTADO ACTUAL DEL FRONTEND**
 
@@ -7,11 +18,19 @@
 2. **Página `CajaPage`**: Ya solicita saldo final con `window.prompt()` (MVP básico)
 3. **Base de datos**: Completamente migrada con todos los campos necesarios
 
-### ❌ **FALTANTE: IMPLEMENTACIONES CRÍTICAS**
+### ✅ Estado actualizado: Implementaciones críticas completadas
+
+Resumen de completado:
+- Modal profesional de cierre: Implementado (UI de 2 pasos, validaciones por umbrales, justificación, accesibilidad).
+- Visualización/cálculo de diferencias: Implementado en hook y modal (tiempo real, categorías de severidad).
+- Tipos TypeScript: Actualizados para incluir saldo_final_reportado y diferencia_caja.
+- Integración con páginas y hooks existentes: Realizada (sustituye prompt básico).
+
+Ver detalles en docs/modal-cierre-caja-implementacion.md.
 
 ---
 
-## 🚨 **1. INTERFAZ DE CIERRE MEJORADA**
+## 🚨 1) INTERFAZ DE CIERRE MEJORADA — Estado: COMPLETADO
 
 ### **Problema actual:**
 ```tsx
@@ -19,29 +38,28 @@
 const input = window.prompt('Saldo final en efectivo contado (pesos)...');
 ```
 
-### **Necesita:**
-- Modal profesional de cierre de caja
-- Formulario con validaciones
-- Cálculo automático de diferencias
-- Confirmación visual antes del cierre
+### Implementado
+- Modal profesional de cierre con validaciones progresivas y confirmación visual.
+- Cálculo automático de diferencias en tiempo real.
+- Integración de design tokens y accesibilidad.
 
 ---
 
-## 🚨 **2. VISUALIZACIÓN DE DIFERENCIAS**
+## 🚨 2) VISUALIZACIÓN DE DIFERENCIAS — Estado: COMPLETADO
 
 ### **Problema actual:**
 - El campo `diferencia_caja` se calcula en la base de datos
 - Frontend no muestra las diferencias calculadas
 - No hay alertas para diferencias significativas
 
-### **Necesita:**
-- Mostrar diferencia automática: `saldo_reportado - saldo_calculado`
-- Alertas visuales para diferencias > umbral configurado
-- Histórico de diferencias por sesión
+### Implementado
+- Diferencia automática (reportado − calculado) y categorías por umbrales.
+- Alertas visuales y mensajes contextuales en el modal.
+- Base de datos con triggers de auditoría; UI de historial queda como mejora opcional.
 
 ---
 
-## 🚨 **3. VALIDACIONES MEJORADAS**
+## 🚨 3) VALIDACIONES MEJORADAS — Estado: COMPLETADO
 
 ### **Problema actual:**
 ```tsx
@@ -51,14 +69,12 @@ if (!isNaN(val) && val >= 0) {
 }
 ```
 
-### **Necesita:**
-- Validación de rangos razonables
-- Comparación con saldo calculado
-- Confirmación para diferencias grandes
+### Implementado
+- Validaciones de rangos, bloqueos por diferencias excesivas y justificación obligatoria en casos críticos.
 
 ---
 
-## 🚨 **4. TIPOS TYPESCRIPT ACTUALIZADOS**
+## 🚨 4) TIPOS TYPESCRIPT ACTUALIZADOS — Estado: COMPLETADO
 
 ### **Problema actual:**
 ```tsx
@@ -69,29 +85,26 @@ export interface CajaSesion {
 }
 ```
 
-### **Necesita:**
-- Agregar `saldo_final_reportado?: number`
-- Agregar `diferencia_caja?: number`
-- Tipos para auditoría
+### Implementado
+- Tipos actualizados en la capa de front para caja, incluyendo campos de diferencias y compatibilidad con auditoría.
 
 ---
 
-## 🚨 **5. DASHBOARD DE AUDITORÍA**
+## 🚨 5) DASHBOARD DE AUDITORÍA — Estado: PENDIENTE (Mejora)
 
 ### **Problema actual:**
 - No existe interfaz para ver auditoría
 - Función `get_caja_sesion_history()` no se usa
 
-### **Necesita:**
-- Página de auditoría para administradores
-- Historial de cambios por sesión
-- Filtros por fecha, usuario, tipo de operación
+### Próximos pasos (opcional)
+- Página de auditoría para administradores (consume get_caja_sesion_history()).
+- Historial de cambios con filtros por fecha, usuario y tipo de operación.
 
 ---
 
-## 🎯 **PLAN DE IMPLEMENTACIÓN PRIORITARIO**
+## 🎯 Plan de implementación — Estado actual
 
-### **🔥 PRIORIDAD CRÍTICA (Implementar YA):**
+### ✅ Prioridad crítica — COMPLETADA
 
 #### **1. Modal de Cierre Profesional**
 ```tsx
@@ -143,7 +156,7 @@ export const useDiferenciasCaja = (
 };
 ```
 
-### **📈 PRIORIDAD MEDIA:**
+### 📈 Prioridad media — PARCIAL/OPCIONAL
 
 #### **4. Componente de Alertas de Diferencia**
 ```tsx
@@ -162,7 +175,7 @@ interface AlertaDiferenciaProps {
 // Usar función get_caja_sesion_history()
 ```
 
-### **🔧 PRIORIDAD BAJA:**
+### 🔧 Prioridad baja — OPCIONAL
 
 #### **6. Configuración de Umbrales**
 #### **7. Exportación de Reportes**
@@ -170,38 +183,39 @@ interface AlertaDiferenciaProps {
 
 ---
 
-## 🛠️ **ARCHIVOS QUE NECESITAN MODIFICACIÓN**
+## 🛠️ Archivos modificados/creados — Resumen
 
-### **Modificar existentes:**
+### Existentes modificados
 1. `apps/web/src/app/dashboard/caja/hooks/useCajaSesion.ts`
 2. `apps/web/src/app/dashboard/caja/components/ControlesCaja.tsx`
 3. `apps/web/src/app/dashboard/caja/pages/CajaPage.tsx`
 4. `apps/web/src/app/dashboard/caja/types/cajaTypes.ts`
 
-### **Crear nuevos:**
+### Nuevos creados (implementados)
 1. `apps/web/src/app/dashboard/caja/components/ModalCierreCaja.tsx`
 2. `apps/web/src/app/dashboard/caja/hooks/useDiferenciasCaja.ts`
 3. `apps/web/src/app/dashboard/caja/components/AlertaDiferenciaCaja.tsx`
-4. `apps/web/src/app/dashboard/caja/pages/AuditoriaPage.tsx`
+
+### Nuevos propuestos (pendiente)
+1. `apps/web/src/app/dashboard/caja/pages/AuditoriaPage.tsx`
 
 ---
 
 ## 🎯 **RESUMEN EJECUTIVO**
 
-### **Estado Actual:**
-- ✅ Base de datos: 100% completa
-- ✅ Backend: 100% funcional
-- ⚠️ Frontend: 40% completo (básico funcional)
+### **Estado Actual (2025-09-20):**
+- ✅ Base de datos: Completa (ver docs/db/MIGRACION_COMPLETADA.md)
+- ✅ Backend (BaaS): Funcional con RLS, triggers y auditoría
+- ✅ Frontend (Caja): Completo (modal de cierre, diferencias, tipos)
 
-### **Para tener funcionalidad completa necesitas:**
-1. **Modal profesional de cierre** (crítico)
-2. **Tipos TypeScript actualizados** (crítico)
-3. **Visualización de diferencias** (importante)
-4. **Dashboard de auditoría** (para administradores)
+### **Backlog (opcional):**
+1. Dashboard de auditoría para administradores
+2. Notificaciones/alertas en tiempo real por diferencias
+3. Reportes automatizados
 
 ### **Tiempo estimado de implementación:**
 - **Crítico (modal + tipos):** 2-4 horas
 - **Importante (diferencias):** 2-3 horas  
 - **Completo (con auditoría):** 6-8 horas
 
-**¿Por dónde empezamos? Te sugiero el modal de cierre profesional.**
+Consulta también: docs/modal-cierre-caja-implementacion.md para descripción detallada de la implementación.

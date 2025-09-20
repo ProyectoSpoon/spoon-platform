@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { PageTitleProvider } from '@spoon/shared/Context/page-title-context'
 import { UserProvider } from '@spoon/shared/Context/user-context'
+import { NotificationProvider } from '@spoon/shared/Context/notification-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,7 +22,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <UserProvider>
           <PageTitleProvider>
-            {children}
+            <NotificationProvider>
+              {children}
+            </NotificationProvider>
           </PageTitleProvider>
         </UserProvider>
       </body>

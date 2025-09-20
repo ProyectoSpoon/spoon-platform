@@ -21,6 +21,7 @@
   "include": [
     "packages/shared/**/*.ts",
     "packages/shared/**/*.tsx",
+    "packages/shared/types/**/*.d.ts",
     "apps/web/src/**/*.ts",
     "apps/web/src/**/*.tsx",
     "jest.setup.js"

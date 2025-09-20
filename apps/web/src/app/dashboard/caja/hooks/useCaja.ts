@@ -48,6 +48,41 @@ export const useCaja = () => {
   const [error, setError] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState<'hoy' | 'semana' | 'mes' | 'personalizado'>('hoy');
   const [fechaFinFiltro, setFechaFinFiltro] = useState<string | null>(null);
+  // Secuenciador de fetch para evitar condiciones de carrera (solo aplica el último resultado)
+  const fetchSeqRef = useRef(0);
+
+  // Helper: convertir un ISO a YYYY-MM-DD en zona America/Bogota
+  const isoToBogotaDateString = (iso?: string | null): string | null => {
+    if (!iso) return null;
+    try {
+      const d = new Date(iso);
+      const bogota = new Date(d.getTime() - 5 * 60 * 60 * 1000);
+      return bogota.toISOString().slice(0, 10);
+    } catch {
+      return null;
+    }
+  };
+
+  // Ajuste automático del filtro diario al “business day” de la sesión (una vez por cambio de sesión)
+  const fechaAutoAjustadaParaSesionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (periodo !== 'hoy') return;
+    if (!sesionActual?.id) return;
+    const sessionBusinessDay = (sesionActual as any)?.business_day as string | undefined;
+    const target = sessionBusinessDay || isoToBogotaDateString(sesionActual.abierta_at);
+    if (!target) return;
+    // Calcular hoy Bogotá para detectar el caso de default del navegador
+    const now = new Date();
+    const todayBogota = new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const sessionChanged = fechaAutoAjustadaParaSesionRef.current !== sesionActual.id;
+    const looksLikeDefaultToday = fechaFiltro === todayBogota; // usuario no ha cambiado manualmente
+    const shouldAdjust = sessionChanged || looksLikeDefaultToday;
+    if (shouldAdjust && target !== fechaFiltro) {
+      setFechaFiltro(target);
+      fechaAutoAjustadaParaSesionRef.current = sesionActual.id;
+      console.log('[useCaja][fecha] Ajuste automático del filtro diario a business_day', { target, sesion: sesionActual.id });
+    }
+  }, [periodo, sesionActual?.id, sesionActual?.abierta_at, fechaFiltro]);
 
   // ===============================
   // FUNCIÓN ROBUSTA PARA OBTENER DATOS
@@ -56,6 +91,8 @@ export const useCaja = () => {
   const sesionMontoInicial = sesionActual?.monto_inicial ?? 0;
 
   const obtenerDatosCaja = useCallback(async () => {
+    // Asignar número de secuencia a esta ejecución
+    const mySeq = ++fetchSeqRef.current;
     try {
       setLoading(true);
       
@@ -70,7 +107,7 @@ export const useCaja = () => {
         ERROR_CONFIGS.DATABASE
       );
 
-      console.log('📊 Obteniendo datos de caja con retry automático...');
+  console.log('📊 Obteniendo datos de caja con retry automático... seq=', mySeq);
 
       // EJECUTAR TODAS LAS QUERIES CON ERROR HANDLING
   const [mesasData, deliveryData, transaccionesData, gastosData] = await Promise.all([
@@ -125,10 +162,20 @@ export const useCaja = () => {
         // 3 y 4. Métricas dependiendo del periodo seleccionado
         (async () => {
           if (periodo === 'hoy') {
-            return executeWithRetry(
+            const resultadoHoy = await executeWithRetry(
               () => getTransaccionesDelDia(profile.restaurant_id!, fechaFiltro),
               ERROR_CONFIGS.DATABASE
             );
+            // 🔍 DEBUG: Ver qué retorna la función para diagnosticar forma/propiedades
+            try {
+              console.log('[useCaja][debug] getTransaccionesDelDia resultado', {
+                tipo: typeof resultadoHoy,
+                keys: resultadoHoy ? Object.keys(resultadoHoy as any) : [],
+                transaccionesLen: (resultadoHoy as any)?.transacciones?.length ?? 'no-existe',
+                sample: (resultadoHoy as any)?.transacciones?.[0] ?? null
+              });
+            } catch { /* no-op */ }
+            return resultadoHoy;
           }
           // Calcular rango Bogotá según periodo
           const start = new Date(`${fechaFiltro}T00:00:00.000-05:00`);
@@ -181,6 +228,12 @@ export const useCaja = () => {
           : Promise.resolve(null)
       ]);
 
+      // Si otra ejecución más reciente ya inició, descartar este resultado
+      if (mySeq !== fetchSeqRef.current) {
+        console.log('[useCaja][race] Descartando resultado obsoleto (seq', mySeq, '≠', fetchSeqRef.current, ')');
+        return;
+      }
+
       // TRANSFORMAR Y COMBINAR DATOS
       const mesasTransformadas: OrdenPendiente[] = mesasData.map((mesa: any) => ({
         id: mesa.id,
@@ -229,13 +282,14 @@ export const useCaja = () => {
             gastosPorCategoria: (transaccionesData as any).gastosPorCategoria
           };
 
-      const balance = sesionId 
-        ? sesionMontoInicial + totales.totalVentas - totales.totalGastos
+      // Efectivo teórico en caja física: solo efectivo entra/sale de la caja
+      const efectivoTeorico = sesionId 
+        ? sesionMontoInicial + totales.totalEfectivo - totales.totalGastos
         : 0;
 
       // ACTUALIZAR ESTADO
-      setOrdenesMesas(mesasTransformadas);
-      setOrdenesDelivery(deliveryTransformadas);
+  setOrdenesMesas(mesasTransformadas);
+  setOrdenesDelivery(deliveryTransformadas);
       // Recalcular total de gastos si el reportado es 0 pero hay elementos
       let gastosTotalesFinal = typeof totales.totalGastos === 'number' ? totales.totalGastos : 0;
       if (gastosTotalesFinal === 0 && Array.isArray(totales.gastos) && totales.gastos.length > 0) {
@@ -259,8 +313,13 @@ export const useCaja = () => {
         gastosTotalesFinal
       });
 
+      // Verificar nuevamente antes de aplicar estado costoso
+      if (mySeq !== fetchSeqRef.current) {
+        console.log('[useCaja][race] Descartando setMetricas obsoleto (seq', mySeq, '≠', fetchSeqRef.current, ')');
+        return;
+      }
       setMetricas({
-        balance,
+        balance: efectivoTeorico,
         ventasTotales: totales.totalVentas,
         porCobrar: porCobrarTotal,
         gastosTotales: gastosTotalesFinal,
@@ -273,17 +332,23 @@ export const useCaja = () => {
       });
 
       setError(null);
-      console.log('✅ Datos de caja obtenidos exitosamente');
+      console.log('✅ Datos de caja obtenidos exitosamente (seq=', mySeq, ')');
 
     } catch (err: any) {
-      console.error('⚠️ Error obteniendo datos de caja:', err);
-      setError(err.message);
+      console.error('⚠️ Error obteniendo datos de caja (seq=', mySeq, '):', err);
+      if (mySeq === fetchSeqRef.current) {
+        setError(err.message);
+      } else {
+        console.log('[useCaja][race] Error ignorado por obsoleto (seq', mySeq, '≠', fetchSeqRef.current, ')');
+      }
       
       // Para datos no críticos, mostrar estado del circuit breaker
       const breakerStatus = getCircuitBreakerStatus();
       console.log('🔧 Estado Circuit Breaker:', breakerStatus);
     } finally {
-      setLoading(false);
+      if (mySeq === fetchSeqRef.current) {
+        setLoading(false);
+      }
     }
   }, [sesionId, sesionMontoInicial, fechaFiltro, periodo, fechaFinFiltro]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -293,6 +358,12 @@ export const useCaja = () => {
   useEffect(() => {
     obtenerDatosCajaRef.current = obtenerDatosCaja;
   }, [obtenerDatosCaja]);
+
+  // Cargar datos iniciales y cuando cambien filtros/periodo, incluso si los WebSockets no están activos
+  useEffect(() => {
+    try { obtenerDatosCajaRef.current(); } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [periodo, fechaFiltro, fechaFinFiltro]);
 
   
 
@@ -312,7 +383,7 @@ export const useCaja = () => {
       // Utilidad para suscribirse de forma segura y obtener un unsubscribe estable
       const unsubscribes: Array<() => void> = [];
 
-      // WEBSOCKET 1: Escuchar nuevas transacciones
+      // WEBSOCKET 1: Escuchar nuevas transacciones SOLO de la sesión actual (update incremental)
       const chTransacciones: any = supabase
         .channel(`transacciones-${sesionId}`)
         .on('postgres_changes', {
@@ -320,7 +391,7 @@ export const useCaja = () => {
           schema: 'public',
           table: 'transacciones_caja',
           filter: `caja_sesion_id=eq.${sesionId}`
-        }, (payload) => {
+  }, (payload: any) => {
           console.log('💰 Nueva transacción detectada:', payload.new);
           
           const nuevaTransaccion = payload.new as TransaccionCaja;
@@ -339,13 +410,40 @@ export const useCaja = () => {
               ? prev.totalDigital + nuevaTransaccion.monto_total
               : prev.totalDigital,
             transaccionesDelDia: [nuevaTransaccion, ...prev.transaccionesDelDia],
-            balance: prev.balance + nuevaTransaccion.monto_total // Actualizar balance también
+            // Actualizar balance solo si la transacción fue en efectivo
+            balance: nuevaTransaccion.metodo_pago === 'efectivo'
+              ? prev.balance + nuevaTransaccion.monto_total
+              : prev.balance
           }));
         });
       const subTrans = typeof chTransacciones?.subscribe === 'function' ? chTransacciones.subscribe() : null;
       unsubscribes.push(() => {
         if (subTrans && typeof subTrans.unsubscribe === 'function') subTrans.unsubscribe();
         else if (chTransacciones && typeof chTransacciones.unsubscribe === 'function') chTransacciones.unsubscribe();
+      });
+
+      // WEBSOCKET 1b: Escuchar transacciones del mismo restaurante (otras sesiones del día)
+      // Si llega una transacción de otra sesión del restaurante, hacemos un refresh completo para que Ingresos incluya todo el día.
+      const chTransaccionesRest: any = supabase
+        .channel(`transacciones-restaurante-${restaurantId || 'global'}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'transacciones_caja'
+  }, (payload: any) => {
+          const nueva = payload.new as any;
+          const mismaSesion = nueva?.caja_sesion_id === sesionId;
+          // Solo reaccionar si no es de la misma sesión pero sí es del mismo restaurante y estamos viendo 'hoy'
+          const esMismoRest = (nueva as any)?.restaurant_id ? ((nueva as any).restaurant_id === restaurantId) : true;
+          if (!mismaSesion && esMismoRest) {
+            console.log('🔁 Transacción en otra sesión del mismo restaurante. Refrescando métricas del día...');
+            try { obtenerDatosCajaRef.current(); } catch { /* noop */ }
+          }
+        });
+      const subTransRest = typeof chTransaccionesRest?.subscribe === 'function' ? chTransaccionesRest.subscribe() : null;
+      unsubscribes.push(() => {
+        if (subTransRest && typeof subTransRest.unsubscribe === 'function') subTransRest.unsubscribe();
+        else if (chTransaccionesRest && typeof chTransaccionesRest.unsubscribe === 'function') chTransaccionesRest.unsubscribe();
       });
 
       // WEBSOCKET 2: Escuchar nuevos gastos
@@ -356,7 +454,7 @@ export const useCaja = () => {
           schema: 'public',
           table: 'gastos_caja',
           filter: `caja_sesion_id=eq.${sesionId}`
-        }, (payload) => {
+  }, (payload: any) => {
           console.log('💸 Nuevo gasto detectado:', payload.new);
           
           const nuevoGasto = payload.new as any;
@@ -382,7 +480,7 @@ export const useCaja = () => {
           schema: 'public',
           table: 'ordenes_mesa',
           filter: restaurantId ? `restaurant_id=eq.${restaurantId}` : undefined
-        }, (payload) => {
+  }, (payload: any) => {
           if (payload.new.estado === 'pagada' && payload.old.estado === 'activa') {
             console.log('🍽️ Orden de mesa pagada:', payload.new);
             
@@ -426,10 +524,6 @@ const procesarPago = async (
   montoRecibido?: number
 ) => {
   try {
-    if (!sesionActual) {
-      throw new Error('No hay sesión de caja abierta');
-    }
-
     if (requiereSaneamiento) {
       throw new Error('Operación bloqueada: hay una sesión previa pendiente de cierre.');
     }
@@ -437,6 +531,27 @@ const procesarPago = async (
     setLoading(true);
     const profile = await getUserProfile();
     if (!profile) throw new Error('Usuario no autenticado');
+
+    // Resolver id de sesión de forma robusta para evitar falsos negativos por desincronización
+    let cajaSesionId = sesionActual?.id as string | undefined;
+    if (!cajaSesionId && estadoCaja === 'abierta' && profile.restaurant_id) {
+      try {
+        const { data: abierta } = await supabase
+          .from('caja_sesiones')
+          .select('id, estado')
+          .eq('restaurant_id', profile.restaurant_id)
+          .eq('estado', 'abierta')
+          .order('abierta_at', { ascending: false })
+          .maybeSingle();
+        if (abierta?.id) {
+          cajaSesionId = abierta.id as any;
+          // Nota: no actualizamos estado global aquí para no interferir con el hook fuente; usamos el id resuelto localmente.
+        }
+      } catch {/* ignore lookup errors */}
+    }
+    if (!cajaSesionId) {
+      throw new Error('No hay sesión de caja abierta');
+    }
 
     console.log('💳 Procesando pago atómico con retry automático:', { 
       orden: orden.identificador, 
@@ -447,7 +562,7 @@ const procesarPago = async (
     const data = await executeWithRetry(
       async () => {
         const { data, error } = await supabase.rpc('procesar_pago_atomico', {
-          p_caja_sesion_id: sesionActual.id,
+          p_caja_sesion_id: cajaSesionId,
           p_orden_id: orden.id,
           p_tipo_orden: orden.tipo,
           p_metodo_pago: metodoPago,
@@ -502,9 +617,18 @@ const procesarPago = async (
   } catch (error: any) {
     // Return con error
     console.error('❌ Error procesando pago:', error);
+    const msg = String(error?.message || 'Error desconocido');
+    const lower = msg.toLowerCase();
+    // Guía accionable si el esquema no tiene columnas requeridas
+    if (lower.includes('column "orden_id"') && lower.includes('does not exist')) {
+      return {
+        success: false,
+        error: 'Esquema desalineado: falta la columna orden_id en transacciones_caja. Ejecuta el script scripts/fix/add_orden_id_to_transacciones_caja.sql en Supabase y vuelve a intentar.'
+      };
+    }
     return {
       success: false,
-      error: error.message
+      error: msg
     };
   } finally {
     setLoading(false);

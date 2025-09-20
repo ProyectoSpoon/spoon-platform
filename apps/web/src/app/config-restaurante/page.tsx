@@ -11,17 +11,15 @@ const MapPinComponent = MapPin as any;
 const CalendarDaysComponent = CalendarDays as any;
 const LucideImageComponent = LucideImage as any;
 import { useRouter } from 'next/navigation';
-import { getUserProfile, getUserRestaurant } from '@spoon/shared';
-import { 
-  Button, 
-  Card, 
-  CardContent, 
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  Progress,
-  toast 
-} from '@spoon/shared';
+import { getUserProfile, getUserRestaurant } from '@spoon/shared/lib/supabase';
+import { Button } from '@spoon/shared/components/ui/Button';
+import { Card } from '@spoon/shared/components/ui/Card';
+import { CardContent } from '@spoon/shared/components/ui/Card';
+import { CardHeader } from '@spoon/shared/components/ui/Card';
+import { CardTitle } from '@spoon/shared/components/ui/Card';
+import { CardDescription } from '@spoon/shared/components/ui/Card';
+import { Progress } from '@spoon/shared/components/ui/Progress';
+import { toast } from '@spoon/shared/components/ui/Toast';
 
 // More type casting for UI components
 const GridComponent = Grid as any;

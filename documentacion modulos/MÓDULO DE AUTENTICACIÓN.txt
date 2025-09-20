@@ -1,423 +1,218 @@
-INFORME DETALLADO - MÓDULO DE AUTENTICACIÓN
-
-1. INFORMACIÓN GENERAL DEL MÓDULO
-(AuthPage Component)
-Tipo: Componente React de autenticación
-Framework: Next.js con TypeScript
-Propósito: Gestionar el login y registro de usuarios restauranteros en la plataforma SPOON
-
-2. ANÁLISIS DE IMPORTACIONES Y DEPENDENCIAS
-2.1 Directivas del Framework
-javascript'use client';
-
-Propósito: Indica que este es un Client Component en Next.js 13+
-Implicación: Se ejecuta en el navegador, permite usar hooks y eventos
-
-2.2 Hooks de React
-javascriptimport { useState } from 'react';
-
-useState: Hook para manejar estado local del componente
-Uso: Gestiona múltiples estados (formularios, UI, errores, carga)
-
-2.3 Iconos de Lucide React
-javascriptimport { Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
-
-Eye/EyeOff: Iconos para mostrar/ocultar contraseñas
-ArrowLeft: Ícono de navegación (importado pero no utilizado)
-Loader2: Ícono de carga con animación de spinning
-
-2.4 Navegación de Next.js
-javascriptimport { useRouter } from 'next/navigation';
-
-useRouter: Hook para navegación programática
-Uso: Redirigir usuarios después de autenticación exitosa
-
-2.5 Sistema de Notificaciones
-javascriptimport toast, { Toaster } from 'react-hot-toast';
-
-toast: Función para mostrar notificaciones emergentes
-Toaster: Componente contenedor para renderizar las notificaciones
-
-2.6 Componentes de Next.js
-javascriptimport Link from 'next/link';
-
-Link: Componente optimizado para navegación entre páginas
-
-2.7 Funciones de la Capa de Servicios
-javascriptimport { signInUser, signUpUser, getUserProfile, getUserRestaurant } from '@spoon/shared';
-
-signInUser: Función para autenticar usuarios existentes
-signUpUser: Función para registrar nuevos usuarios
-getUserProfile: Obtiene datos del perfil del usuario
-getUserRestaurant: Obtiene información del restaurante del usuario
-
-
-3. ANÁLISIS DETALLADO DEL ESTADO DEL COMPONENTE
-3.1 Estados de Control de UI
-javascriptconst [modoRegistro, setModoRegistro] = useState(false);
-
-Propósito: Alternar entre vista de login (false) y registro (true)
-Tipo: boolean
-Comportamiento: Cambia toda la interfaz del formulario
-
-javascriptconst [cargando, setCargando] = useState(false);
-
-Propósito: Indicar cuando se está procesando una petición
-Uso: Deshabilita botones y muestra spinners durante operaciones async
-
-javascriptconst [error, setError] = useState<string | null>(null);
-
-Propósito: Almacenar mensajes de error para mostrar al usuario
-Tipo: string nullable
-Comportamiento: Se limpia automáticamente al cambiar inputs
-
-3.2 Estados de Visibilidad de Contraseñas
-javascriptconst [mostrarContrasena, setMostrarContrasena] = useState(false);
-const [mostrarConfirmPassword, setMostrarConfirmPassword] = useState(false);
-
-Propósito: Controlar la visibilidad de campos de contraseña
-Comportamiento: Alternan entre type="password" y type="text"
-
-3.3 Estados de Datos de Formularios
-3.3.1 Datos de Login
-javascriptconst [datosLogin, setDatosLogin] = useState({
-  correo: '',
-  contrasena: ''
-});
-
-Estructura: Objeto con campos mínimos para autenticación
-Validación: Básica (required en HTML)
-
-3.3.2 Datos de Registro
-javascriptconst [datosRegistro, setDatosRegistro] = useState({
-  first_name: '',
-  last_name: '',
-  phone: '',
-  email: '',
-  password: '',
-  confirmPassword: ''
-});
-
-Estructura: Objeto completo para creación de usuario
-Campos adicionales: Nombres, teléfono, confirmación de contraseña
-
-
-4. ANÁLISIS DE MANEJADORES DE EVENTOS
-4.1 Manejadores de Cambio de Input
-4.1.1 Login
-javascriptconst manejarCambioLogin = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const { name, value } = e.target;
-  setDatosLogin(prev => ({ ...prev, [name]: value }));
-  setError(null);
-};
-
-Patrón: Destructuring de event target
-Actualización: Spread operator para inmutabilidad
-Side effect: Limpia errores al escribir
-
-4.1.2 Registro
-javascriptconst manejarCambioRegistro = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const { name, value } = e.target;
-  setDatosRegistro(prev => ({ ...prev, [name]: value }));
-  setError(null);
-};
-
-Patrón idéntico al login
-Separación de responsabilidades: Estados independientes
-
-
-5. SISTEMA DE VALIDACIONES
-5.1 Función de Validación de Registro
-javascriptconst validarFormularioRegistro = () => {
-  if (!datosRegistro.first_name.trim()) return 'El nombre es requerido';
-  if (!datosRegistro.last_name.trim()) return 'El apellido es requerido';
-  if (!datosRegistro.email.trim()) return 'El correo electrónico es requerido';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datosRegistro.email)) 
-    return 'Correo electrónico inválido';
-  if (datosRegistro.password.length < 6) 
-    return 'La contraseña debe tener al menos 6 caracteres';
-  if (datosRegistro.password !== datosRegistro.confirmPassword) 
-    return 'Las contraseñas no coinciden';
-  if (!datosRegistro.phone.trim()) 
-    return 'El teléfono es requerido';
-  if (!/^\d{10}$/.test(datosRegistro.phone)) 
-    return 'El teléfono debe tener 10 dígitos';
-  return '';
-};
-Validaciones implementadas:
-
-Campos requeridos: trim() elimina espacios
-Email: Regex para formato válido
-Contraseña: Mínimo 6 caracteres
-Confirmación: Coincidencia exacta de contraseñas
-Teléfono: Exactamente 10 dígitos numéricos
-Retorno: String vacío indica éxito
-
-
-6. LÓGICA DE NAVEGACIÓN POST-AUTENTICACIÓN
-6.1 Función Helper para Pasos de Configuración
-javascriptconst getNextStepUrl = (currentStep: number) => {
-  switch (currentStep) {
-    case 1: return '/config-restaurante/informacion-general';
-    case 2: return '/config-restaurante/ubicacion';
-    case 3: return '/config-restaurante/horario-comercial';
-    case 4: return '/config-restaurante/logo-portada';
-    default: return '/config-restaurante';
-  }
-};
-
-Propósito: Mapear números de paso a URLs
-Pasos definidos: 4 pasos de configuración secuencial
-Fallback: Redirige a configuración base si paso inválido
-
-6.2 Verificación de Estado del Restaurante
-javascriptconst verificarConfiguracionRestaurante = async () => {
-  try {
-    const profile = await getUserProfile();
-    const restaurant = await getUserRestaurant();
-    
-    if (!profile) {
-      throw new Error('Error al obtener datos del usuario');
-    }
-
-    if (!restaurant) {
-      console.log('❌ Usuario no tiene restaurante, redirigiendo a configuración...');
-      toast.success('¡Bienvenido! Vamos a configurar tu restaurante.');
-      router.push('/config-restaurante');
-    } else {
-      // Lógica de restaurante existente...
-    }
-  } catch (restaurantError) {
-    console.error('❌ Error al verificar restaurante:', restaurantError);
-    router.push('/config-restaurante');
-  }
-};
-Flujos de decisión:
-
-Sin perfil: Error y excepción
-Sin restaurante: Ir a configuración inicial
-Con restaurante completo: Ir al dashboard
-Configuración incompleta: Continuar desde paso actual
-Error: Fallback a configuración
-
-
-7. MANEJADORES DE AUTENTICACIÓN
-7.1 Manejador de Login
-javascriptconst manejarLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setCargando(true);
-  setError(null);
-
-  try {
-    console.log('🔐 Intentando login con:', datosLogin.correo);
-    await signInUser(datosLogin.correo, datosLogin.contrasena);
-    toast.success('¡Bienvenido!');
-    await verificarConfiguracionRestaurante();
-  } catch (err: any) {
-    // Manejo de errores específicos...
-    setCargando(false);
-  }
-};
-Manejo de errores específicos:
-
-Invalid login credentials: "Email o contraseña incorrectos"
-Email not confirmed: "Debes confirmar tu email antes de iniciar sesión"
-Too many requests: "Demasiados intentos. Intenta de nuevo en unos minutos"
-
-7.2 Manejador de Registro
-javascriptconst manejarRegistro = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  const validationError = validarFormularioRegistro();
-  if (validationError) {
-    setError(validationError);
-    return;
-  }
-
-  setCargando(true);
-  setError(null);
-
-  try {
-    const result = await signUpUser({
-      email: datosRegistro.email,
-      password: datosRegistro.password,
-      first_name: datosRegistro.first_name,
-      last_name: datosRegistro.last_name,
-      phone: datosRegistro.phone
-    });
-
-    // Logs y redirección...
-    router.push('/config-restaurante');
-  } catch (error: any) {
-    // Manejo de errores...
-  }
-};
-Flujo del registro:
-
-Validación previa: Cliente-side antes de envío
-Llamada a API: signUpUser con datos completos
-Redirección automática: Siempre a configuración (usuarios nuevos)
-
-
-8. ANÁLISIS DE LA INTERFAZ DE USUARIO
-8.1 Estructura de Layout
-javascript<div className="flex min-h-screen">
-  {/* Columna izquierda - Información promocional */}
-  <div className="hidden md:flex w-1/2 relative">
-    {/* Imagen de fondo con overlay */}
-  </div>
-  
-  {/* Columna derecha - Formulario */}
-  <div className="w-full md:w-1/2 bg-white flex items-center justify-center p-8">
-    {/* Contenido del formulario */}
-  </div>
-</div>
-Características del diseño:
-
-Responsive: Oculta columna izquierda en móvil
-Split layout: 50/50 en desktop
-Imagen de fondo: Con filtros y overlay
-Centrado: Formulario centrado vertical y horizontalmente
-
-8.2 Contenido Promocional Dinámico
-8.2.1 Títulos y Descripciones Condicionales
-javascript<h1 className="text-4xl font-bold text-white mb-6">
-  {modoRegistro 
-    ? "Únete a la revolución gastronómica" 
-    : "Conecta con más clientes en tu zona"
-  }
-</h1>
-8.2.2 Características Destacadas
-
-Geolocalización: "Alcanza clientes en cualquier zona"
-Sistema de Reseñas: "Mejora tu servicio con feedback real"
-Notificaciones: "Mantén informados a tus clientes"
-Gestión de Domicilios: "Control total sobre entregas"
-
-8.3 Formularios Condicionales
-8.3.1 Formulario de Registro
-Campos implementados:
-
-Nombre y Apellido: Grid de 2 columnas
-Email: Validación HTML5 + custom
-Teléfono: Prefijo +57, máx 10 dígitos
-Contraseña: Con toggle de visibilidad
-Confirmar Contraseña: Validación de coincidencia
-
-8.3.2 Formulario de Login
-Campos minimalistas:
-
-Email: Input simple con placeholder
-Contraseña: Con toggle de visibilidad
-Recuperar contraseña: Placeholder (no implementado)
-
-
-9. SISTEMA DE NOTIFICACIONES Y FEEDBACK
-9.1 Implementación de Toast
-javascript<Toaster position="top-right" />
-
-Posición: Esquina superior derecha
-Tipos: Success, error, info
-Duración personalizable
-
-9.2 Alertas de Error
-javascript{error && (
-  <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-    <p className="text-red-700 text-sm">{error}</p>
-  </div>
-)}
-
-Diseño: Border-left rojo con fondo suave
-Condicional: Solo se muestra si hay error
-Responsive: Se adapta al contenedor
-
-
-10. FUNCIONES DE UTILIDAD Y HELPERS
-10.1 Toggle de Modo
-javascriptconst toggleModo = () => {
-  setModoRegistro(!modoRegistro);
-  setError(null);
-  setDatosLogin({ correo: '', contrasena: '' });
-  setDatosRegistro({
-    first_name: '', last_name: '', phone: '',
-    email: '', password: '', confirmPassword: ''
-  });
-  setMostrarContrasena(false);
-  setMostrarConfirmPassword(false);
-};
-Limpieza completa:
-
-Estado de modo: Alterna boolean
-Errores: Resetea mensajes
-Formularios: Limpia todos los campos
-UI: Resetea visibilidad de contraseñas
-
-
-11. CARACTERÍSTICAS DE SEGURIDAD
-11.1 Validación de Entrada
-
-Sanitización: trim() en todos los campos de texto
-Longitud máxima: Límites en inputs HTML
-Patrones de validación: Regex para email y teléfono
-
-11.2 Manejo de Contraseñas
-
-No exposición: Estados separados para visibilidad
-Validación de fortaleza: Mínimo 6 caracteres
-Confirmación: Validación de coincidencia
-
-
-12. ASPECTOS DE EXPERIENCIA DE USUARIO
-12.1 Estados de Carga
-javascript{cargando ? (
-  <div className="flex items-center">
-    <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-    <span>Iniciando sesión...</span>
-  </div>
-) : (
-  'Iniciar sesión'
-)}
-12.2 Feedback Inmediato
-
-Limpieza de errores: Al escribir en inputs
-Validación previa: Antes de envío
-Mensajes contextuales: Específicos por tipo de error
-
-
-13. INTEGRACIÓN CON SERVICIOS EXTERNOS
-13.1 Google Sign-In (Placeholder)
-javascript<button
-  type="button"
-  onClick={() => toast.error('Google Sign-In estará disponible próximamente')}
-  disabled={true}
-  className="...cursor-not-allowed"
->
-
-Estado: No implementado, preparado para futuro
-UI: Botón deshabilitado con mensaje
-
-
-14. CONCLUSIONES Y OBSERVACIONES
-14.1 Fortalezas del Módulo
-
-Separación clara entre login y registro
-Validación robusta del lado cliente
-Manejo comprehensivo de errores
-UX fluida con feedback inmediato
-Diseño responsive y atractivo
-
-14.2 Áreas de Mejora Potencial
-
-Validación del servidor: Falta validación backend explícita
-Recuperación de contraseña: No implementada
-Google OAuth: Pendiente de implementación
-Testing: No hay evidencia de tests unitarios
-Accesibilidad: Podría mejorarse con ARIA labels
-
-14.3 Dependencias Críticas
-
-@spoon/shared: Todas las operaciones de autenticación
-next/navigation: Navegación post-autenticación
-react-hot-toast: Sistema de notificaciones
-
-Este módulo constituye la puerta de entrada principal a la aplicación y maneja el flujo crítico de onboarding de restauranteros, incluyendo la lógica de redirección basada en el estado de configuración del restaurante.
+INFORME TÉCNICO DETALLADO — MÓDULO DE AUTENTICACIÓN
+
+Rutas y archivos principales
+- Página: apps/web/src/app/auth/page.tsx (Client Component)
+- Hooks: apps/web/src/app/auth/useLogin.ts, useRegister.ts, usePasswordRecovery.ts
+- Servicio compartido: packages/shared/lib/supabase.ts (Auth + perfiles + restaurantes)
+
+Stack y dependencias clave
+- Next.js App Router (client component con 'use client')
+- React 18 + TypeScript
+- Supabase JS (@supabase/supabase-js) via @spoon/shared/lib/supabase
+- UI: Tailwind CSS, lucide-react (Eye / EyeOff)
+- Notificaciones: react-hot-toast (toast)
+- Form fields: @spoon/shared/patterns/FormFieldsV2 (EmailField, PasswordField, InputFieldV2)
+
+Variables de entorno relevantes
+- NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY: credenciales cliente Supabase
+- SUPABASE_SERVICE_ROLE_KEY: solo en server (cliente admin opcional)
+- NEXT_PUBLIC_USE_NEW_UI=1: alterna entre inputs nuevos (FormFieldsV2) y legacy inputs
+
+Contratos del servicio (packages/shared/lib/supabase.ts)
+- getCurrentUser(): Promise<User | null>
+  - Lee usuario de supabase.auth.getUser()
+- getUserProfile(): Promise<User | null>
+  - SELECT * FROM public.users WHERE id = auth.user.id (caché 30s, dedup)
+- getUserRestaurant(): Promise<Restaurant | null>
+  - SELECT * FROM public.restaurants WHERE owner_id = auth.user.id (caché 30s)
+- signUpUser({ email, password, first_name, last_name, phone })
+  - Crea auth.user (auth.signUp) y fila en public.users (role=restaurant_owner)
+  - Retorna { user, profile }
+- signInUser(email: string, password: string)
+  - auth.signInWithPassword, y actualiza users.last_login = now()
+- signOutUser(): cierra sesión
+- supabase: cliente inicializado con persistencia de sesión (localStorage)
+
+Tipos relevantes
+- User: id, first_name, last_name, email, phone, role, restaurant_id, is_active, last_login, …
+- Restaurant: id, owner_id, name, address, business_hours, logo_url, cover_image_url, setup_completed, setup_step, status, …
+
+AuthPage (apps/web/src/app/auth/page.tsx)
+- Estados de UI
+  - modoRegistro: boolean — alterna entre “login” y “registro”
+  - cargando: boolean — existe pero NO se cablea con los hooks (ver mejoras)
+  - error: string | null — estado local; actualmente no se alimenta desde hooks (ver mejoras)
+  - mostrarContrasena / mostrarConfirmPassword: booleans (para legacy inputs)
+  - mostrarRecuperar: boolean — abre modal de “recuperar contraseña”
+  - datosLogin: { correo, contrasena }
+  - datosRegistro: { first_name, last_name, phone, email, password, confirmPassword }
+  - useNewUI: derivado de NEXT_PUBLIC_USE_NEW_UI === '1' para conmutar los campos UI
+
+- Hooks consumidos
+  - const { login, loading: loginLoading, error: loginError } = useLogin()
+    - Validación local: email válido, password >= 6; usa signInUser; toast success/error
+  - const { register, loading: registerLoading, error: registerError } = useRegister()
+    - Validación local de registro; usa signUpUser; toast success/error
+  - const recovery = usePasswordRecovery()
+    - resetPasswordForEmail(email, redirectTo=/auth/reset-password)
+
+- Manejadores y helpers
+  - manejarCambioLogin/Registro: setean estado y limpian error local
+  - getNextStepUrl(step): mapea 1..4 a rutas de onboarding de configuración
+  - verificarConfiguracionRestaurante: usa getUserProfile() y getUserRestaurant()
+    - Sin restaurante: toast y push('/config-restaurante')
+    - setup_completed: toast y push('/dashboard')
+    - setup incompleto: toast con paso actual y push(nextStep)
+    - catch: push('/config-restaurante')
+  - manejarLogin(e): e.preventDefault(); llama login(correo, contrasena); si true → verificarConfiguracionRestaurante()
+  - manejarRegistro(e): e.preventDefault(); llama register con datos mapeados; si hay user → setModoRegistro(false) y push('/config-restaurante')
+
+Nota sobre mapeo de contraseñas en registro
+- useRegister espera { ord, confirmord } (nombres internos del hook)
+- AuthPage mapea password → ord y confirmPassword → confirmord al invocar register()
+- Recomendado: unificar nombres a password/confirmPassword para consistencia
+
+Password Recovery (usePasswordRecovery)
+- Estado: { email, loading, error, success }
+- handleSubmit: supabase.auth.resetPasswordForEmail(email, { redirectTo: `${origin}/auth/reset-password` })
+- UI: modal dentro de AuthPage cuando mostrarRecuperar = true
+
+UI y layout
+- Diseño split: columna izquierda (promoción + logo) visible en md+; derecha: formulario
+- Branding: /images/spoon-logo.jpg (aparece en ambas columnas)
+- Formularios condicionados por useNewUI
+  - Nuevo UI: EmailField, PasswordField, InputFieldV2
+  - Legacy UI: inputs nativos + toggles de visibilidad con Eye/EyeOff
+- Botones principales: “Crear cuenta” (registro), “Iniciar sesión” (login)
+- Enlaces/acciones: toggle entre login/registro; botón “¿Olvidaste tu contraseña?” abre modal
+
+Flujos principales
+1) Login
+   - Validación cliente (useLogin.validateLogin)
+   - Autenticación (signInUser)
+   - Toast de éxito → verificarConfiguracionRestaurante() → redirección según estado del restaurante
+2) Registro
+   - Validación cliente (useRegister.validateRegister)
+   - Registro (signUpUser) + creación de perfil users
+   - Toast de éxito → pasar a login (setModoRegistro(false)) → push('/config-restaurante')
+3) Recuperar contraseña
+   - En modal: email → resetPasswordForEmail → toast/alerta en modal
+
+Validaciones en hooks
+- useLogin: correo requerido + regex email, contraseña min 6
+- useRegister: first/last_name requeridos, email regex, contraseña min 6, match confirmación, phone 10 dígitos
+
+Observaciones y mejoras recomendadas
+- Estados de carga/errores en AuthPage
+  - Actualmente “cargando” del componente no se conecta a loginLoading/registerLoading; usar loading de hooks para deshabilitar botones y feedback visual
+  - El estado local “error” no se llena con loginError/registerError; mostrar esos mensajes en el recuadro de error o eliminar el recuadro y confiar en toasts
+- Nombres de campos en registro
+  - Reemplazar ord/confirmord por password/confirmPassword en useRegister para consistencia y claridad
+- Imports no usados
+  - Link (next/link), Loader2 pueden eliminarse si no se usan en UI actual
+- Ruta de reset password
+  - Asegurar que /auth/reset-password exista y procese el cambio de contraseña (Supabase magic link). Si no existe, crear la página correspondiente
+- Accesibilidad
+  - Añadir aria-labels y descripciones a botones de visibilidad de contraseña y al modal
+- Tests
+  - Agregar pruebas unitarias para useLogin/useRegister (validaciones y ramas de error)
+
+Contratos de entrada/salida (resumen)
+- login(correo: string, contrasena: string) → Promise<boolean>
+  - true si signInUser ok; en caso contrario retorna false y emite toast de error
+- register(data: { first_name, last_name, phone, email, ord, confirmord }) → Promise<{ user, profile } | false>
+  - Retorna objeto de Supabase en éxito; false en error/validación
+- recovery.handleSubmit(event) → Promise<void>
+  - Efecto: email de reseteo enviado por Supabase o error mostrado en modal
+
+Rutas de redirección post-auth (orquestadas en verificarConfiguracionRestaurante)
+- Sin restaurante → /config-restaurante
+- setup_completed = true → /dashboard
+- setup_step = 1..4 → /config-restaurante/(informacion-general|ubicacion|horario-comercial|logo-portada)
+
+Edge cases previstos
+- Usuario sin sesión tras login (fallo de supabase): se muestran errores con toast y retorna false
+- Email no validado: Supabase puede retornar error; manejado con toast genérico
+- Condición de carrera en fetch de perfil/restaurante: funciones usan caché y deduplicación para evitar múltiples llamadas simultáneas
+
+Checklist de verificación rápida
+- Variables de entorno cargadas (NEXT_PUBLIC_SUPABASE_URL/ANON_KEY)
+- Página /auth operativa con toggle login/registro y modal de recuperación
+- Redirecciones tras login coherentes con estado del restaurante
+- Toasts visibles y no duplicados (evitar duplicar toasts en página y hooks)
+
+Resumen
+El módulo de autenticación consta de una página única que orquesta login, registro y recuperación de contraseña mediante hooks dedicados. La capa de servicio centraliza las operaciones con Supabase (auth + tablas públicas) e incluye utilidades de caché para perfil/restaurante. La UX emplea un layout bi-columnar, componentes de formulario reutilizables y toasts para feedback. Se recomiendan pequeños ajustes para alinear estados de carga/errores entre página y hooks, unificar nombres de campos y asegurar la ruta de restablecimiento de contraseña.
+
+## Mapa técnico detallado (por archivo)
+
+### apps/web/src/app/auth/page.tsx — AuthPage
+- Componentes/UI usados: Eye, EyeOff (lucide-react), EmailField, PasswordField, InputFieldV2 (@spoon/shared/patterns), toast (react-hot-toast)
+- Dependencias: useRouter (next/navigation), getUserProfile, getUserRestaurant (@spoon/shared/lib/supabase), useLogin, useRegister, usePasswordRecovery (local)
+- Variables de estado:
+  - useNewUI: boolean (NEXT_PUBLIC_USE_NEW_UI === '1')
+  - modoRegistro: boolean
+  - cargando: boolean (actualmente no cableado a hooks)
+  - error: string | null (actualmente no cableado a hooks)
+  - mostrarContrasena: boolean
+  - mostrarConfirmPassword: boolean
+  - mostrarRecuperar: boolean
+  - datosLogin: { correo: string; contrasena: string }
+  - datosRegistro: { first_name: string; last_name: string; phone: string; email: string; password: string; confirmPassword: string }
+  - recovery: retorna { email, loading, error, success, handleChange, handleSubmit }
+- Funciones:
+  - manejarCambioLogin(e): setDatosLogin + limpia error
+  - manejarCambioRegistro(e): setDatosRegistro + limpia error
+  - getNextStepUrl(step: 1|2|3|4): string — mapea a rutas de onboarding
+  - verificarConfiguracionRestaurante(): usa getUserProfile() y getUserRestaurant(); decide push a /config-restaurante, /dashboard o al paso correspondiente
+  - manejarLogin(e): previene default, llama login(correo, contrasena) del hook; si true → verificarConfiguracionRestaurante()
+  - manejarRegistro(e): previene default, llama register({ first_name, last_name, phone, email, ord: password, confirmord: confirmPassword }); si result.user → setModoRegistro(false) y push('/config-restaurante')
+  - toggleModo(): alterna login/registro
+- Rutas involucradas:
+  - /config-restaurante, /dashboard
+  - /config-restaurante/(informacion-general|ubicacion|horario-comercial|logo-portada)
+  - /auth/reset-password (en redirectTo del recovery)
+- Servicios usados y dónde:
+  - getUserProfile/getUserRestaurant: dentro de verificarConfiguracionRestaurante
+  - useLogin → signInUser: al enviar login
+  - useRegister → signUpUser: al enviar registro
+  - usePasswordRecovery → supabase.auth.resetPasswordForEmail
+- Observaciones:
+  - Link (next/link) y Loader2 están importados pero no utilizados en la UI actual
+
+### apps/web/src/app/auth/useLogin.ts — Hook de login
+- Exporta: useLogin(): { login(correo: string, contrasena: string): Promise<boolean>; loading: boolean; error: string | null }
+- Estado interno: loading, error
+- Helpers: validateLogin(correo, contrasena): string | null (email regex y longitud de password)
+- Servicios usados: signInUser(correo.trim(), contrasena) de @spoon/shared/lib/supabase
+- Comportamiento: emite toast de éxito/fracaso; retorna true/false según resultado
+
+### apps/web/src/app/auth/useRegister.ts — Hook de registro
+- Tipos: interface RegisterData { first_name, last_name, phone, email, ord, confirmord }
+- Exporta: useRegister(): { register(data: RegisterData): Promise<{ user: any; profile: any } | false>; loading: boolean; error: string | null }
+- Estado interno: loading, error
+- Helpers: validateRegister(data): string | null (nombres requeridos, email regex, ord min 6, match con confirmord, phone 10 dígitos)
+- Servicios usados: signUpUser({ email, password: data.ord, first_name, last_name, phone })
+- Observación: nombres de campos ord/confirmord difieren de password/confirmPassword en la página → se recomienda unificar
+
+### apps/web/src/app/auth/usePasswordRecovery.ts — Hook de recuperación
+- Estado: email, loading, error, success
+- Métodos: handleChange(e), handleSubmit(e)
+- Servicio: supabase.auth.resetPasswordForEmail(email, { redirectTo: `${origin}/auth/reset-password` })
+- Integración UI: modal controlado por mostrarRecuperar en AuthPage
+
+### packages/shared/lib/supabase.ts — Contratos de auth relevantes
+- supabase: cliente con persistencia de sesión en localStorage
+- signUpUser({ email, password, first_name, last_name, phone }): crea auth user y fila en public.users (role=restaurant_owner)
+- signInUser(email, password): inicia sesión y actualiza users.last_login = now()
+- signOutUser(): cierra sesión
+- getUserProfile(): SELECT * FROM public.users WHERE id = auth.user.id (caché 30s)
+- getUserRestaurant(): SELECT * FROM public.restaurants WHERE owner_id = auth.user.id (caché 30s)
+- Tablas tocadas: public.users, public.restaurants
+
+## Gaps y mejoras (resumen)
+- Ruta /auth/reset-password: no existe actualmente en el repo → crear página que procese el cambio de contraseña desde el magic link de Supabase
+- Unificar nombres de contraseña en registro: reemplazar ord/confirmord por password/confirmPassword en useRegister y consumidores
+- Cablear estados de carga/errores: usar loginLoading/registerLoading y loginError/registerError en AuthPage; o eliminar estados locales redundantes
+- Limpieza de imports: remover Link y Loader2 si no se utilizan
+- Tests: agregar unit tests para useLogin y useRegister (validaciones y ramas de error)

@@ -427,3 +427,223 @@ Middleware de autenticación - Para flujo de permisos
 
 
 Este módulo representa una implementación profesional y completa de un sistema POS, con todas las funcionalidades necesarias para la operación diaria de un restaurante.
+
+
+============================================================
+Mapa técnico detallado (por archivo)
+============================================================
+
+Nota: Esta sección enumera variables de estado, funciones, componentes, contratos de datos y los servicios de Supabase que se utilizan en cada archivo, según el análisis del módulo.
+
+1) packages/shared/caja/hooks/useCajaSesion.ts
+- Rol: Gestión del ciclo de vida de la sesión de caja para un restaurante (única sesión abierta a la vez).
+- Estado local:
+  - sesionActual: CajaSesion | null
+  - estadoCaja: 'abierta' | 'cerrada' (string)
+  - loading: boolean
+  - error: string | null
+- Funciones principales:
+  - verificarSesionAbierta(): Promise<void>
+    - Servicio: getSesionCajaActiva(restaurantId)
+    - Efectos: setSesionActual, setEstadoCaja('abierta'|'cerrada')
+  - abrirCaja(montoInicial: number, notas?: string): Promise<CajaSesion>
+    - Servicio: abrirSesionCaja(restaurantId, cajeroId, montoInicial, notas)
+    - Efectos: setSesionActual, setEstadoCaja('abierta')
+  - cerrarCaja(notas?: string): Promise<CajaSesion>
+    - Servicio: cerrarSesionCaja(sesionId, notas)
+    - Efectos: setSesionActual(null), setEstadoCaja('cerrada')
+- Contrato de datos:
+  - CajaSesion: { id, restaurant_id, cajero_id, monto_inicial (centavos), estado, abierta_at, cerrada_at?, notas_* }
+  - Entradas en abrir/cerrar: restaurantId, cajeroId (derivado del contexto de auth), montoInicial (centavos), notas (string)
+- Consideraciones:
+  - Garantizar idempotencia en abrirCaja (no crear dos sesiones simultáneas)
+  - Sincronizar con RLS para restaurante
+
+2) packages/shared/caja/hooks/useCaja.ts
+- Rol: Hook principal de operaciones del POS (dashboard, cobros, métricas, auto-refresh cuando caja está abierta).
+- Estado local:
+  - ordenesMesas: OrdenPendiente[]
+  - ordenesDelivery: OrdenPendiente[]
+  - metricas: MetricasCaja { balance, ventasTotales, porCobrar, gastosTotales, transaccionesDelDia[], totalEfectivo, totalTarjeta, totalDigital }
+- Funciones principales:
+  - obtenerDatosCaja(): Promise<void>
+    - Servicios:
+      - getTransaccionesDelDia(restaurantId, fecha?)
+      - getGastosDelDia(restaurantId, fecha?)
+      - getOrdenesMesasPendientes(restaurantId)
+      - getOrdenesDeliveryPendientes(restaurantId)
+    - Efectos: setMetricas, setOrdenesMesas, setOrdenesDelivery
+  - procesarPago(orden, metodoPago, montoRecibido?): Promise<TransaccionCaja>
+    - Precondición: estadoCaja === 'abierta' y sesionActual != null
+    - Servicio: procesarPagoOrden(sesionId, cajeroId, ordenId, tipoOrden, metodoPago, montoTotal, montoRecibido)
+    - Efectos: actualiza métricas y listas, puede calcular cambio
+  - calcularCambio(montoTotal, montoRecibido): number
+    - Lógica: retorna max(0, montoRecibido - montoTotal) cuando método 'efectivo'
+- Auto-refresh:
+  - useEffect con intervalo CAJA_CONFIG.REFRESH_INTERVAL (30000ms) activo sólo si estadoCaja === 'abierta'
+- Contrato de datos:
+  - OrdenPendiente: { id, tipo: 'mesa'|'delivery', identificador, monto_total (centavos), fecha_creacion, detalles? }
+  - TransaccionCaja: { id, caja_sesion_id, orden_id, tipo_orden, metodo_pago, monto_total (centavos), monto_recibido?, monto_cambio, procesada_at, cajero_id }
+
+3) packages/shared/caja/hooks/useGastos.ts
+- Rol: Gestión de gastos operativos de la caja (CRUD básico + agregaciones por categoría).
+- Estado local:
+  - gastos: GastoCaja[]
+  - totalGastos: number (centavos)
+  - gastosPorCategoria: Record<CategoriaGasto, number>
+- Funciones principales:
+  - crearGasto(nuevoGasto: NuevoGasto): Promise<GastoCaja>
+    - Servicio: crearGastoCaja(cajaSesionId, cajeroId, gastoData)
+    - Efectos: push a gastos, recomputar totales/agregados
+  - eliminarGasto(gastoId: string): Promise<void>
+    - Servicio: eliminarGastoCaja(gastoId)
+    - Efectos: soft delete en lista local y recomputar totales
+  - validarGasto(gasto: NuevoGasto): ValidationResult (monto positivo, categoría válida, concepto no vacío)
+  - buscarGastos(termino: string): GastoCaja[]
+- Contrato de datos:
+  - GastoCaja: { id, caja_sesion_id, concepto, monto (centavos), categoria, comprobante_url?, registrado_por, registrado_at, notas? }
+
+4) packages/shared/caja/constants/cajaConstants.ts
+- Rol: Configuración general y listas maestras del POS.
+- Claves:
+  - CAJA_CONFIG: { MONTO_INICIAL_DEFAULT (centavos), REFRESH_INTERVAL (ms), DENOMINACIONES_EFECTIVO[] }
+  - METODOS_PAGO: Array<{ value: 'efectivo'|'tarjeta'|'digital', label, icon }>
+  - CATEGORIAS_GASTOS: Array<{ value: CategoriaGasto, label, icon, color }>
+- Utilidades de formato (si están aquí o en utils): formatCurrency(centavos) y parseCurrency(string)
+
+5) packages/shared/caja/types/cajaTypes.ts
+- Rol: Definiciones de tipos para sesión, transacciones, órdenes y gastos.
+- Interfaces principales:
+  - CajaSesion, TransaccionCaja, OrdenPendiente, GastoCaja, CategoriaGasto, MetodoPago
+- Notas de contrato:
+  - Todos los montos se manejan en centavos (integer) para evitar errores de floating.
+
+6) packages/shared/lib/supabase.ts (sección Caja)
+- Rol: Capa de acceso a datos/RPC para el módulo de caja.
+- Sesiones de caja:
+  - getSesionCajaActiva(restaurantId): Promise<CajaSesion|null>
+  - abrirSesionCaja(restaurantId, cajeroId, montoInicial, notas): Promise<CajaSesion>
+  - cerrarSesionCaja(sesionId, notas?): Promise<CajaSesion>
+- Transacciones (pagos):
+  - procesarPagoOrden(sesionId, cajeroId, ordenId, tipoOrden, metodoPago, montoTotal, montoRecibido)
+  - getTransaccionesDelDia(restaurantId, fecha?)
+  - getTransaccionesSesion(sesionId): Promise<TransaccionCaja[]>
+- Gastos:
+  - crearGastoCaja(cajaSesionId, cajeroId, gastoData)
+  - getGastosDelDia(restaurantId, fecha?)
+  - eliminarGastoCaja(gastoId)
+- Órdenes pendientes:
+  - getOrdenesMesasPendientes(restaurantId)
+  - getOrdenesDeliveryPendientes(restaurantId)
+
+7) apps/restaurant/src/components/caja/CajaTerminal.tsx
+- Rol: Componente principal del terminal POS (dashboard de caja).
+- Estado local (UI):
+  - tabActiva: 'movimientos'|'arqueo'|'reportes'
+  - subTabMovimientos: 'por_cobrar'|'ingresos'|'egresos'
+  - ordenSeleccionada: OrdenPendiente|null
+  - modalPagoAbierto: boolean
+  - modalGastoAbierto: boolean
+- Handlers principales:
+  - handleProcesarPago(orden): abre ModalProcesarPago
+  - handleConfirmarPago(orden, metodoPago, montoRecibido): delega a useCaja.procesarPago
+  - handleNuevoGasto(): abre ModalNuevoGasto
+- Datos mostrados:
+  - Métricas (balance, ventas, por cobrar, gastos) y listas de órdenes pendientes
+- Dependencias:
+  - Hooks: useCajaSesion, useCaja, useGastos
+  - Componentes: ControlesCaja, ModalProcesarPago, ModalNuevoGasto, OrdenPendiente
+
+8) apps/restaurant/src/components/caja/ControlesCaja.tsx
+- Rol: Controles de apertura/cierre de caja con UI de arqueo básico.
+- Estados visuales:
+  - Caja abierta: muestra sesión, monto inicial, hora apertura
+  - Caja cerrada: acción para abrir
+- Funciones:
+  - Abrir caja (monto inicial positivo, notas opcionales)
+  - Cerrar caja (confirmación y notas)
+- Dependencias:
+  - useCajaSesion (abrirCaja, cerrarCaja, verificarSesionAbierta)
+
+9) apps/restaurant/src/components/caja/ModalProcesarPago.tsx
+- Rol: Modal para procesar pagos de órdenes (efectivo/tarjeta/digital).
+- Estado local (UI):
+  - metodoPago: MetodoPago
+  - montoRecibido: number (centavos)
+  - cambioCalculado: number (centavos)
+  - procesando: boolean
+  - pagoExitoso: { cambio: number } | null
+- Funciones:
+  - getMontosSugeridos(): number[] — basado en denominaciones comunes
+  - onConfirmar: llama useCaja.procesarPago y muestra confirmación (incluye cambio)
+- Contratos:
+  - Props: { orden: OrdenPendiente, onClose: () => void }
+  - Entradas: metodoPago, montoRecibido (para efectivo), validación vs orden.monto_total
+
+10) apps/restaurant/src/components/caja/ModalNuevoGasto.tsx
+- Rol: Modal de registro de gastos con selección de categoría y conceptos frecuentes.
+- Estado local: concepto (string), monto (centavos), categoria (CategoriaGasto), notas (string), showConceptosSugeridos (boolean)
+- Funciones:
+  - Validaciones en tiempo real (monto>0, categoría válida)
+  - Montos rápidos (5k, 10k, 20k, 50k)
+  - onConfirmar: llama useGastos.crearGasto, cierra y refresca
+
+11) apps/restaurant/src/components/caja/OrdenPendiente.tsx
+- Rol: Tarjeta/list item para visualizar y accionar sobre órdenes por cobrar (mesas/delivery).
+- Funciones:
+  - Cálculo de tiempo transcurrido desde creación
+  - Botón “Cobrar” que dispara ModalProcesarPago
+- Contrato:
+  - Props: { orden: OrdenPendiente, onCobrar: (orden) => void }
+
+
+Contratos de datos clave (inputs/outputs)
+----------------------------------------
+- abrirSesionCaja(restaurantId, cajeroId, montoInicial, notas?) -> CajaSesion
+- cerrarSesionCaja(sesionId, notas?) -> CajaSesion
+- procesarPagoOrden(sesionId, cajeroId, ordenId, tipoOrden, metodoPago, montoTotal, montoRecibido?) -> TransaccionCaja
+- crearGastoCaja(cajaSesionId, cajeroId, { concepto, monto, categoria, comprobante_url?, notas? }) -> GastoCaja
+- getOrdenesMesasPendientes(restaurantId) -> OrdenPendiente[]
+- getOrdenesDeliveryPendientes(restaurantId) -> OrdenPendiente[]
+- getTransaccionesDelDia(restaurantId, fecha?) -> TransaccionCaja[]
+- getGastosDelDia(restaurantId, fecha?) -> GastoCaja[]
+
+
+Gaps y recomendaciones (acciones prácticas)
+------------------------------------------
+1) Unificación de moneda (centavos)
+- Asegurar que toda la UI formatee/parsee centavos consistentemente (formatCurrency/parseCurrency) y no mezcle floats.
+
+2) Confirmaciones y toasts
+- Confirmar cierre de caja y pagos; mostrar toasts de éxito/error. Evitar alerts nativos.
+
+3) Guards de caja en backend
+- Reforzar en servicios/RPC: no permitir procesarPagoOrden/crearGasto si no hay sesión abierta para el restaurant.
+
+4) Concurrencia y doble cobro
+- Introducir locks o claves de idempotencia por orden para evitar cobros duplicados (especialmente con dos cajas abiertas por error o vistas simultáneas).
+
+5) Realtime
+- Suscribirse a transacciones y gastos del día para reflejar cambios sin esperar al intervalo de 30s.
+
+6) Auditoría y recibos
+- Generar identificador de recibo (folio) y guardar payload resumido para auditoría; permitir reimpresión/exportación.
+
+7) Validaciones y UX
+- ModalProcesarPago: validar que montoRecibido ≥ total en efectivo; deshabilitar confirmación cuando no aplica; accesibilidad (focus trap, ARIA).
+
+8) Tests recomendados
+- useCajaSesion: abrir/cerrar con estados y errores.
+- useCaja: procesarPago happy-path + cambio; fallos en red y reintentos; agregación de métricas.
+- useGastos: crear/eliminar y agregaciones por categoría.
+- ModalProcesarPago: montos sugeridos y validaciones.
+
+9) Integración con Mesas/Delivery
+- Asegurar que al procesar pago se marque la orden como pagada en origen (mesas/delivery) y se invalide su caché/lista.
+
+Cobertura de requisitos (resumen)
+- Control de sesiones de caja: OK (abrir/cerrar/verificar)
+- Procesamiento de pagos: OK (consolidado en servicios y hook)
+- Gestión de gastos: OK
+- Dashboard en tiempo real: OK (auto-refresh; recomendado realtime)
+- Integración con mesas y delivery: OK (fuentes de órdenes pendientes y actualización tras pago)

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { UbicacionForm } from '@spoon/shared';
+import { UbicacionForm } from '@spoon/shared/components/ui/components/UbicacionForm';
 
 export default function TestUbicacionFinalPage() {
   const [formData, setFormData] = useState({
@@ -44,14 +44,14 @@ export default function TestUbicacionFinalPage() {
         />
       </div>
 
-      <div className="mt-6 p-4 bg-gray-50 border rounded">
+      <div className="mt-6 p-4 bg-[color:var(--sp-neutral-50)] border border-[color:var(--sp-border)] rounded">
         <h3 className="text-lg font-semibold mb-2">📊 Estado actual:</h3>
         <pre className="text-sm">
           {JSON.stringify(formData, null, 2)}
         </pre>
       </div>
 
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
+      <div className="mt-6 p-4 bg-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded">
         <h3 className="text-lg font-semibold mb-2">📝 Test:</h3>
         <ol className="text-sm space-y-1">
           <li>1. ✅ Los países deberían cargar automáticamente</li>

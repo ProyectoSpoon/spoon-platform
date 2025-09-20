@@ -6,6 +6,7 @@ import {
   Trash2, Edit3 
 } from 'lucide-react';
 import { MenuApiService } from '@spoon/shared/services/menu-dia/menuApiService';
+import { ensureFavoriteCombination as sbEnsureFavoriteCombination, deleteFavoriteCombinationByComponents as sbDeleteFavoriteByComponents } from '@spoon/shared/lib/supabase';
 import { mapCombinationUpdatesToDb } from '@spoon/shared/utils/menu-dia/adapters';
 import { MenuCombinacion, LoadingStates, ComboFilters } from '@spoon/shared/types/menu-dia/menuTypes';
 import { CATEGORIAS_MENU_CONFIG } from '@spoon/shared/constants/menu-dia/menuConstants';
@@ -218,10 +219,82 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
 
       const newFavoriteState = !combination.favorito;
 
+      // Persist UI flag in generated_combinations
       await MenuApiService.updateCombination(
         combinationId,
         mapCombinationUpdatesToDb({ favorito: newFavoriteState }) as any
       );
+
+      // Helper to resolve core product IDs either from local combo or by fetching from DB
+      const resolveCoreIds = async () => {
+        let principioId = combination.principio?.id as string | undefined;
+        let proteinaId = combination.proteina?.id as string | undefined;
+        let entradaId = combination.entrada?.id as string | undefined;
+        let bebidaId = combination.bebida?.id as string | undefined;
+        let acompIds: string[] | undefined = Array.isArray(combination.acompanamiento)
+          ? (combination.acompanamiento as any[]).map((a: any) => a?.id).filter(Boolean)
+          : undefined;
+
+        // If any core IDs are missing, fetch the combination row from DB
+        if (!principioId || !proteinaId) {
+          try {
+            const row = await MenuApiService.getCombinationById(combinationId);
+            if (row) {
+              principioId = row.principio_product_id || principioId;
+              proteinaId = row.proteina_product_id || proteinaId;
+              entradaId = row.entrada_product_id ?? entradaId ?? null as any;
+              bebidaId = row.bebida_product_id ?? bebidaId ?? null as any;
+              if (!acompIds && Array.isArray(row.acompanamiento_products)) acompIds = row.acompanamiento_products;
+            }
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('fetch combination for IDs failed', e);
+          }
+        }
+        return { principioId, proteinaId, entradaId, bebidaId, acompIds };
+      };
+
+      if (newFavoriteState) {
+        // If turning on, also ensure a favorite_combinations row exists (for the Favorites tab)
+        try {
+          const { principioId, proteinaId, entradaId, bebidaId, acompIds } = await resolveCoreIds();
+          if (principioId && proteinaId) {
+            await sbEnsureFavoriteCombination({
+              restaurant_id: restaurantId!,
+              combination_name: combination.nombre || 'Combinación',
+              combination_description: (combination.descripcion || null) as any,
+              combination_price: combination.precio ?? null,
+              principio_product_id: principioId,
+              proteina_product_id: proteinaId,
+              entrada_product_id: entradaId ?? null,
+              bebida_product_id: bebidaId ?? null,
+              acompanamiento_products: acompIds || [],
+            });
+          } else {
+            showNotification('No se pudo identificar la combinación para guardar como favorito', 'error');
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('ensure favorite failed (non-fatal)', e);
+        }
+      } else {
+        // Turning off: remove any matching favorite row to keep Favorites tab consistent
+        try {
+          const { principioId, proteinaId, entradaId, bebidaId } = await resolveCoreIds();
+          if (principioId && proteinaId) {
+            await sbDeleteFavoriteByComponents({
+              restaurant_id: restaurantId!,
+              principio_product_id: principioId,
+              proteina_product_id: proteinaId,
+              entrada_product_id: entradaId ?? null,
+              bebida_product_id: bebidaId ?? null,
+            });
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('delete favorite by components failed (non-fatal)', e);
+        }
+      }
 
       setMenuCombinations(
         menuCombinations.map((combo: MenuCombinacion) => 
@@ -271,6 +344,8 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
     }
   }, [restaurantId, menuCombinations, setMenuCombinations, showNotification]);
 
+  // Guardado explícito como favorito ya no se usa en el card; el toggle se encarga de persistir
+
   return (
     <div className="space-y-6">
       
@@ -314,6 +389,7 @@ export default function MenuCombinationsPage({ menuData, onOpenWizard, onCreateN
                     menuCombinations.map((c: MenuCombinacion) => (c.id === id ? { ...c, ...patch } : c))
                   )
                 }
+                // onSaveAsFavorite removed to hide the bottom action button
               />
             ))}
           </div>

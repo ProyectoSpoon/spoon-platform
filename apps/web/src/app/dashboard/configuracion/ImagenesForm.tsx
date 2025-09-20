@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader, Save, Upload, Trash2, Pencil } from 'lucide-react';
-import { Button } from '@spoon/shared';
-import { InlineEditButton } from '@spoon/shared';
-import { FormCard } from '@spoon/shared';
+import { Button } from '@spoon/shared/components/ui/Button';
+import { InlineEditButton } from '@spoon/shared/components/ui/components/InlineEditButton';
+import { FormCard } from '@spoon/shared/components/ui/components/FormCard';
 import toast from 'react-hot-toast';
 import { RestaurantService } from '@spoon/shared/services/restaurant';
 
@@ -24,6 +24,7 @@ interface ImageUrls {
 export default function ImagenesForm({ readOnly = false, showSave = true, onCancel, onToggleEdit }: { readOnly?: boolean; showSave?: boolean; onCancel?: () => void; onToggleEdit?: () => void }) {
   const [imageUrls, setImageUrls] = useState<ImageUrls>({ logo_url: '', cover_image_url: '' });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState<null | 'logo' | 'cover'>(null);
   const [loading, setLoading] = useState(true);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -52,24 +53,35 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'cover') {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!['image/png', 'image/jpeg'].includes(file.type)) {
-      toast.error('Solo se permiten imágenes PNG o JPG');
+    // Validaciones básicas lato-UI (el servicio también valida)
+    const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      toast.error('Solo se permiten imágenes PNG, JPG o WebP');
       return;
     }
-    if (file.size > (type === 'logo' ? 2 * 1024 * 1024 : 5 * 1024 * 1024)) {
+    const maxSize = type === 'logo' ? 2 * 1024 * 1024 : 5 * 1024 * 1024; // 2MB logo, 5MB portada
+    if (file.size > maxSize) {
       toast.error(type === 'logo' ? 'Logo máximo 2MB' : 'Portada máximo 5MB');
       return;
     }
-    // Simulación de upload (reemplaza por lógica real de subida)
-    const reader = new FileReader();
-    reader.onloadend = () => {
+
+    try {
+      setUploading(type);
+      const { url } = await RestaurantService.uploadRestaurantImage({ file, type });
       setImageUrls(prev => ({
         ...prev,
-        [type === 'logo' ? 'logo_url' : 'cover_image_url']: reader.result as string
+        [type === 'logo' ? 'logo_url' : 'cover_image_url']: url
       }));
-      toast.success('Imagen cargada (simulación)');
-    };
-    reader.readAsDataURL(file);
+      toast.success('Imagen subida correctamente');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error subiendo la imagen');
+    } finally {
+      setUploading(null);
+      // Limpia el input para permitir volver a subir el mismo archivo si se desea
+      if (type === 'logo') logoInputRef.current && (logoInputRef.current.value = '');
+      if (type === 'cover') coverInputRef.current && (coverInputRef.current.value = '');
+    }
   }
 
   async function handleSave() {
@@ -132,10 +144,10 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
                 <input
                   ref={logoInputRef}
                   type="file"
-                  accept="image/png, image/jpeg"
+                  accept="image/png, image/jpeg, image/webp"
                   className="hidden"
                   onChange={e => handleFileUpload(e, 'logo')}
-                  disabled={readOnly}
+                  disabled={readOnly || uploading === 'logo'}
                 />
               </div>
             )}
@@ -170,10 +182,10 @@ export default function ImagenesForm({ readOnly = false, showSave = true, onCanc
                 <input
                   ref={coverInputRef}
                   type="file"
-                  accept="image/png, image/jpeg"
+                  accept="image/png, image/jpeg, image/webp"
                   className="hidden"
                   onChange={e => handleFileUpload(e, 'cover')}
-                  disabled={readOnly}
+                  disabled={readOnly || uploading === 'cover'}
                 />
               </div>
             )}

@@ -63,9 +63,9 @@ describe('useCaja - periodo hoy y procesarPago error codes', () => {
     expect(result.current.metricas.ventasTotales).toBe(300);
     expect(result.current.metricas.totalEfectivo).toBe(100);
     expect(result.current.metricas.totalTarjeta).toBe(200);
-    expect(result.current.metricas.gastosTotales).toBe(80);
-    // 500 + 300 - 80
-    expect(result.current.metricas.balance).toBe(720);
+  expect(result.current.metricas.gastosTotales).toBe(80);
+  // Balance solo efectivo: 500 + 100 (efectivo) - 80 = 520
+  expect(result.current.metricas.balance).toBe(520);
   });
 
   it('procesarPago maneja VALIDACION_SEGURIDAD_FALLIDA y REQUIERE_AUTORIZACION', async () => {

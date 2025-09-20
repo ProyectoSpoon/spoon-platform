@@ -1,17 +1,16 @@
 'use client';
 
-import React, { useEffect, useMemo, useCallback, Dispatch, SetStateAction } from 'react';
-import { X, Check, Search, Heart, Star, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useMemo, useCallback, Dispatch, SetStateAction, useState } from 'react';
+import { X, Check, Search, AlertTriangle } from 'lucide-react';
 
 // Type casting para componentes de lucide-react
 const XComponent = X as any;
 const CheckComponent = Check as any;
 const SearchComponent = Search as any;
-const HeartComponent = Heart as any;
-const StarComponent = Star as any;
 const AlertTriangleComponent = AlertTriangle as any;
 import { CATEGORIAS_MENU_CONFIG, CATEGORY_ICONS, DEFAULT_PROTEIN_QUANTITY } from '@spoon/shared/constants/menu-dia/menuConstants';
 import { MenuApiService } from '@spoon/shared/services/menu-dia/menuApiService';
+import { createMenuTemplate } from '@spoon/shared/lib/supabase';
 import { Producto, LoadingStates, MenuCombinacion, MenuFilters, ComboFilters } from '@spoon/shared/types/menu-dia/menuTypes';
 
 // Tipos importados desde shared para evitar duplicación
@@ -103,6 +102,25 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
     setMenuCombinations
   } = menuData;
 
+  // Historial de uso por categoría (para selección rápida)
+  interface ProductUsage {
+    id: string;
+    universal_product_id: string;
+    product_name: string;
+    category_name: string;
+    times_used: number;
+    last_used_date: string;
+    first_used_date: string;
+    total_orders: number;
+    avg_rating: number;
+    restaurant_price: number;
+  }
+
+  const [usageHistory, setUsageHistory] = useState<ProductUsage[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [saveTemplateOnFinalize, setSaveTemplateOnFinalize] = useState(false);
+  const [templateName, setTemplateName] = useState('Plantilla rápida');
+
   // CATEGORÍA ACTUAL Y PRODUCTOS FILTRADOS
   const currentCategory = useMemo(
     () => (currentStep < CATEGORIAS_MENU_CONFIG.length ? CATEGORIAS_MENU_CONFIG[currentStep] : null),
@@ -120,6 +138,33 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
     () => (!isLastStep && currentCategory ? selectedProducts[currentCategory.id] || [] : []),
     [isLastStep, currentCategory, selectedProducts]
   );
+
+  // Cargar historial de uso una vez según restaurante
+  useEffect(() => {
+    const loadHistory = async () => {
+      if (!restaurantId) return;
+      try {
+        setLoadingHistory(true);
+        const data = await MenuApiService.getProductUsageHistory(restaurantId);
+        setUsageHistory(data || []);
+      } catch (e) {
+        console.error('[Wizard] Error cargando historial:', e);
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+    loadHistory();
+  }, [restaurantId]);
+
+  const normalizedEquals = (a?: string, b?: string) =>
+    (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
+
+  const currentCategoryHistory = useMemo(() => {
+    if (!currentCategory) return [] as ProductUsage[];
+    return usageHistory
+      .filter(u => normalizedEquals(u.category_name, currentCategory.nombre))
+      .sort((a, b) => new Date(b.last_used_date).getTime() - new Date(a.last_used_date).getTime());
+  }, [usageHistory, currentCategory]);
 
   // PRODUCTOS FILTRADOS
   const filteredProducts = useMemo(() => {
@@ -182,7 +227,7 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
   const canContinue = isLastStep ? canFinalize : selectedInCategory.length > 0;
 
   // Finalizar con validaciones
-  const handleFinalize = useCallback(() => {
+  const handleFinalize = useCallback(async () => {
     const principiosCategory = CATEGORIAS_MENU_CONFIG.find((cat: any) => cat.id === 'principios');
     const proteinasCategory = CATEGORIAS_MENU_CONFIG.find((cat: any) => cat.id === 'proteinas');
     const principios = principiosCategory ? selectedProducts[principiosCategory.id] || [] : [];
@@ -223,8 +268,56 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
     }
 
     // Enviar al contenedor para guardar (Supabase)
+    // Guardar plantilla si corresponde
+    if (saveTemplateOnFinalize && restaurantId) {
+      try {
+        // Si no hay nombre en el input, pedirlo por prompt como fallback
+        let finalName = (templateName || '').trim();
+        if (!finalName) {
+          finalName = window.prompt('Nombre para la plantilla a guardar:', `Plantilla ${new Date().toLocaleDateString('es-CO')}`) || '';
+          finalName = finalName.trim();
+        }
+        if (!finalName) {
+          showNotification?.('Guardado cancelado: necesitas un nombre.', 'error');
+        } else {
+          // Construir filas de productos con metadata completa
+          const products: Array<{
+            universal_product_id: string;
+            category_id?: string | null;
+            category_name?: string | null;
+            product_name?: string | null;
+          }> = [];
+          for (const [categoryId, productos] of (Object.entries(selectedProducts) as [string, any[]][])) {
+            const cfg = CATEGORIAS_MENU_CONFIG.find((c) => c.id === categoryId);
+            const categoryName = cfg?.nombre || categoryId;
+            const categoryUuid = cfg?.uuid || null;
+            (productos || []).forEach((p: any) => {
+              products.push({
+                universal_product_id: p.id,
+                category_id: p.category_id || categoryUuid,
+                category_name: categoryName,
+                product_name: p.name,
+              });
+            });
+          }
+          await createMenuTemplate(
+            {
+              restaurant_id: restaurantId,
+              template_name: finalName,
+              // menu_price puede que no exista en algunos esquemas; lo omitimos por compatibilidad
+            },
+            products
+          );
+          showNotification?.('Plantilla guardada');
+        }
+      } catch (e) {
+        console.error('save template error', e);
+        showNotification?.('Error al guardar plantilla', 'error');
+      }
+    }
+
     onComplete(combinations);
-  }, [menuPrice, selectedProducts, proteinQuantities, showNotification, onComplete]);
+  }, [menuPrice, selectedProducts, proteinQuantities, showNotification, onComplete, saveTemplateOnFinalize, restaurantId, templateName]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -284,6 +377,65 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
           <div className="flex-1 overflow-y-auto bg-[color:var(--sp-neutral-50)]">
             {!isLastStep && currentCategory ? (
               <div className="p-4 space-y-4">
+                {/* Seleccionados en esta categoría: chips removibles */}
+                {selectedInCategory.length > 0 && (
+                  <div className="bg-[color:var(--sp-surface)] border border-[color:var(--sp-neutral-200)] rounded-lg p-3">
+                    <div className="text-xs font-medium text-[color:var(--sp-neutral-700)] mb-2">Seleccionados</div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedInCategory.map((p: any) => (
+                        <span key={p.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-[color:var(--sp-primary-50)] text-[color:var(--sp-primary-900)] border border-[color:var(--sp-primary-200)]">
+                          {p.name}
+                          <button
+                            type="button"
+                            className="ml-1 w-4 h-4 grid place-items-center rounded-full hover:bg-[color:var(--sp-primary-100)]"
+                            aria-label={`Quitar ${p.name}`}
+                            onClick={() => handleProductClick(p)}
+                          >
+                            <XComponent className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Historial por categoría */}
+                <div className="bg-[color:var(--sp-neutral-100)] border border-[color:var(--sp-neutral-200)] rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-[color:var(--sp-neutral-900)]">Historial de {currentCategory.nombre}</span>
+                      <span className="text-xs text-[color:var(--sp-neutral-600)]">{loadingHistory ? 'Cargando…' : `${currentCategoryHistory.length} items`}</span>
+                    </div>
+                  </div>
+                  {currentCategoryHistory.length > 0 ? (
+                    <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                      {currentCategoryHistory.slice(0, 20).map((h: ProductUsage) => {
+                        const match = (availableProducts[currentCategory.id] || []).find((p: any) => p.id === h.universal_product_id) 
+                          || (availableProducts[currentCategory.id] || []).find((p: any) => p.name?.toLowerCase() === h.product_name.toLowerCase());
+                        const disabled = !match;
+                        return (
+                          <button
+                            key={`${h.universal_product_id}-${h.last_used_date}`}
+                            type="button"
+                            onClick={() => {
+                              if (!match) {
+                                showNotification?.('Este producto no está disponible actualmente en esta categoría.', 'error');
+                                return;
+                              }
+                              handleProductClick(match);
+                            }}
+                            className={`w-full text-left text-sm px-2 py-1 rounded-md flex items-center justify-between ${disabled ? 'opacity-60 cursor-not-allowed bg-[color:var(--sp-neutral-50)]' : 'cursor-pointer hover:bg-[color:var(--sp-neutral-200)]'}`}
+                          >
+                            <span className="truncate text-[color:var(--sp-neutral-900)]">{h.product_name}</span>
+                            <span className="text-[10px] text-[color:var(--sp-neutral-600)] ml-2 shrink-0">{new Date(h.last_used_date).toLocaleDateString('es-CO')}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[color:var(--sp-neutral-600)]">Sin historial para esta categoría.</p>
+                  )}
+                </div>
+
                 {/* Lista de productos disponibles */}
                 {filteredProducts.length > 0 ? (
                   <div className="space-y-2">
@@ -325,11 +477,11 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
                             </div>
                             {/* Indicadores derecha */}
                             <div className="flex items-center gap-2 shrink-0">
-                              {producto.is_favorite && (
-                                <HeartComponent className="h-3 w-3 text-[color:var(--sp-error-600)] fill-current" />
-                              )}
                               {producto.is_special && (
-                                <StarComponent className="h-3 w-3 text-[color:var(--sp-warning-600)] fill-current" />
+                                <span className="text-xs" title="Especial">⭐</span>
+                              )}
+                              {producto.is_favorite && (
+                                <span className="text-xs" title="Favorito">❤️</span>
                               )}
                               {/* Indicador de selección: círculo relleno + check visible */}
                               <div
@@ -597,6 +749,27 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
               >
                 {isLastStep ? 'Finalizar' : 'Siguiente'}
               </button>
+              {isLastStep && (
+                <div className="ml-2 flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm text-[color:var(--sp-neutral-700)]">
+                    <input
+                      type="checkbox"
+                      checked={saveTemplateOnFinalize}
+                      onChange={(e) => setSaveTemplateOnFinalize(e.target.checked)}
+                    />
+                    Guardar como plantilla
+                  </label>
+                  {saveTemplateOnFinalize && (
+                    <input
+                      type="text"
+                      value={templateName}
+                      onChange={(e) => setTemplateName(e.target.value)}
+                      className="px-2 py-1 text-sm rounded border border-[color:var(--sp-neutral-300)]"
+                      placeholder="Nombre de la plantilla"
+                    />
+                  )}
+                </div>
+              )}
             </div>
           </div>
           {/* FIN FOOTER */}

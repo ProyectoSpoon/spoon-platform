@@ -51,6 +51,7 @@ export default function CajaPage() {
     loading,
     error,
   refrescar,
+  fechaFiltro,
   setFechaFiltro,
   periodo,
   setPeriodo,
@@ -75,11 +76,17 @@ export default function CajaPage() {
 
   // Estado local simplificado
   const [tabActiva, setTabActiva] = useState<TabActiva>('movimientos');
+  // Usar día local de Bogotá en lugar de toISOString (UTC) para evitar desfasar al día siguiente
+  const hoyBogota = React.useMemo(() => {
+    const now = new Date();
+    const bogota = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+    return bogota.toISOString().split('T')[0];
+  }, []);
   const [filtros, setFiltros] = useState({
     tiempo: 'hoy',
-    fecha: new Date().toISOString().split('T')[0],
-  fechaFin: new Date().toISOString().split('T')[0],
-  busqueda: ''
+    fecha: hoyBogota,
+    fechaFin: hoyBogota,
+    busqueda: ''
   });
   const [modals, setModals] = useState({
     pago: false,
@@ -95,6 +102,16 @@ export default function CajaPage() {
   const [cierres, setCierres] = useState<CierreCajaItem[]>([]);
   const [loadingCierres, setLoadingCierres] = useState(false);
   const [cierreSeleccionado, setCierreSeleccionado] = useState<string | null>(null);
+
+  // Mantener sincronizado el filtro visual con los filtros del hook (fechaFiltro/fechaFinFiltro)
+  React.useEffect(() => {
+    setFiltros(prev => ({
+      ...prev,
+      fecha: fechaFiltro || prev.fecha,
+      fechaFin: fechaFinFiltro || prev.fechaFin || fechaFiltro || prev.fecha
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fechaFiltro, fechaFinFiltro]);
 
   // Cargar cierres reales cuando se activa tab 'arqueo'
   React.useEffect(() => {

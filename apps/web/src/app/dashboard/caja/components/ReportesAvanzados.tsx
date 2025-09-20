@@ -28,8 +28,8 @@ interface EstadisticasReporte {
 
 export function ReportesAvanzados() {
   const [periodo, setPeriodo] = useState({
-    fechaInicio: new Date().toISOString().split('T')[0],
-    fechaFin: new Date().toISOString().split('T')[0]
+    fechaInicio: require('@spoon/shared/utils/datetime').getBogotaDateISO(),
+    fechaFin: require('@spoon/shared/utils/datetime').getBogotaDateISO(),
   });
   const [estadisticas, setEstadisticas] = useState<EstadisticasReporte | null>(null);
   const [cargando, setCargando] = useState(false);

@@ -3,16 +3,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getUserProfile, getUserRestaurant, supabase } from '@spoon/shared';
-import { 
-  Button, 
-  Card, 
-  CardContent, 
-  CardHeader,
-  CardTitle,
-  Input,
-  toast 
-} from '@spoon/shared';
+import { supabase, getUserProfile, getUserRestaurant } from '@spoon/shared/lib/supabase';
+import { Button } from '@spoon/shared/components/ui/Button';
+import { Card } from '@spoon/shared/components/ui/Card';
+import { CardContent } from '@spoon/shared/components/ui/Card';
+import { CardHeader } from '@spoon/shared/components/ui/Card';
+import { CardTitle } from '@spoon/shared/components/ui/Card';
+import { Input } from '@spoon/shared/components/ui/Input';
+import { toast } from '@spoon/shared/components/ui/Toast';
 
 // Type casting to resolve React version conflicts
 const ButtonComponent = Button as any;

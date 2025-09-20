@@ -60,7 +60,7 @@ export interface ComboFilters {
 
 export interface MenuState {
   // Estados principales
-  currentView: 'creation' | 'combinations';
+  currentView: 'creation' | 'combinations' | 'analytics' | 'favorites';
   showSlideOver: boolean;
   isAnimating: boolean;
   currentStep: number;

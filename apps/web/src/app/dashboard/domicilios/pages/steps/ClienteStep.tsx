@@ -59,17 +59,17 @@ export default function ClienteStep({ subtotal, domicilio, total, onBack, onSubm
           <div>
             <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Nombre</label>
             <input value={form.nombre} onChange={(e)=>handleChange('nombre', e.target.value)} onBlur={()=>handleBlur('nombre')} className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)]" />
-            {touched.nombre && errors.nombre && <p className="text-xs text-red-600 mt-1">{errors.nombre}</p>}
+            {touched.nombre && errors.nombre && <p className="text-xs text-[color:var(--sp-error-600)] mt-1">{errors.nombre}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Teléfono</label>
             <input value={form.telefono} onChange={(e)=>handleChange('telefono', e.target.value)} onBlur={()=>handleBlur('telefono')} className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)]" placeholder="Ej: 3001234567" />
-            {touched.telefono && errors.telefono && <p className="text-xs text-red-600 mt-1">{errors.telefono}</p>}
+            {touched.telefono && errors.telefono && <p className="text-xs text-[color:var(--sp-error-600)] mt-1">{errors.telefono}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Dirección</label>
             <input value={form.direccion} onChange={(e)=>handleChange('direccion', e.target.value)} onBlur={()=>handleBlur('direccion')} className="mt-1 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)]" />
-            {touched.direccion && errors.direccion && <p className="text-xs text-red-600 mt-1">{errors.direccion}</p>}
+            {touched.direccion && errors.direccion && <p className="text-xs text-[color:var(--sp-error-600)] mt-1">{errors.direccion}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)]">Referencia</label>
@@ -85,8 +85,8 @@ export default function ClienteStep({ subtotal, domicilio, total, onBack, onSubm
             <div className="flex justify-between"><span>Domicilio</span><span>{formatMoney(domicilio)}</span></div>
             <div className="flex justify-between font-semibold border-t pt-2"><span>Total</span><span>{formatMoney(total)}</span></div>
           </div>
-          {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
-          <button type="submit" disabled={loading} className="mt-3 w-full px-4 py-2 bg-[color:var(--sp-primary-600)] text-[--sp-on-primary] rounded-lg hover:bg-[color:var(--sp-primary-700)] disabled:opacity-60">
+          {error && <p className="text-sm text-[color:var(--sp-error-600)] mt-2">{error}</p>}
+          <button type="submit" disabled={loading} className="mt-3 w-full px-4 py-2 bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] rounded-lg hover:bg-[color:var(--sp-primary-700)] disabled:opacity-60">
             {loading ? 'Creando…' : 'Crear Pedido'}
           </button>
         </div>

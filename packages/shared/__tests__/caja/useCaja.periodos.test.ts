@@ -37,7 +37,7 @@ describe('useCaja - periodos', () => {
 
   it('calcula métricas para semana usando getTransaccionesYGastosEnRango', async () => {
     setupListQueries();
-    (supa as any).getTransaccionesYGastosEnRango.mockResolvedValueOnce({
+    (supa as any).getTransaccionesYGastosEnRango.mockResolvedValue({
       transacciones: [{ id: 't1', metodo_pago: 'efectivo', monto_total: 200 }],
       totalVentas: 200,
       totalEfectivo: 200,
@@ -65,7 +65,7 @@ describe('useCaja - periodos', () => {
 
   it('calcula métricas para mes', async () => {
     setupListQueries();
-    (supa as any).getTransaccionesYGastosEnRango.mockResolvedValueOnce({
+    (supa as any).getTransaccionesYGastosEnRango.mockResolvedValue({
       transacciones: [{ id: 't2', metodo_pago: 'tarjeta', monto_total: 500 }],
       totalVentas: 500,
       totalEfectivo: 0,
@@ -85,14 +85,15 @@ describe('useCaja - periodos', () => {
       await Promise.resolve();
     });
 
-    expect(result.current.metricas.totalTarjeta).toBe(500);
-    expect(result.current.metricas.ventasTotales).toBe(500);
-    expect(result.current.metricas.balance).toBe(1500); // 1000 + 500
+  expect(result.current.metricas.totalTarjeta).toBe(500);
+  expect(result.current.metricas.ventasTotales).toBe(500);
+  // Balance solo cuenta efectivo: 1000 + 0 (efectivo) - 0 = 1000
+  expect(result.current.metricas.balance).toBe(1000);
   });
 
   it('calcula métricas para personalizado usando fechaFinFiltro', async () => {
     setupListQueries();
-    (supa as any).getTransaccionesYGastosEnRango.mockResolvedValueOnce({
+    (supa as any).getTransaccionesYGastosEnRango.mockResolvedValue({
       transacciones: [{ id: 't3', metodo_pago: 'digital', monto_total: 300 }],
       totalVentas: 300,
       totalEfectivo: 0,
@@ -113,8 +114,9 @@ describe('useCaja - periodos', () => {
       await Promise.resolve();
     });
 
-    expect(result.current.metricas.totalDigital).toBe(300);
-    expect(result.current.metricas.gastosTotales).toBe(100);
-    expect(result.current.metricas.balance).toBe(1200); // 1000 + 300 - 100
+  expect(result.current.metricas.totalDigital).toBe(300);
+  expect(result.current.metricas.gastosTotales).toBe(100);
+  // Balance solo cuenta efectivo: 1000 + 0 (efectivo) - 100 = 900
+  expect(result.current.metricas.balance).toBe(900);
   });
 });

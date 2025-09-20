@@ -254,3 +254,182 @@ Prevenir cobros dobles con locks
 Backup de datos antes de operaciones críticas
 
 Este módulo es fundamental para las operaciones diarias del restaurante y requiere máxima estabilidad y precisión en el manejo de transacciones financieras.
+
+
+============================================================
+Mapa técnico detallado (por archivo)
+============================================================
+
+1) apps/web/src/app/dashboard/mesas/pages/MesasPage.tsx
+- Rol: Orquestador de UI para el administrador de Mesas. Renderiza grid, panel lateral de detalles, wizard de creación de orden, configuración inicial y flujo de cobro.
+- Entradas/Dependencias:
+  - useMesas (orquestador de dominio) y/o useMesasMaestro (modelo unificado)
+  - useCajaSesion: Gate de “caja abierta” para habilitar acciones (crear/cobrar)
+  - Componentes: MesaCard, MesaDetailsPanel, CrearOrdenWizard, ConfiguracionMesasPanel
+  - Utils: formateadores de moneda y helpers de estado
+- Estados/eventos claves:
+  - Apertura del wizard para crear orden; cierre y recarga tras guardar
+  - Apertura del panel de detalles; acciones delegadas (editar/eliminar/reservar/etc.)
+  - Flujo de cobro: confirma, arma datos de recibo, invoca procesarCobro y refresca; muestra overlay de recibo
+- Contratos:
+  - Espera que useMesas exponga: cargarMesas, procesarCobro, configurarMesasIniciales, acciones por mesa, y colección normalizada de mesas
+  - Si no hay caja abierta, bloquea acciones críticas y muestra aviso contextual
+
+2) apps/web/src/app/dashboard/mesas/pages/MesaCard.tsx
+- Rol: Tarjeta visual de mesa dentro del grid.
+- Props principales: numero, estado ('vacia'|'ocupada'), total, onClick, seleccionada; compatibilidad extendida con sistema maestro (nombre, zona, capacidad, estadoMesa, items, comensales, inicioAtencion, mesero).
+- Lógica:
+  - Determina presentación a partir de getEstadoDisplay y COLORES_ESTADO/TEXTOS_ESTADO.
+  - Calcula tiempo transcurrido si inicioAtencion está presente (intervalo local cada 60s).
+  - Usa un formateo de moneda inline (Intl.NumberFormat). Recomendado: reemplazar por util compartido formatearMoneda.
+- UI:
+  - Colores/gradientes por estado (libre/ocupada/reservada/inactiva/mantenimiento/en_cocina/servida/por_cobrar).
+  - Badges para estados especiales; indicadores; accesibilidad con aria-label.
+
+3) apps/web/src/app/dashboard/mesas/components/MesaDetailsPanel.tsx
+- Rol: Contenedor que compone Header + Content + Actions + Footer para el detalle de una mesa.
+- Flujo:
+  - Renderiza según estado de mesa y existencia de ordenActiva.
+  - Delegación a useMesaActions para crear/eliminar orden, reservar/liberar, activar/inactivar, mantenimiento y cobrar.
+  - Hoy usa prompts/alerts nativos para confirmaciones. Recomendado: reemplazar por dialog/confirm centralizado.
+- Contratos:
+  - Recibe la mesa seleccionada, estados de carga de acciones y callbacks de acciones (inyectados desde MesasPage/useMesas).
+
+4) apps/web/src/app/dashboard/mesas/components/MesaDetailsHeader.tsx
+- Rol: Encabezado del panel de detalles; muestra nombre/numero, estado y capacidad.
+- Dependencias: getEstadoDisplay, formatearNombreMesa, formatearCapacidad; íconos (X, Users).
+- Contrato: Props { mesa, onClose }.
+
+5) apps/web/src/app/dashboard/mesas/components/MesaDetailsContent.tsx
+- Rol: Cuerpo del panel; muestra items de la orden, totales, y vistas específicas por estado (libre/ocupada/reservada/inactiva/mantenimiento).
+- Dependencias: formatearMoneda, calcularTiempoOcupacion, formatearTiempoOcupacion.
+- Lógica: Cuando ocupada, lista items con cantidad, unitario y total; estadísticas de items/productos; múltiples cajas informativas por estado.
+- Contrato: Props { mesa, loading? }.
+
+6) apps/web/src/app/dashboard/mesas/components/MesaDetailsActions.tsx
+- Rol: Conjunto de botones/acciones según estado.
+- Dependencias: Button compartido; getAccionesDisponibles (de utils/mesas); íconos Lucide.
+- Comportamiento:
+  - libre: Crear orden, Reservar, Mantenimiento, Inactivar
+  - ocupada: Editar/Eliminar orden
+  - reservada: Crear orden (libera)/Liberar reserva
+  - inactiva/mantenimiento: Activar/Actualizar notas
+- Contrato: Props con callbacks específicos (onCrearOrden, onEditarOrden, onEliminarOrden, onReservarMesa, onLiberarReserva, onActivarMesa, onInactivarMesa, onPonerMantenimiento, onActualizarNotas).
+
+7) apps/web/src/app/dashboard/mesas/components/MesaDetailsFooter.tsx
+- Rol: Footer con botón principal de cobro y cierre del panel.
+- Dependencias: Button, DollarSign, formatearMoneda.
+- Lógica: Si mesa está ocupada y hay ordenActiva, habilita COBRAR; muestra spinner mientras cobra.
+- Contrato: Props { mesa, cobrando?, onCobrar, onClose }.
+
+8) apps/web/src/app/dashboard/mesas/components/EditarMesaModal.tsx
+- Rol: Modal para editar configuración visual/operativa de una mesa (nombre, zona, capacidad, notas).
+- Lógica:
+  - Valida capacidad [1..20] y longitud mínima de zona.
+  - Emite onGuardar(datosActualizados) y cierra si hay éxito.
+  - Atajos: ESC para cerrar; bloqueo del scroll en apertura.
+- Nota de modelo: Hay comentarios de que “zona” fue eliminada del esquema en DB; la UI aún la expone. Definir política: o persistir en un metadato separado o remover del modelo UI si no aplica.
+
+9) packages/shared/hooks/mesas/useMesas.ts (orquestador actual)
+- Rol: Orquestar estado de mesas y acciones. Tiene bandera para “sistema maestro” vs ruta legacy.
+- Maestro: Normaliza items y totales; expone cargarMesas, procesarCobro (transaccional), configurarMesasIniciales; compone acciones desde useMesaActions.
+- Legacy: Usa useMesaState + useMesaActions + useMesaConfig + useMesaStats; entrega colección “mesasCompletas” y acciones derivadas.
+- Contratos clave: procesarCobro espera datos de recibo; refresca estado tras éxito.
+
+10) packages/shared/hooks/mesas/core/useMesaState.ts
+- Rol: Fuente única de estado local (mesas, configuración, estadísticas) y sincronización con API/DB.
+- Dependencias Supabase (cargas):
+  - getEstadoCompletoMesas(restaurantId): Trae mesas + detalles de orden (items, totales)
+  - verificarMesasConfiguradas(restaurantId): Determina si hay setup inicial (totalMesas, zonas)
+- Lógica de normalización:
+  - Construye ordenActiva a partir de “detallesOrden” resolviendo precioUnitario/Total con varios fallbacks (generated_combinations o precio_total/cantidad).
+  - Si hay ordenActiva con items y estado venía 'libre' → fuerza visual 'ocupada' (resolves inconsistencias de origen).
+- Auto-refresh: Intervalo 30s condicionado a restaurantId y configuradas=true.
+- Expone: sincronizarMesas, sincronizarConfiguracion, limpiarError; flags de loading y error.
+
+11) packages/shared/hooks/mesas/core/useMesasMaestro.ts
+- Rol: API de “modelo unificado” para la UI. Mapea estado extendido de UI a par (estado_mesa, estado_orden) y devuelve “MesaCompletaMaestro”.
+- splitEstados: Traduce 'en_cocina'|'servida'|'por_cobrar' a estado_mesa='ocupada' con estado_orden derivado; valida 'libre'|'ocupada'|'reservada'|'inactiva'.
+- Acciones: Proxies a useMesaActions (crear/eliminar orden, reservar/inactivar/activar) y a useMesaConfig (configurarMesas). TODO explícito para estados finos de orden.
+
+12) packages/shared/hooks/mesas/core/useMesaConfig.ts
+- Rol: Configurar, reconfigurar, limpiar configuración y crear mesa individual.
+- Validaciones: validarConfiguracionMesa; límites de totalMesas; capacidad [según constants].
+- Supabase: configurarMesas, reconfigurarMesas, limpiarConfiguracionMesas, crearMesa.
+- Callback onSuccess: re-sincroniza configuración + mesas.
+
+13) packages/shared/hooks/mesas/core/useMesaActions.ts
+- Rol: Encapsula acciones transaccionales y de ciclo de vida:
+  - crearOrden (con validación), cobrarMesa/procesarCobro (transaccional), reservarMesa/liberarReserva, activar/inactivar, ponerMantenimiento, eliminarOrden.
+- Manejo de estados de carga por acción; validadores (crear orden, reserva) desde utils.
+- Dependencias: métodos compartidos de Supabase (transacciones y mutaciones por mesa/orden).
+
+14) packages/shared/hooks/mesas/core/useMesaStats.ts
+- Rol: Cálculo de estadísticas derivadas y versiones formateadas para UI.
+- Cálculos: totales por estado, totalPendiente/promedioTicket, porcentajes de ocupación/disponibilidad; breakdown por zona; “mesas más ocupadas” por tiempo; “zonas más activas”.
+- API futura: obtenerEstadisticasPorPeriodo y obtenerTendenciasOcupacion (stubs preparados).
+
+15) packages/shared/types/mesas/mesasTypes.ts
+- Rol: Archivo de compatibilidad que re-exporta tipos de ./stateTypes y ./actionTypes.
+- Nota: marcar como @deprecated y preferir imports específicos para reducir acoplamiento.
+
+16) packages/shared/utils/mesas/mesaFormatters.ts
+- formatearMoneda: Usa FORMATO_MONEDA desde constants y Intl.
+- formatearTiempoOcupacion: Convierte minutos a “Xm”/“Xh Ym”.
+- formatearNombreMesa, formatearCapacidad, formatearResumenOrden, formatearNotaConFecha, formatearPorcentaje.
+
+17) packages/shared/utils/mesas/mesaValidators.ts
+- validarConfiguracionMesa(numero, nombre, zona?, capacidad)
+- validarCrearOrden(CrearOrdenData)
+- validarReserva(nombreCliente, telefono?, horaReserva?)
+- Usa CONFIG_MESAS (límites, rangos), y valida tipos/valores.
+
+18) Constants y Helpers relevantes
+- @spoon/shared/constants/mesas/mesasConstants: TEXTOS_ESTADO, COLORES_ESTADO, FORMATO_MONEDA, CONFIG_MESAS...
+- @spoon/shared/utils/mesas: getEstadoDisplay, getAccionesDisponibles, calcularTiempoOcupacion, etc.
+
+
+Gaps y recomendaciones (acciones prácticas)
+------------------------------------------
+1) Confirmaciones y feedback unificados
+- Reemplazar alert/prompt nativos por un ConfirmDialog/Toast compartido (consistencia y accesibilidad).
+- Cobro: siempre confirmar con total (formatearMoneda) y mostrar resultado con recibo/ID de transacción.
+
+2) Formateo de moneda centralizado
+- Sustituir Intl.NumberFormat inline en MesaCard por formatearMoneda del shared utils.
+
+3) Zona en el modelo
+- La columna “zona” fue eliminada del esquema según comentarios en hooks; varias UIs aún la usan. Decidir:
+  - a) Mantener como metadato UI (persistir en tabla auxiliar o JSONB de mesa), o
+  - b) Retirarla de la UI y usar solo “Principal” por defecto. Documentar decisión para evitar drift.
+
+4) Adoptar modelo maestro por defecto
+- Migrar llamadas de useMesas a useMesasMaestro donde sea posible para un contrato estable: estado_mesa vs estado_orden, y normalización consistente.
+
+5) Realtime y actualizaciones optimistas
+- Suscribirse a cambios de órdenes/mesas vía Supabase Realtime para reducir el polling a 30s o eliminarlo.
+- Optimistic UI para crear/eliminar items y reservas; fallback con revalidación.
+
+6) Validaciones y guardas de caja
+- En UI ya hay gate de “caja abierta”; reforzar en backend/RPCs que crear/cobrar/eliminar orden requieran sesión de caja activa para el restaurant.
+
+7) Testing mínimo recomendado
+- useMesaState: normalización de items y coerción de estado 'libre'→'ocupada' con orden.
+- useMesaActions: rutas de éxito y error (incluye validarCrearOrden y validarReserva).
+- MesaCard: snapshot de estados (libre/ocupada/reservada/inactiva/mantenimiento) y a11y (aria-label).
+- MesaDetailsContent: render de items y totales; casos vacíos.
+
+8) Errores y toasts
+- Donde hoy solo se hace console.error, emitir toast de error con acción de reintento (ej. recargar mesas).
+
+9) Editar mesa: persistencia real
+- El modal EditarMesaModal emite onGuardar; asegurar que exista endpoint para update parcial de mesa (nombre/capacidad/notas[/zona si aplica]) y refresco posterior.
+
+10) Performance
+- Considerar memo de MesaCard y virtualización del grid cuando #mesas >50; mantener sombras/transiciones bajo control para hardware modesto.
+
+Cobertura de requisitos (resumen)
+- Gate de caja para acciones críticas: OK en UI; pendiente refuerso en backend (recomendado).
+- KPIs y grid interactivo: OK; con stats derivadas (useMesaStats).
+- Cobro transaccional: Expuesto vía acciones; confirmar UI/UX y recibo.
+- Documentación técnica por archivo: ENTREGADA en esta sección.

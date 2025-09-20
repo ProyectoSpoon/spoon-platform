@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { signUpUser } from '@spoon/shared';
+import { signUpUser } from '@spoon/shared/lib/supabase';
 import toast from 'react-hot-toast';
 
 export interface RegisterData {

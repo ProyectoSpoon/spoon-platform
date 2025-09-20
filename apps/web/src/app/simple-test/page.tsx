@@ -25,7 +25,7 @@ export default function SimpleClientTestPage() {
       if (error) {
         setResult(`❌ Error: ${error.message}`);
       } else {
-        setResult(`✅ Conexión exitosa! Encontrado: ${data?.length || 0} países`);
+  setResult(`✅ Conexión exitosa! Encontrado: ${data?.length || 0} países`);
       }
       
     } catch (error) {
@@ -44,23 +44,23 @@ export default function SimpleClientTestPage() {
         <button
           onClick={testConnection}
           disabled={isLoading}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+          className="bg-[color:var(--sp-primary-600)] text-[color:var(--sp-on-primary)] px-4 py-2 rounded hover:bg-[color:var(--sp-primary-700)] disabled:opacity-50"
         >
           {isLoading ? 'Probando...' : 'Probar Conexión'}
         </button>
       </div>
 
-      <div className="p-4 border rounded bg-gray-50">
+      <div className="p-4 border border-[color:var(--sp-border)] rounded bg-[color:var(--sp-neutral-50)]">
         <h3 className="font-semibold mb-2">Resultado:</h3>
         <p className="text-sm">{result}</p>
       </div>
 
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
+      <div className="mt-6 p-4 bg-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded">
         <h3 className="text-lg font-semibold mb-2">📝 Instrucciones:</h3>
         <ol className="text-sm space-y-1">
           <li>1. Abre las herramientas de desarrollador (F12)</li>
-          <li>2. Ve a la pestaña "Console"</li>
-          <li>3. Haz clic en "Probar Conexión"</li>
+          <li>2. Ve a la pestaña &quot;Console&quot;</li>
+          <li>3. Haz clic en &quot;Probar Conexión&quot;</li>
           <li>4. Revisa los logs en la consola</li>
         </ol>
       </div>

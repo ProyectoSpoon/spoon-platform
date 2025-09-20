@@ -23,15 +23,15 @@ export const SecurityPanel: React.FC<SecurityPanelProps> = ({
 
   if (loading || !limits) {
     return (
-      <CardComponent className={`border-l-4 border-l-blue-500 ${className}`}>
+      <CardComponent className={`border-l-4 border-l-[color:var(--sp-info-500)] ${className}`}>
         <CardContentComponent className="p-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <ShieldIcon className="w-5 h-5 text-blue-600" />
+            <div className="p-2 bg-[color:var(--sp-info-100)] rounded-lg">
+              <ShieldIcon className="w-5 h-5 text-[color:var(--sp-info-600)]" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">Límites de Seguridad</h3>
-              <p className="text-xs text-gray-500">Cargando controles...</p>
+              <h3 className="font-medium text-[color:var(--sp-neutral-900)]">Límites de Seguridad</h3>
+              <p className="text-xs text-[color:var(--sp-neutral-500)]">Cargando controles...</p>
             </div>
           </div>
         </CardContentComponent>
@@ -58,23 +58,24 @@ export const SecurityPanel: React.FC<SecurityPanelProps> = ({
   };
 
   const getColorByPercentage = (percentage: number) => {
-    if (percentage > 80) return { bg: 'bg-red-500', text: 'text-red-600' };
-    if (percentage > 60) return { bg: 'bg-yellow-500', text: 'text-yellow-600' };
-    return { bg: 'bg-green-500', text: 'text-green-600' };
+    // Mapear a tokens del sistema de diseño
+    if (percentage > 80) return { bg: 'bg-[color:var(--sp-error-500)]', text: 'text-[color:var(--sp-error-600)]' };
+    if (percentage > 60) return { bg: 'bg-[color:var(--sp-warning-500)]', text: 'text-[color:var(--sp-warning-600)]' };
+    return { bg: 'bg-[color:var(--sp-success-500)]', text: 'text-[color:var(--sp-success-600)]' };
   };
 
   const colors = getColorByPercentage(porcentajeUsado);
 
   return (
-    <CardComponent className={`border-l-4 border-l-blue-500 ${className}`}>
+    <CardComponent className={`border-l-4 border-l-[color:var(--sp-info-500)] ${className}`}>
       <CardContentComponent className="p-4">
         <div className="flex items-center space-x-3 mb-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <ShieldIcon className="w-5 h-5 text-blue-600" />
+          <div className="p-2 bg-[color:var(--sp-info-100)] rounded-lg">
+            <ShieldIcon className="w-5 h-5 text-[color:var(--sp-info-600)]" />
           </div>
           <div>
-            <h3 className="font-medium text-gray-900">Límites de Seguridad</h3>
-            <p className="text-xs text-gray-500">Controles automáticos</p>
+            <h3 className="font-medium text-[color:var(--sp-neutral-900)]">Límites de Seguridad</h3>
+            <p className="text-xs text-[color:var(--sp-neutral-500)]">Controles automáticos</p>
           </div>
         </div>
 
@@ -87,20 +88,20 @@ export const SecurityPanel: React.FC<SecurityPanelProps> = ({
                 {Math.round(porcentajeUsado)}%
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-[color:var(--sp-neutral-200)] rounded-full h-2">
               <div
                 className={`h-2 rounded-full ${colors.bg}`}
                 style={{ width: `${Math.min(100, porcentajeUsado)}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <div className="flex justify-between text-xs text-[color:var(--sp-neutral-500)] mt-1">
               <span>{formatPesos(ventasTotalesPesos)}</span>
               <span>{formatPesos(limitesDiarioPesos)}</span>
             </div>
           </div>
 
           {/* Resumen de límites */}
-          <div className="text-xs text-gray-600 space-y-1">
+          <div className="text-xs text-[color:var(--sp-neutral-600)] space-y-1">
             <div className="flex justify-between">
               <span>Límite por transacción:</span>
               <span>{formatPesos(limiteTransaccionPesos)}</span>

@@ -2,6 +2,13 @@
 
 > Sistema operativo para la cadena de suministro de restaurantes en Latinoamérica
 
+## 📚 Documentación clave
+- Arquitectura (overview): [docs/architecture/overview.md](./docs/architecture/overview.md)
+- Módulo Menú del Día: [docs/menu-del-dia.md](./docs/menu-del-dia.md)
+- Sistema de Caja (migración BD): [docs/db/MIGRACION_COMPLETADA.md](./docs/db/MIGRACION_COMPLETADA.md)
+- Modal de Cierre de Caja (frontend): [docs/modal-cierre-caja-implementacion.md](./docs/modal-cierre-caja-implementacion.md)
+- UI V2 y tokens: [docs/ui-v2-migration.md](./docs/ui-v2-migration.md), [docs/ui-tokens-usage.md](./docs/ui-tokens-usage.md)
+
 ## 🎯 Visión
 Convertir a SPOON en el sistema operativo central para la cadena de suministro de los restaurantes independientes, comenzando por Colombia.
 

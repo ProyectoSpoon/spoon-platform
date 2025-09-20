@@ -6,7 +6,9 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { supabase, uploadSpecialDishImage } from '@spoon/shared';
+import { useNotification } from '@spoon/shared/Context/notification-provider';
+import { supabase } from '@spoon/shared/lib/supabase';
+import { uploadSpecialDishImage } from '@spoon/shared/services/specials';
 // Reemplazamos íconos lucide-react por emojis para evitar conflictos de tipos temporales
 // import { X, ArrowLeft, ArrowRight, Check, Search } from 'lucide-react';
 import type { Producto } from '@spoon/shared/types/menu-dia/menuTypes';
@@ -60,6 +62,7 @@ export default function SpecialDishWizard({
   loadingProducts,
   existingSpecial
 }: SpecialDishWizardProps) {
+  const { notify } = useNotification();
   // Estado interno del wizard
   const [currentStep, setCurrentStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -146,11 +149,11 @@ export default function SpecialDishWizard({
       return;
     }
     if (!file.type.startsWith('image/')) {
-      alert('El archivo debe ser una imagen.');
+      notify('warning', 'El archivo debe ser una imagen.');
       return;
     }
     if (file.size > 2 * 1024 * 1024) { // 2MB
-      alert('Imagen demasiado grande (máx 2MB).');
+      notify('warning', 'Imagen demasiado grande (máx 2MB).');
       return;
     }
     const url = URL.createObjectURL(file);

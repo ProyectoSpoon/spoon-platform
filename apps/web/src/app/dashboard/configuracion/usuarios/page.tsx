@@ -3,7 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import { useNotifications } from '@spoon/shared/Context/notification-context';
 import { Users, Settings, FileText } from 'lucide-react';
-import { Tabs } from '@spoon/shared';
+import { Tabs } from '@spoon/shared/components/ui/Tabs';
 import { usePermissions } from '@spoon/shared/hooks/usePermissions';
 import { SinPermisos } from '@spoon/shared/components/ui/SinPermisos';
 import { UsuariosTab } from './components/UsuariosTab';

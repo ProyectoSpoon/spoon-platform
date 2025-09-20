@@ -18,5 +18,20 @@
         "message": "Evita hex #000/#fff en className; usa tokens CSS."
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/app/debug-supabase/**/*.tsx",
+        "src/app/server-test/**/*.tsx",
+        "src/app/simple-test/**/*.tsx",
+        "src/app/test-*/**/*.tsx",
+        "src/app/**/test-*/**/*.tsx"
+      ],
+      "rules": {
+        "no-restricted-syntax": "off",
+        "react/no-unescaped-entities": "off"
+      }
+    }
+  ]
 }

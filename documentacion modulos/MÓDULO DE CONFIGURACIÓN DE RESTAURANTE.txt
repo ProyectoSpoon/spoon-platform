@@ -382,9 +382,20 @@ const copiarHorarios = (origen: DiaSemana, destino: DiaSemana) => { ... };
 - **Validación en tiempo real**
 - **Indicadores visuales** de estado
 
+Nota de persistencia (estado actual):
+- La página guarda `business_hours` mediante `updateRestaurant(restaurantId, { business_hours: horarios })`, pero no marca el avance del onboarding.
+- Recomendación: añadir `setup_step: 3` en la misma actualización después de pasar las validaciones, para alinear el progreso con el Hub y permitir que el Paso 4 se marque como siguiente pendiente.
+
 ---
 
 ### 3.5 PASO 4: LOGO Y PORTADA (`/logo-portada/page.tsx`)
+
+NOTA sobre estado actual del código (verificado):
+- El archivo `apps/web/src/app/config-restaurante/logo-portada/page.tsx` es actualmente una copia del paso 1 (Información General): mismos estados, validaciones y textos (por ejemplo, muestra “Paso 1 de 4”).
+- No implementa aún manejo de archivos (logo/portada), validaciones de imágenes, previews, ni guardado de URLs a `restaurants.logo_url` / `restaurants.cover_image_url`.
+- Tampoco actualiza `setup_step` a 4 ni `setup_completed` a `true`.
+
+A continuación se detalla la implementación propuesta/objetivo para este paso:
 
 #### 3.5.1 Manejo de Archivos
 ```typescript
@@ -1294,6 +1305,27 @@ const subirImagen = async (archivo: File, tipo: 'logo' | 'cover'): Promise<strin
     
   return publicUrl;
 };
+```
+
+#### 12.1.3 Archivo de Paso 4 no corresponde (mismatch)
+```
+Estado actual:
+- `apps/web/src/app/config-restaurante/logo-portada/page.tsx` duplica la lógica/UI del Paso 1 (Información General).
+- No hay inputs de archivos, previsualizaciones ni llamadas a storage.
+- El copy del header muestra “Paso 1 de 4”.
+
+Acciones recomendadas:
+1) Reemplazar el contenido del archivo por un componente de “Imágenes (Logo y Portada)” con:
+   - Inputs tipo file (logo y portada) con validación de tipo/tamaño.
+   - Previews locales via `URL.createObjectURL` y limpieza con `URL.revokeObjectURL`.
+   - Subida real a Supabase Storage (o, temporalmente, simulación con clear TODO).
+   - Persistencia de `restaurants.logo_url` y `restaurants.cover_image_url`.
+   - Actualización de `setup_step: 4` y `setup_completed: true` al guardar.
+2) Actualizar el header UI a “Paso 4 de 4”.
+
+Criterios de aceptación:
+- Al guardar con éxito, el Hub muestra el paso “Logo y Portada” como completado y el progreso al 100%.
+- Las imágenes aparecen en la vista previa y persisten tras recargar.
 ```
 
 ### 12.2 Mejoras de UX

@@ -14,6 +14,171 @@ export const MenuApiService = {
   _key(name: string, key: string) {
     return `${name}::${key}`;
   },
+  
+  // ================================
+  // Favoritos: combinaciones reutilizables por restaurante
+  // ================================
+  async saveFavoriteCombination(restaurantId: string, combo: any) {
+    // combo esperado: { nombre, descripcion, precio, principio, proteina, entrada?, bebida?, acompanamiento?[] }
+    const row = {
+      restaurant_id: restaurantId,
+      combination_name: combo?.nombre || null,
+      combination_description: combo?.descripcion || null,
+      combination_price: combo?.precio ?? null,
+      principio_product_id: combo?.principio?.id || null,
+      proteina_product_id: combo?.proteina?.id || null,
+      entrada_product_id: combo?.entrada?.id || null,
+      bebida_product_id: combo?.bebida?.id || null,
+      acompanamiento_products: Array.isArray(combo?.acompanamiento)
+        ? combo.acompanamiento.map((p: any) => p.id)
+        : [],
+    };
+
+    const { data, error } = await supabase
+      .from('favorite_combinations')
+      .insert(row)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getFavoriteCombinations(restaurantId: string) {
+    const { data, error } = await this._withCache(
+      'getFavoriteCombinations',
+      restaurantId,
+      30_000,
+      async () => {
+        const { data, error } = await supabase
+          .from('favorite_combinations')
+          .select('*')
+          .eq('restaurant_id', restaurantId)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+      }
+    ).then((d) => ({ data: d, error: null as any }));
+    if (error) throw error;
+    return data || [];
+  },
+
+  async deleteFavoriteCombination(favoriteId: string) {
+    const { error } = await supabase
+      .from('favorite_combinations')
+      .delete()
+      .eq('id', favoriteId);
+    if (error) throw error;
+    this._invalidate('getFavoriteCombinations');
+  },
+
+  async updateFavoriteCombinationName(favoriteId: string, name: string) {
+    const { error } = await supabase
+      .from('favorite_combinations')
+      .update({ combination_name: name, updated_at: new Date().toISOString() })
+      .eq('id', favoriteId);
+    if (error) throw error;
+    this._invalidate('getFavoriteCombinations');
+  },
+
+  // ================================
+  // Plantillas de menú (selecciones + precio)
+  // ================================
+  async saveMenuTemplate(params: {
+    restaurantId: string;
+    templateName: string;
+    templateDescription?: string;
+    menuPrice?: number | null;
+    selectedProducts: Record<string, any[]>; // keys: categoryId ('principios', 'proteinas', ...)
+  }) {
+    const { restaurantId, templateName, templateDescription, menuPrice, selectedProducts } = params;
+
+    // 1) Insertar plantilla
+    const { data: template, error: tplErr } = await supabase
+      .from('menu_templates')
+      .insert({
+        restaurant_id: restaurantId,
+        template_name: templateName,
+        template_description: templateDescription || null,
+        menu_price: menuPrice ?? null,
+      })
+      .select()
+      .single();
+    if (tplErr) throw tplErr;
+
+    // 2) Insertar productos asociados
+    const rows: any[] = [];
+    for (const [categoryId, products] of Object.entries(selectedProducts || {})) {
+      const cfg = CATEGORIAS_MENU_CONFIG.find((c) => c.id === categoryId);
+      const categoryUuid = cfg?.uuid || null;
+      const categoryName = cfg?.nombre || categoryId;
+      (products || []).forEach((p: any, idx: number) => {
+        rows.push({
+          template_id: template.id,
+          universal_product_id: p.id,
+          category_id: categoryUuid || p.category_id || null,
+          category_name: categoryName,
+          product_name: p.name,
+          selection_order: idx,
+        });
+      });
+    }
+
+    if (rows.length > 0) {
+      const { error: prodErr } = await supabase.from('menu_template_products').insert(rows);
+      if (prodErr) throw prodErr;
+    }
+
+    // Invalidate cache
+    this._invalidate('getMenuTemplates', restaurantId);
+    return template;
+  },
+
+  async getMenuTemplates(restaurantId: string) {
+    const { data, error } = await this._withCache(
+      'getMenuTemplates',
+      restaurantId,
+      30_000,
+      async () => {
+        const { data, error } = await supabase
+          .from('menu_templates')
+          .select('*')
+          .eq('restaurant_id', restaurantId);
+        if (error) throw error;
+        return data || [];
+      }
+    ).then((d) => ({ data: d, error: null as any }));
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getTemplateProducts(templateId: string) {
+    const { data, error } = await this._withCache(
+      'getTemplateProducts',
+      templateId,
+      30_000,
+      async () => {
+        const { data, error } = await supabase
+          .from('menu_template_products')
+          .select('*')
+          .eq('template_id', templateId)
+          .order('category_name', { ascending: true })
+          .order('selection_order', { ascending: true });
+        if (error) throw error;
+        return data || [];
+      }
+    ).then((d) => ({ data: d, error: null as any }));
+    if (error) throw error;
+    return data || [];
+  },
+
+  async deleteMenuTemplate(templateId: string) {
+    const { error } = await supabase
+      .from('menu_templates')
+      .delete()
+      .eq('id', templateId);
+    if (error) throw error;
+    this._invalidate('getMenuTemplates');
+  },
   _invalidate(name: string, key?: string) {
     if (key) {
       this._cache.delete(this._key(name, key));
@@ -72,8 +237,19 @@ export const MenuApiService = {
     return transformedData;
   },
 
+  async getProductsByIds(productIds: string[]) {
+    const ids = (productIds || []).filter(Boolean);
+    if (ids.length === 0) return [];
+    const { data, error } = await supabase
+      .from('universal_products')
+      .select('*')
+      .in('id', ids);
+    if (error) throw error;
+    return data || [];
+  },
+
   async getTodayMenu(restaurantId: string) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = require('@spoon/shared/utils/datetime').getBogotaDateISO();
     const { data, error } = await this._withCache(
       'getTodayMenu',
       `${restaurantId}:${today}`,
@@ -137,7 +313,9 @@ export const MenuApiService = {
   },
 
   async createDailyMenu(restaurantId: string, menuPrice: number, _selectedProducts: any, _proteinQuantities: any) {
-    const today = new Date().toISOString().split('T')[0];
+    // Usar fecha de hoy en zona America/Bogota
+    const today = require('@spoon/shared/utils/datetime').getBogotaDateISO();
+    const expiresAt = require('@spoon/shared/utils/datetime').bogotaDateAtHourISO(today, 22, 0, 0);
 
     // Upsert para evitar conflicto único (restaurant_id, menu_date)
     const { data: upserted, error: menuError } = await supabase
@@ -148,6 +326,7 @@ export const MenuApiService = {
           menu_date: today,
           status: 'active',
           menu_price: menuPrice,
+          expires_at: expiresAt,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'restaurant_id,menu_date' }
@@ -240,6 +419,16 @@ export const MenuApiService = {
     return data;
   },
 
+  async getCombinationById(combinationId: string) {
+    const { data, error } = await supabase
+      .from('generated_combinations')
+      .select('*')
+      .eq('id', combinationId)
+      .maybeSingle();
+    if (error) throw error;
+    return data || null;
+  },
+
   async updateCombination(combinationId: string, updates: any) {
     const dbUpdates = {
       updated_at: new Date().toISOString(),
@@ -283,6 +472,67 @@ export const MenuApiService = {
 
     if (error) throw error;
   this._invalidate('getMenuCombinations', dailyMenuId);
+  },
+
+  // ================================
+  // Analytics: historial de uso de productos por restaurante
+  // ================================
+  async getProductUsageHistory(restaurantId: string) {
+    const { data, error } = await this._withCache(
+      'getProductUsageHistory',
+      restaurantId,
+      60_000,
+      async () => {
+        const { data, error } = await supabase
+          .from('restaurant_product_usage')
+          .select(
+            `
+            id,
+            universal_product_id,
+            times_used,
+            last_used_date,
+            first_used_date,
+            total_orders,
+            avg_rating,
+            restaurant_price,
+            universal_products!inner (
+              name,
+              category_id,
+              universal_categories!inner (
+                name
+              )
+            )
+            `
+          )
+          .eq('restaurant_id', restaurantId)
+          .order('times_used', { ascending: false });
+        if (error) throw error;
+
+        const rows = (data || []) as any[];
+        return rows.map((row) => {
+          const up = row.universal_products || {};
+          const categoryUuid = up.category_id as string | undefined;
+          const cat = CATEGORIAS_MENU_CONFIG.find((c) => c.uuid === categoryUuid);
+          const dbCategoryName = (up.universal_categories && (up.universal_categories as any).name) || undefined;
+          return {
+            id: row.id,
+            universal_product_id: row.universal_product_id,
+            product_name: up.name || 'Producto',
+            // Preferir nombre desde DB; fallback al mapping local por uuid
+            category_name: dbCategoryName || cat?.nombre || 'Otro',
+            times_used: row.times_used ?? 0,
+            last_used_date: row.last_used_date,
+            first_used_date: row.first_used_date,
+            total_orders: row.total_orders ?? 0,
+            avg_rating: row.avg_rating ?? null,
+            restaurant_price: row.restaurant_price ?? 0,
+          };
+        });
+      }
+    ).then((d) => ({ data: d, error: null as any }));
+
+    if (error) throw error;
+    return data || [];
   },
 
   // ================================

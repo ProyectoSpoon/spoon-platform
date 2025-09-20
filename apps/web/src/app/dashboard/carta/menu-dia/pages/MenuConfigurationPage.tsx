@@ -1,17 +1,17 @@
 'use client';
 
 import React from 'react';
-import { Plus, Save, RefreshCw, Download, Trash2, Eye, AlertTriangle } from 'lucide-react';
+import { Plus, Save, RefreshCw, Trash2, Eye, AlertTriangle } from 'lucide-react';
 
 // Type casting for React type conflicts
 const PlusComponent = Plus as any;
 const SaveComponent = Save as any;
 const RefreshCwComponent = RefreshCw as any;
-const DownloadComponent = Download as any;
 const Trash2Component = Trash2 as any;
 const EyeComponent = Eye as any;
 const AlertTriangleComponent = AlertTriangle as any;
 import { CATEGORIAS_MENU_CONFIG, CATEGORY_ICONS } from '@spoon/shared/constants/menu-dia/menuConstants';
+import { createMenuTemplate } from '@spoon/shared/lib/supabase';
 import { Producto, LoadingStates } from '@spoon/shared/types/menu-dia/menuTypes';
 
 interface MenuData {
@@ -24,6 +24,7 @@ interface MenuData {
   setHasUnsavedChanges: (hasChanges: boolean) => void;
   setLoadingStates: (setter: (prev: LoadingStates) => LoadingStates) => void;
   showNotification: (message: string, type?: 'success' | 'error') => void;
+  restaurantId?: string | null;
 }
 
 interface Props {
@@ -37,6 +38,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
     selectedProducts,
     hasUnsavedChanges,
     loadingStates,
+    menuPrice,
     setSelectedProducts,
     setHasUnsavedChanges,
     showNotification
@@ -45,46 +47,60 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
   // ✅ FUNCIÓN PARA GUARDAR MENÚ
   const handleSaveMenu = async () => {
     menuData.setLoadingStates((prev: LoadingStates) => ({ ...prev, saving: true }));
-    
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const restaurantId = menuData.restaurantId || null;
+      if (!restaurantId) {
+        showNotification('No se pudo identificar el restaurante', 'error');
+        return;
+      }
+
+      // Preguntar nombre de plantilla
+      let templateName = window.prompt('Nombre para la plantilla a guardar:', `Plantilla ${new Date().toLocaleDateString('es-CO')}`) || '';
+      templateName = templateName.trim();
+      if (!templateName) {
+        showNotification('Guardado cancelado: necesitas un nombre.', 'error');
+        return;
+      }
+      const products: Array<{
+        universal_product_id: string;
+        category_id?: string | null;
+        category_name?: string | null;
+        product_name?: string | null;
+      }> = [];
+
+      for (const [categoryId, productos] of Object.entries(selectedProducts)) {
+        const cfg = CATEGORIAS_MENU_CONFIG.find((c) => c.id === categoryId);
+        const categoryName = cfg?.nombre || categoryId;
+        const categoryUuid = cfg?.uuid || null;
+        (productos || []).forEach((p) => {
+          products.push({
+            universal_product_id: p.id,
+            category_id: p.category_id || categoryUuid,
+            category_name: categoryName,
+            product_name: p.name,
+          });
+        });
+      }
+
+      await createMenuTemplate(
+        {
+          restaurant_id: restaurantId,
+          template_name: templateName,
+        },
+        products
+      );
+
       setHasUnsavedChanges(false);
-      showNotification('Menú guardado exitosamente');
+      showNotification('Plantilla guardada');
     } catch (error) {
-      showNotification('Error al guardar el menú', 'error');
+      console.error('Error al guardar plantilla desde Configuración:', error);
+      showNotification('Error al guardar plantilla', 'error');
     } finally {
       menuData.setLoadingStates((prev: LoadingStates) => ({ ...prev, saving: false }));
     }
   };
 
-  // ✅ FUNCIÓN PARA EXPORTAR MENÚ
-  const handleExportMenu = () => {
-    try {
-      const exportData = {
-        selectedProducts,
-        menuCombinations: menuData.menuCombinations,
-        menuPrice: menuData.menuPrice,
-        exportDate: new Date().toISOString()
-      };
-      
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-        type: 'application/json'
-      });
-      
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `menu-dia-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      showNotification('Menú exportado exitosamente');
-    } catch (error) {
-      showNotification('Error al exportar el menú', 'error');
-    }
-  };
+  // (Eliminado) Función de exportar menú ya no es necesaria
 
   // ✅ FUNCIÓN PARA OBTENER ICONO DE CATEGORÍA
   const getIconForCategory = (nombre: string) => {
@@ -125,7 +141,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
             <div className="flex gap-3">
               <button
                 onClick={handleSaveMenu}
-                disabled={loadingStates.saving || !hasUnsavedChanges}
+                disabled={loadingStates.saving || totalProducts === 0}
                 className="flex items-center px-4 py-2 bg-[color:var(--sp-success-600)] text-[--sp-on-success] rounded-lg hover:bg-[color:var(--sp-success-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loadingStates.saving ? (
@@ -136,13 +152,7 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
                 {loadingStates.saving ? 'Guardando...' : 'Guardar'}
               </button>
               
-              <button
-                onClick={handleExportMenu}
-                className="flex items-center px-4 py-2 border border-[color:var(--sp-neutral-300)] text-[color:var(--sp-neutral-700)] rounded-lg hover:bg-[color:var(--sp-neutral-50)] transition-colors"
-              >
-                <DownloadComponent className="w-4 h-4 mr-2" />
-                Exportar
-              </button>
+              {/* Botón de exportar eliminado por requerimiento */}
               
               <button
                 onClick={onOpenWizard}

@@ -37,7 +37,7 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
   onTabChange,
   filtroTiempo = 'hoy',
   onFiltroTiempoChange,
-  filtroFecha = new Date().toISOString().split('T')[0],
+  filtroFecha = require('@spoon/shared/utils/datetime').getBogotaDateISO(),
   onFiltroFechaChange,
   filtroFechaFin,
   onFiltroFechaFinChange,

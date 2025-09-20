@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { InputV2, ButtonV2, SelectV2, SpinnerV2, AlertV2 } from '@spoon/shared';
-import { FormCard } from '@spoon/shared';
-import { InlineEditButton } from '@spoon/shared';
+import { InputV2 } from '@spoon/shared/components/ui/InputV2';
+import { ButtonV2 } from '@spoon/shared/components/ui/ButtonV2';
+import { SelectV2 } from '@spoon/shared/components/ui/SelectV2';
+import { SpinnerV2 } from '@spoon/shared/components/ui/SpinnerV2';
+import { AlertV2 } from '@spoon/shared/components/ui/AlertV2';
+import { FormCard } from '@spoon/shared/components/ui/components/FormCard';
+import { InlineEditButton } from '@spoon/shared/components/ui/components/InlineEditButton';
 import { useGeographicData, type Country, type Department, type City } from '../../../hooks/useGeographicData';
 
 interface UbicacionData {

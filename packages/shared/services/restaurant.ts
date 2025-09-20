@@ -1,5 +1,6 @@
 // packages/shared/services/restaurant.ts
 import { supabase } from '../lib/supabase';
+import { storageService, buildObjectPath, safeFileName } from '../lib/storage';
 
 // ✅ TIPOS BASADOS EN TU ESTRUCTURA REAL
 export interface RestaurantData {
@@ -64,6 +65,40 @@ export interface UserData {
 
 // ✅ SERVICIO PRINCIPAL DE RESTAURANTE
 export class RestaurantService {
+  // Subir imagen (logo o portada) a Supabase Storage y devolver URL pública
+  static async uploadRestaurantImage(params: { file: File | Blob; type: 'logo' | 'cover'; restaurantId?: string }): Promise<{ url: string }> {
+    // Determinar restaurantId del usuario si no viene
+    let restaurantId = params.restaurantId;
+    if (!restaurantId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user');
+      const { data } = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('owner_id', user.id)
+        .maybeSingle();
+      restaurantId = data?.id || 'unknown';
+    }
+
+    const bucket = 'restaurant-images';
+    const originalName = (params.file as any).name || `${params.type}.png`;
+    const cleaned = safeFileName(originalName);
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}-${cleaned}`;
+    const path = buildObjectPath(['restaurants', restaurantId, params.type, fileName]);
+    const contentType = (params as any).file?.type || 'image/png';
+
+    const { publicUrl } = await storageService.uploadFile({
+      bucket,
+      path,
+      body: params.file,
+      contentType,
+      cacheControl: '3600',
+      upsert: true,
+      makePublic: true,
+    });
+    if (!publicUrl) throw new Error('No se pudo obtener URL pública');
+    return { url: publicUrl };
+  }
   
   // Obtener restaurante del usuario autenticado
   static async getUserRestaurant(): Promise<{ data: RestaurantData | null, error: any }> {

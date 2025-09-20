@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { toast } from '@spoon/shared';
+import { toast } from '../Toast';
 
 export function useSaveFeedback() {
   const [saving, setSaving] = useState(false);

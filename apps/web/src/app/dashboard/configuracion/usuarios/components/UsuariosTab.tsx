@@ -1,6 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Search, UserPlus, Edit3, Mail, Phone, Calendar, Clock, Users } from 'lucide-react';
-import { Button, SelectV2 as Select, Input, SwitchV2 as Switch, DialogV2 as Dialog } from '@spoon/shared';
+import { Button } from '@spoon/shared/components/ui/Button';
+import { Input } from '@spoon/shared/components/ui/Input';
+import { SelectV2 as Select } from '@spoon/shared/components/ui/SelectV2';
+import { SwitchV2 as Switch } from '@spoon/shared/components/ui/SwitchV2';
+import { DialogV2 as Dialog } from '@spoon/shared/components/ui/DialogV2';
 import { UsuariosService, type UsuarioRestaurante, type RoleSistema } from '@spoon/shared/services/usuarios';
 
 // Type casting para componentes de lucide-react y @spoon/shared

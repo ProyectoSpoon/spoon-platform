@@ -12,8 +12,7 @@ import { useSpecialData as useSpecialDataRaw } from '@spoon/shared/hooks/special
 const useSpecialData: any = useSpecialDataRaw as any;
 import { DEFAULT_DELIVERY_FEE } from '../../constants/domiciliosConstants';
 // Obtener especiales disponibles hoy desde Supabase (RPC)
-import * as SharedAny from '@spoon/shared';
-const getAvailableSpecialsToday: any = (SharedAny as any)?.getAvailableSpecialsToday;
+import { getAvailableSpecialsToday } from '@spoon/shared/lib/supabase';
 
 type ItemSinSubtotal = Omit<ItemPedido, 'subtotal'>;
 

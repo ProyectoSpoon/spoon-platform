@@ -55,8 +55,10 @@ export const formatearResumenOrden = (items: any[]): string => {
 /**
  * Formatea nota con timestamp
  */
+import { formatInBogota } from '@spoon/shared/utils/datetime';
+
 export const formatearNotaConFecha = (nota: string): string => {
-  const fecha = new Date().toLocaleString('es-CO');
+  const fecha = formatInBogota(new Date());
   return `${nota} - ${fecha}`;
 };
 

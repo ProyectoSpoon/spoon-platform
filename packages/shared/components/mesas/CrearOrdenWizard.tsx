@@ -78,7 +78,7 @@ const CrearOrdenWizard: React.FC<CrearOrdenWizardProps> = ({
       
       
       // 1. Cargar menús del día actual usando JOIN con daily_menus
-      const today = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+  const today = require('@spoon/shared/utils/datetime').getBogotaDateISO(); // Formato YYYY-MM-DD
       
       const { data: menusDia, error: errorMenus } = await supabase
         .from('generated_combinations')

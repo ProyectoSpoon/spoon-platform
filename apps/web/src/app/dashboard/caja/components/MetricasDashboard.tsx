@@ -1,11 +1,13 @@
 import React from 'react';
 import { Card, CardContent } from '@spoon/shared/components/ui/Card';
+import { TooltipV2 } from '@spoon/shared/components/ui/TooltipV2';
 import { TrendingUp, DollarSign, Receipt, AlertCircle, ListOrdered } from 'lucide-react';
 
 // Aliases casteados para evitar conflictos de tipos (múltiples React type defs en monorepo)
 // TODO: eliminar cuando se unifique la versión de React/los types en el workspace
 const CardC = Card as any;
 const CardContentC = CardContent as any;
+const TooltipV2C = TooltipV2 as any;
 const TrendingUpIcon = TrendingUp as any;
 const DollarSignIcon = DollarSign as any;
 const ReceiptIcon = Receipt as any;
@@ -35,11 +37,12 @@ const MetricCard: React.FC<{
   label: string;
   value: number;
   subtitle?: string;
+  helpText?: string; // texto de ayuda opcional (tooltip)
   color: 'green' | 'blue' | 'red' | 'gray';
   trend?: 'up' | 'down' | 'neutral';
   badges?: Array<{ label: string; value: number; color: string }>;
   format?: 'currency' | 'number';
-}> = ({ icon, label, value, subtitle, color, trend, badges = [], format = 'currency' }) => {
+}> = ({ icon, label, value, subtitle, helpText, color, trend, badges = [], format = 'currency' }) => {
   
   const formatCurrency = (pesos: number) => formatCurrencyCOP(pesos);
   const formatValue = (val: number) => (format === 'currency' ? formatCurrency(val) : new Intl.NumberFormat('es-CO').format(val));
@@ -93,8 +96,19 @@ const MetricCard: React.FC<{
             
             {/* Contenido principal */}
             <div>
-              <p className="text-[13px] font-medium text-[color:var(--sp-neutral-500)] mb-1.5">
-                {label}
+              <p className="text-[13px] font-medium text-[color:var(--sp-neutral-500)] mb-1.5 flex items-center gap-1">
+                <span>{label}</span>
+                {helpText && (
+                  <TooltipV2C content={helpText} placement="top">
+                    <span
+                      className="inline-flex items-center justify-center rounded-full w-4 h-4 text-[10px] leading-none cursor-help bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-500)] border border-[color:var(--sp-neutral-200)]"
+                      aria-label={helpText}
+                      tabIndex={0}
+                    >
+                      i
+                    </span>
+                  </TooltipV2C>
+                )}
               </p>
               <p className={`text-[22px] leading-7 font-bold ${classes.value}`}>
                 {formatValue(value)}
@@ -204,12 +218,13 @@ export const MetricasDashboard: React.FC<MetricasDashboardProps> = ({
 
   return (
   <div className="grid gap-4 sm:gap-6 grid-cols-1 xs:grid-cols-2 md:[grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
-      {/* Balance */}
+      {/* Efectivo en Caja (Efectivo teórico) */}
       <MetricCard
   icon={<TrendingUpIcon />}
-        label="Balance"
+        label="Efectivo en Caja"
         value={metricas.balance}
-        subtitle="Ingresos - Egresos del día"
+        subtitle="Monto inicial + ventas en efectivo − gastos"
+        helpText="Efectivo teórico en el cajón. Fórmula: monto inicial + ventas en efectivo − gastos. No incluye tarjeta ni pagos digitales."
         color={metricas.balance >= 0 ? 'blue' : 'red'}
         trend={getBalanceTrend()}
       />

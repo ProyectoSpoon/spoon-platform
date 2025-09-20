@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNotifications } from '@spoon/shared/Context/notification-context';
 import ImagenesForm from './ImagenesForm';
 import HorariosForm from './HorariosForm';
 import { GeneralInfoForm } from '@spoon/shared/components/ui/components/GeneralInfoForm';
 import { UbicacionForm } from '@spoon/shared/components/ui/components/UbicacionForm';
 import { Info, Clock, Upload, Users } from 'lucide-react';
-import { Tabs } from '@spoon/shared';
+import { Tabs } from '@spoon/shared/components/ui/Tabs';
 import { usePermissions } from '@spoon/shared/hooks/usePermissions';
 import { SinPermisos } from '@spoon/shared/components/ui/SinPermisos';
 
@@ -97,7 +97,71 @@ export default function ConfiguracionPage() {
   const departments = [{ id: '11', name: 'Bogotá', code: '11', country_id: 'CO' }];
   const cities = [{ id: '11001', name: 'Bogotá', department_id: '11', latitude: 4.711, longitude: -74.072, is_capital: true }];
 
-  // Cargar datos reales al montar
+  // Deep-link: sincronizar hash -> pestaña
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const applyHash = () => {
+      const hash = (window.location.hash || '').replace('#', '').trim();
+      if (!hash) return;
+      const map: Record<string, string> = {
+        general: 'info',
+        info: 'info',
+        ubicacion: 'location',
+        location: 'location',
+        horarios: 'horarios',
+        imagenes: 'imagenes',
+        users: 'usuarios',
+        usuarios: 'usuarios'
+      };
+      const target = map[hash];
+      if (target) setActiveTab(target);
+    };
+    applyHash();
+    const onHashChange = () => applyHash();
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  // Al cambiar de pestaña, opcionalmente actualizar el hash (solo si viene de navegación interna)
+  const onTabChange = useCallback((id: string) => {
+    setActiveTab(id);
+    if (typeof window !== 'undefined') {
+      const reverseMap: Record<string, string> = {
+        info: 'general',
+        location: 'ubicacion',
+        horarios: 'horarios',
+        imagenes: 'imagenes',
+        usuarios: 'usuarios',
+      };
+      const hash = reverseMap[id] || id;
+      if (hash) {
+        history.replaceState(null, '', `#${hash}`);
+      }
+    }
+  }, []);
+
+  // Element refs para anchors visuales
+  const anchorGeneralRef = useRef<HTMLDivElement | null>(null);
+  const anchorUbicacionRef = useRef<HTMLDivElement | null>(null);
+  const anchorHorariosRef = useRef<HTMLDivElement | null>(null);
+  const anchorImagenesRef = useRef<HTMLDivElement | null>(null);
+
+  // scroll suave al entrar por hash
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const elMap: Record<string, React.RefObject<HTMLDivElement>> = {
+      general: anchorGeneralRef,
+      ubicacion: anchorUbicacionRef,
+      horarios: anchorHorariosRef,
+      imagenes: anchorImagenesRef,
+    };
+    const hash = (window.location.hash || '').replace('#', '');
+    const ref = elMap[hash];
+    if (ref?.current) {
+      // pequeño delay para asegurar render
+      setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+    }
+  }, [activeTab]);
   React.useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -343,13 +407,14 @@ export default function ConfiguracionPage() {
       <TabsCast
         className="mt-0 mb-3"
         activeId={activeTab}
-        onChange={setActiveTab}
+        onChange={onTabChange}
         items={tabItems}
       />
 
       {/* Contenido de pestañas */}
       <div className="mt-2">
         {activeTab === 'info' && (
+          <div id="general" ref={anchorGeneralRef} className="scroll-mt-24">
           <GeneralInfoFormCast
             formData={generalInfo}
             onChange={handleGeneralChange}
@@ -360,9 +425,11 @@ export default function ConfiguracionPage() {
             onCancel={() => setEditGeneral(false)}
             onToggleEdit={() => setEditGeneral(true)}
           />
+          </div>
         )}
 
         {activeTab === 'location' && (
+          <div id="ubicacion" ref={anchorUbicacionRef} className="scroll-mt-24">
           <UbicacionFormCast
             formData={ubicacion}
             onChange={handleUbicacionChange}
@@ -373,24 +440,29 @@ export default function ConfiguracionPage() {
             onCancel={() => setEditUbicacion(false)}
             onToggleEdit={() => setEditUbicacion(true)}
           />
+          </div>
         )}
 
         {activeTab === 'horarios' && (
+          <div id="horarios" ref={anchorHorariosRef} className="scroll-mt-24">
           <HorariosForm
             readOnly={!editHorarios}
             showSave={editHorarios}
             onCancel={() => setEditHorarios(false)}
             onToggleEdit={() => setEditHorarios(true)}
           />
+          </div>
         )}
 
         {activeTab === 'imagenes' && (
+          <div id="imagenes" ref={anchorImagenesRef} className="scroll-mt-24">
           <ImagenesForm
             readOnly={!editImagenes}
             showSave={editImagenes}
             onCancel={() => setEditImagenes(false)}
             onToggleEdit={() => setEditImagenes(true)}
           />
+          </div>
         )}
 
         {activeTab === 'usuarios' && (
