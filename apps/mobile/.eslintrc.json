@@ -1,0 +1,14 @@
+{
+  "root": true,
+  "env": { "es6": true, "node": true, "browser": true },
+  "extends": ["eslint:recommended"],
+  "parserOptions": { "ecmaVersion": 2021, "sourceType": "module" },
+  "plugins": ["hexguard"],
+  "rules": {
+    "hexguard/no-raw-hex": ["warn", {
+      "allowInPaths": ["src/design-system", "assets"],
+      "pattern": "#(?:[0-9a-fA-F]{3}){1,2}",
+      "message": "Evita hex directos fuera del design-system; usa tokens de colores"
+    }]
+  }
+}

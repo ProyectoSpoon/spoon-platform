@@ -1,0 +1,3 @@
+// Backup legado vaciado. Puede eliminarse tras confirmar ausencia de imports.
+export const sharedStyles = {} as any;
+export default sharedStyles;

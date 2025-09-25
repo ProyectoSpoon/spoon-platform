@@ -57,9 +57,9 @@ describe('useCajaSesion', () => {
       expect(res.success).toBe(true);
     });
 
-  // Verifica que la RPC reciba p_monto_inicial en centavos (5000 pesos -> 500000 centavos)
+  // Verifica que la RPC reciba p_monto_inicial en PESOS (5000)
   const rpcArgs = (supa as any).supabase.rpc.mock.calls[0]?.[1];
-  expect(rpcArgs?.p_monto_inicial).toBe(500000);
+  expect(rpcArgs?.p_monto_inicial).toBe(5000);
   expect(rpcArgs?.p_cajero_id).toBe('user-1');
 
     expect(result.current.estadoCaja).toBe('abierta');

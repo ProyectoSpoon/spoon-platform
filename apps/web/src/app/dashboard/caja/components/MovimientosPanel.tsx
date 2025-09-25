@@ -18,16 +18,6 @@ interface OrdenPendiente {
   detalles?: string;
 }
 
-interface Transaccion {
-  id: string;
-  tipo_orden: 'mesa' | 'delivery' | 'directa';
-  orden_id: string | null;
-  monto_total: number;
-  metodo_pago: string;
-  procesada_at: string;
-  monto_cambio: number;
-}
-
 interface Gasto {
   id: string;
   concepto: string;
@@ -186,7 +176,7 @@ export const MovimientosPanel: React.FC<MovimientosPanelProps> = ({
                             timeZone: 'America/Bogota' 
                           })}
                         </span>
-                        {transaccion.monto_cambio > 0 && (
+                        {typeof transaccion.monto_cambio === 'number' && transaccion.monto_cambio > 0 && (
                           <span>💰 Cambio: {formatCurrency(transaccion.monto_cambio)}</span>
                         )}
                       </div>

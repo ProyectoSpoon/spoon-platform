@@ -1,5 +1,5 @@
 // Evitar dependencias circulares del barrel export
-import { supabase } from '../../lib/supabase';
+import { supabase, getBogotaDateISO } from '../../lib/supabase';
 
 import { Producto, MenuCombinacion as _MenuCombinacion } from '../../types/menu-dia/menuTypes';
 import { CATEGORIAS_MENU_CONFIG } from '../../constants/menu-dia/menuConstants';
@@ -249,7 +249,7 @@ export const MenuApiService = {
   },
 
   async getTodayMenu(restaurantId: string) {
-    const today = require('@spoon/shared/utils/datetime').getBogotaDateISO();
+    const today = getBogotaDateISO('dateOnly');
     const { data, error } = await this._withCache(
       'getTodayMenu',
       `${restaurantId}:${today}`,
@@ -314,8 +314,8 @@ export const MenuApiService = {
 
   async createDailyMenu(restaurantId: string, menuPrice: number, _selectedProducts: any, _proteinQuantities: any) {
     // Usar fecha de hoy en zona America/Bogota
-    const today = require('@spoon/shared/utils/datetime').getBogotaDateISO();
-    const expiresAt = require('@spoon/shared/utils/datetime').bogotaDateAtHourISO(today, 22, 0, 0);
+    const today = getBogotaDateISO('dateOnly');
+    const expiresAt = getBogotaDateISO('full'); // Para timestamp completo
 
     // Upsert para evitar conflicto único (restaurant_id, menu_date)
     const { data: upserted, error: menuError } = await supabase

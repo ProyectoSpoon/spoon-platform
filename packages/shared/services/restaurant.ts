@@ -66,38 +66,72 @@ export interface UserData {
 // ✅ SERVICIO PRINCIPAL DE RESTAURANTE
 export class RestaurantService {
   // Subir imagen (logo o portada) a Supabase Storage y devolver URL pública
-  static async uploadRestaurantImage(params: { file: File | Blob; type: 'logo' | 'cover'; restaurantId?: string }): Promise<{ url: string }> {
-    // Determinar restaurantId del usuario si no viene
-    let restaurantId = params.restaurantId;
-    if (!restaurantId) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user');
-      const { data } = await supabase
-        .from('restaurants')
-        .select('id')
-        .eq('owner_id', user.id)
-        .maybeSingle();
-      restaurantId = data?.id || 'unknown';
+  static async uploadRestaurantImage(params: { file: File | Blob; type: 'logo' | 'cover' }): Promise<{ url: string }> {
+    // Obtener usuario autenticado
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    // Obtener restaurant del usuario
+    const { data: restaurant, error: restaurantError } = await supabase
+      .from('restaurants')
+      .select('id')
+      .eq('owner_id', user.id)
+      .maybeSingle();
+
+    if (restaurantError || !restaurant) {
+      throw new Error('No se encontró el restaurante del usuario');
     }
 
     const bucket = 'restaurant-images';
+
+    // Verificar que el bucket existe
+    try {
+      await supabase.storage.from(bucket).list('', { limit: 1 });
+    } catch (e: any) {
+      const msg = e?.message || e?.error?.message || '';
+      if (/Not Found|does not exist|Bucket not found/i.test(msg)) {
+        throw new Error('El bucket "restaurant-images" no existe. Ejecuta el script setup-storage-bucket.sql en Supabase.');
+      }
+      // Para otros errores, continuar
+    }
+
+    // Generar nombre único para el archivo
     const originalName = (params.file as any).name || `${params.type}.png`;
     const cleaned = safeFileName(originalName);
     const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}-${cleaned}`;
-    const path = buildObjectPath(['restaurants', restaurantId, params.type, fileName]);
-    const contentType = (params as any).file?.type || 'image/png';
 
-    const { publicUrl } = await storageService.uploadFile({
-      bucket,
-      path,
-      body: params.file,
-      contentType,
-      cacheControl: '3600',
-      upsert: true,
-      makePublic: true,
-    });
-    if (!publicUrl) throw new Error('No se pudo obtener URL pública');
-    return { url: publicUrl };
+    // Estructura: restaurants/{restaurantId}/{type}/{filename}
+    const path = buildObjectPath(['restaurants', restaurant.id, params.type, fileName]);
+    const contentType = (params.file as any)?.type || 'image/png';
+
+    try {
+      const result = await storageService.uploadFile({
+        bucket,
+        path,
+        body: params.file,
+        contentType,
+        cacheControl: '3600',
+        upsert: false,
+        makePublic: true,
+      });
+
+      if (!result.publicUrl) {
+        throw new Error('No se pudo obtener URL pública tras la subida');
+      }
+
+      return { url: result.publicUrl };
+    } catch (e: any) {
+      const raw = e?.message || '';
+      if (/Bucket not found/i.test(raw)) {
+        throw new Error('Bucket no encontrado. Ejecuta setup-storage-bucket.sql en Supabase.');
+      }
+      if (/row-level security|rls/i.test(raw)) {
+        throw new Error('Error de permisos. Verifica las políticas RLS del bucket.');
+      }
+      throw new Error(`Error subiendo imagen: ${raw}`);
+    }
   }
   
   // Obtener restaurante del usuario autenticado

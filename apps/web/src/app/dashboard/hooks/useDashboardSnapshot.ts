@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase, getUserRestaurant } from '@spoon/shared/lib/supabase';
 import { getBogotaDateISO } from '@spoon/shared/utils/datetime';
-import { useCajaSesion } from '../caja/hooks/useCajaSesion';
+import { useCajaSesion } from '@spoon/shared/caja';
 import { useMesas } from '@spoon/shared/hooks/mesas';
 import { getEstadoDisplay } from '@spoon/shared/utils/mesas';
 

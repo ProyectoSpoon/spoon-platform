@@ -17,13 +17,13 @@ export interface CajaSesion {
 
 export interface TransaccionCaja {
   id: string;
-  caja_sesion_id: string;
-  orden_id: string;
-  tipo_orden: 'mesa' | 'delivery' | 'directa';
+  caja_sesion_id?: string;
+  orden_id?: string | null;
+  tipo_orden?: string; // Alineado con shared: puede venir como string genérico
   metodo_pago: 'efectivo' | 'tarjeta' | 'digital';
   monto_total: number; // En pesos
   monto_recibido?: number;
-  monto_cambio: number;
+  monto_cambio?: number;
   procesada_at: string;
   cajero_id: string;
 }

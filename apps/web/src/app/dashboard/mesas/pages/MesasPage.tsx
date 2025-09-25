@@ -14,7 +14,7 @@ const AlertCircle = Lucide.AlertCircle as any;
 const Plus = Lucide.Plus as any;
 const Lock = Lucide.Lock as any;
 import { useMesas } from '@spoon/shared/hooks/mesas';
-import { useCajaSesion } from '../../caja/hooks/useCajaSesion';
+import { useCajaSesion } from '@spoon/shared/caja';
 import MesaCard from './MesaCard';
 import MesaDetallesPanel from './MesaDetallesPanel';
 // Cast similar a otros componentes para evitar conflictos de tipos por múltiples React

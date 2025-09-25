@@ -209,13 +209,19 @@ export default function SpecialDishWizard({
   const isStepValid = useMemo(() => {
     switch (currentStep) {
       case 0:
-        return specialData.name.trim() !== '' && specialData.description.trim() !== '' && specialData.price > 0;
+        // Validación más robusta para el paso básico
+        const nameValid = specialData.name.trim().length >= 3;
+        const descValid = specialData.description.trim().length >= 10;
+        const priceValid = specialData.price >= 15000 && specialData.price <= 100000;
+        const imageAltValid = !specialData.image || (specialData.imageAlt && specialData.imageAlt.trim().length >= 5);
+        return nameValid && descValid && priceValid && imageAltValid;
       case 1:
-    if (wantsAdditionalProducts === false) return true; // Usuario indicó que no desea agregar
-    // Si aún no decidió (null) obligamos a elegir
-    if (wantsAdditionalProducts === null) return false;
-    // Desea agregar productos: exigir al menos uno
-    return Object.values(specialData.selectedProducts).some(arr => arr.length > 0);
+        if (wantsAdditionalProducts === false) return true; // Usuario indicó que no desea agregar
+        // Si aún no decidió (null) obligamos a elegir
+        if (wantsAdditionalProducts === null) return false;
+        // Desea agregar productos: exigir al menos 2 productos en total
+        const totalProducts = Object.values(specialData.selectedProducts).flat().length;
+        return totalProducts >= 2;
       default:
         return true;
     }
@@ -284,13 +290,49 @@ export default function SpecialDishWizard({
               </div>
               <div className="grid grid-cols-1 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-[color:var(--sp-neutral-700)]">Nombre *</label>
-                  <input value={specialData.name} onChange={e => setSpecialData(sd => ({ ...sd, name: e.target.value }))} placeholder="Ej: Bandeja Paisa Especial" className="w-full px-4 py-3 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-transparent" />
+                  <label htmlFor="special-name" className="block text-sm font-medium mb-2 text-[color:var(--sp-neutral-700)]">
+                    Nombre <span className="text-red-500" aria-label="requerido">*</span>
+                  </label>
+                  <input
+                    id="special-name"
+                    value={specialData.name}
+                    onChange={e => setSpecialData(sd => ({ ...sd, name: e.target.value }))}
+                    placeholder="Ej: Bandeja Paisa Especial"
+                    required
+                    aria-required="true"
+                    aria-describedby="name-help"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-transparent ${
+                      specialData.name.trim().length > 0 && specialData.name.trim().length < 3
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-[color:var(--sp-neutral-300)]'
+                    }`}
+                  />
+                  <p id="name-help" className="text-xs text-[color:var(--sp-neutral-500)] mt-1">
+                    Mínimo 3 caracteres
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-[color:var(--sp-neutral-700)]">Descripción *</label>
-                  <textarea value={specialData.description} onChange={e => setSpecialData(sd => ({ ...sd, description: e.target.value }))} rows={4} placeholder="Describe el plato..." className="w-full px-4 py-3 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-transparent" />
-                  <p className="text-xs text-[color:var(--sp-neutral-500)] mt-1">Explica ingredientes o características destacadas.</p>
+                  <label htmlFor="special-description" className="block text-sm font-medium mb-2 text-[color:var(--sp-neutral-700)]">
+                    Descripción <span className="text-red-500" aria-label="requerido">*</span>
+                  </label>
+                  <textarea
+                    id="special-description"
+                    value={specialData.description}
+                    onChange={e => setSpecialData(sd => ({ ...sd, description: e.target.value }))}
+                    rows={4}
+                    placeholder="Describe el plato..."
+                    required
+                    aria-required="true"
+                    aria-describedby="description-help"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-transparent ${
+                      specialData.description.trim().length > 0 && specialData.description.trim().length < 10
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-[color:var(--sp-neutral-300)]'
+                    }`}
+                  />
+                  <p id="description-help" className="text-xs text-[color:var(--sp-neutral-500)] mt-1">
+                    Mínimo 10 caracteres. Explica ingredientes o características destacadas.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2 text-[color:var(--sp-neutral-700)]">Imagen (opcional)</label>

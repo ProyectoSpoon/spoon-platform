@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useNotification } from '../../Context/notification-provider';
 import {
   getUserProfile,
   getUserRestaurant,
@@ -27,6 +28,8 @@ import {
 
 import { Producto, LoadingStates } from '../../types/menu-dia/menuTypes';
 import { CATEGORIAS_MENU_CONFIG } from '../../constants/menu-dia/menuConstants';
+import { SpecialDishData, SpecialProductSelection } from '../../types/special-dishes/specialDishTypes';
+import { SpecialDishesRepository } from '../../repositories/specialDishesRepository';
 
 // ========================================
 // INTERFACES ESPECÍFICAS PARA ESPECIALES
@@ -89,11 +92,13 @@ const DEFAULT_SPECIAL_PRICE = 35000;
 // ========================================
 
 export const useSpecialData = () => {
+  const { notify, confirm } = useNotification();
+
   // ✅ ESTADOS PRINCIPALES
   const [currentView, setCurrentView] = useState<'list' | 'creation' | 'combinations' | 'wizard'>('list');
-  const [currentSpecialDish, setCurrentSpecialDish] = useState<SpecialDish | null>(null);
+  const [currentSpecialDish, setCurrentSpecialDish] = useState<SpecialDishData | null>(null);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
-  const [specialDishes, setSpecialDishes] = useState<SpecialDish[]>([]);
+  const [specialDishes, setSpecialDishes] = useState<SpecialDishData[]>([]);
   // Mapa local (no persistido) de imágenes por id de especial
   const [specialImages, setSpecialImages] = useState<Record<string, string>>({});
   const [selectedProducts, setSelectedProducts] = useState<{[categoryId: string]: Producto[]}>({});
@@ -105,12 +110,12 @@ export const useSpecialData = () => {
   const [dishDescription, setDishDescription] = useState<string>('');
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  
+
   // ✅ ESTADOS DEL WIZARD (para compatibilidad con MenuWizardPage)
   const [currentStep, setCurrentStep] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [proteinQuantities, setProteinQuantities] = useState<{[productId: string]: number}>({});
-  
+
   // ✅ ESTADOS DE LOADING
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({
     saving: false,
@@ -126,16 +131,15 @@ export const useSpecialData = () => {
   const [filters, setFilters] = useState<SpecialFilters>(DEFAULT_SPECIAL_FILTERS);
   const [filtersCombo, setFiltersCombo] = useState<SpecialComboFilters>(DEFAULT_SPECIAL_COMBO_FILTERS);
 
+  // ✅ ESTADOS DE PAGINACIÓN
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [totalCount, setTotalCount] = useState(0);
+
   // ✅ FUNCIÓN PARA NOTIFICACIONES
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    if (type === 'success') {
-      
-      alert('✅ ' + message);
-    } else {
-      console.error('❌ ERROR:', message);
-      alert('❌ ' + message);
-    }
-  }, []);
+    notify(type, message);
+  }, [notify]);
 
   // ✅ FUNCIONES DEL WIZARD (para compatibilidad)
   const handleNextStep = useCallback(() => {
@@ -223,8 +227,8 @@ export const useSpecialData = () => {
       if (restaurant) {
         setRestaurantId(restaurant.id);
         
-        // Cargar platos especiales del restaurante
-        const dishes = await getRestaurantSpecialDishes(restaurant.id);
+        // Cargar platos especiales del restaurante usando el repositorio
+        const dishes = await SpecialDishesRepository.getRestaurantSpecialDishes(restaurant.id);
         setSpecialDishes(dishes);
         
         
@@ -245,42 +249,96 @@ export const useSpecialData = () => {
     }
   }, [showNotification]);
 
-  // ✅ FUNCIÓN PARA CREAR NUEVO PLATO ESPECIAL
-  const createNewSpecialDish = useCallback(async (
-    dishName: string,
-    dishDescription: string,
-    dishPrice: number,
+  // ✅ FUNCIÓN DE VALIDACIÓN
+  const validateSpecialDishData = useCallback((
+    dishData: {
+      dish_name: string;
+      dish_description: string;
+      dish_price: number;
+      image_url?: string | null;
+      image_alt?: string | null;
+    },
+    selectedProducts: {[categoryId: string]: Producto[]}
+  ): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+
+    // Validar nombre
+    if (!dishData.dish_name || dishData.dish_name.trim().length < 3) {
+      errors.push('El nombre debe tener al menos 3 caracteres');
+    }
+
+    // Validar descripción
+    if (!dishData.dish_description || dishData.dish_description.trim().length < 10) {
+      errors.push('La descripción debe tener al menos 10 caracteres');
+    }
+
+    // Validar precio
+    if (!dishData.dish_price || dishData.dish_price < 15000 || dishData.dish_price > 100000) {
+      errors.push('El precio debe estar entre $15.000 y $100.000');
+    }
+
+    // Validar productos (al menos 2 productos en total)
+    const totalProducts = Object.values(selectedProducts).flat().length;
+    if (totalProducts < 2) {
+      errors.push('Debe seleccionar al menos 2 productos');
+    }
+
+    // Validar alt text si hay imagen
+    if (dishData.image_url && (!dishData.image_alt || dishData.image_alt.trim().length < 5)) {
+      errors.push('El texto alternativo de la imagen debe tener al menos 5 caracteres');
+    }
+
+    return { isValid: errors.length === 0, errors };
+  }, []);
+
+  // ✅ FUNCIÓN COMÚN PARA GUARDAR PLATO ESPECIAL
+  const saveSpecialDish = useCallback(async (
+    dishData: {
+      dish_name: string;
+      dish_description: string;
+      dish_price: number;
+      image_url?: string | null;
+      image_alt?: string | null;
+    },
     selectedProducts: {[categoryId: string]: Producto[]},
-    imageUrl?: string,
-    imageAlt?: string
+    specialDishId?: string,
+    isNew: boolean = false
   ) => {
     if (!restaurantId) {
       showNotification('No se pudo identificar el restaurante', 'error');
       return null;
     }
 
+    // Validar datos
+    const validation = validateSpecialDishData(dishData, selectedProducts);
+    if (!validation.isValid) {
+      showNotification(`Errores de validación: ${validation.errors.join(', ')}`, 'error');
+      return null;
+    }
+
     try {
       setLoadingStates(prev => ({ ...prev, saving: true }));
-      
-      // 1. Crear el plato especial
-      const newDish = await createSpecialDish(restaurantId, {
-        dish_name: dishName,
-        dish_description: dishDescription,
-        dish_price: dishPrice,
-        image_url: imageUrl,
-        image_alt: imageAlt
-      });
 
-      
+      let dish = specialDishId ? { id: specialDishId } : null;
 
-      // 2. Agregar productos seleccionados
-      await insertSpecialDishSelections(newDish.id, selectedProducts);
+      if (isNew) {
+        // Crear nuevo plato especial
+        dish = await createSpecialDish(restaurantId, dishData);
+      } else if (specialDishId) {
+        // Actualizar plato existente
+        await updateSpecialDish(specialDishId, dishData);
+      }
 
-      // 3. Calcular métricas y marcar configuración completa
+      if (!dish) return null;
+
+      // Agregar/actualizar productos seleccionados
+      await insertSpecialDishSelections(dish.id, selectedProducts);
+
+      // Calcular métricas y marcar configuración completa
       const totalProducts = Object.values(selectedProducts).reduce((acc, arr) => acc + arr.length, 0);
       const categoriesConfigured = Object.values(selectedProducts).filter(arr => arr.length > 0).length;
       try {
-        await updateSpecialDish(newDish.id, {
+        await updateSpecialDish(dish.id, {
           total_products_selected: totalProducts as any,
           categories_configured: categoriesConfigured as any,
           setup_completed: true as any,
@@ -291,44 +349,70 @@ export const useSpecialData = () => {
         console.warn('No se pudo actualizar flags de especial', e);
       }
 
-      // 4. Recargar datos
-      const updatedDishes = await getRestaurantSpecialDishes(restaurantId);
+      // Recargar datos usando el repositorio
+      const updatedDishes = await SpecialDishesRepository.getRestaurantSpecialDishes(restaurantId);
       setSpecialDishes(updatedDishes);
 
-      // 5. Limpiar formulario
-      setDishName('');
-      setDishDescription('');
-      setDishPrice(DEFAULT_SPECIAL_PRICE);
-      setSelectedProducts({});
-      setProteinQuantities({});
-      setHasUnsavedChanges(false);
-      setCurrentStep(0);
-      setCurrentView('list');
-
-      // Guardar imagen en memoria si existe
-      if (imageUrl) {
-        setSpecialImages(prev => ({ ...prev, [newDish.id]: imageUrl }));
-  // También inyectar en el arreglo en memoria si no vino aún desde la DB
-  setSpecialDishes(prev => prev.map(d => d.id === newDish.id ? { ...d, image_url: imageUrl } : d));
+      // Limpiar formulario si es creación
+      if (isNew) {
+        setDishName('');
+        setDishDescription('');
+        setDishPrice(DEFAULT_SPECIAL_PRICE);
+        setSelectedProducts({});
+        setProteinQuantities({});
+        setHasUnsavedChanges(false);
+        setCurrentStep(0);
+        setCurrentView('list');
       }
 
-      showNotification(`Plato especial "${dishName}" creado exitosamente`);
-      return newDish;
-      
+      // Guardar imagen en memoria si existe
+      if (dishData.image_url && dishData.image_url.startsWith('blob:')) {
+        setSpecialImages(prev => ({ ...prev, [dish.id]: dishData.image_url! }));
+        setSpecialDishes(prev => prev.map(d => d.id === dish.id ? { ...d, image_url: dishData.image_url } : d));
+      }
+
+      showNotification(isNew ? `Plato especial "${dishData.dish_name}" creado exitosamente` : 'Especial actualizado');
+      return dish;
+
     } catch (error) {
-      console.error('Error creando plato especial:', error);
-      showNotification('Error al crear plato especial', 'error');
+      console.error(`Error ${isNew ? 'creando' : 'guardando'} plato especial:`, error);
+      showNotification(`Error al ${isNew ? 'crear' : 'guardar'} plato especial`, 'error');
       return null;
     } finally {
       setLoadingStates(prev => ({ ...prev, saving: false }));
     }
   }, [restaurantId, showNotification]);
 
+  // ✅ FUNCIÓN PARA CREAR NUEVO PLATO ESPECIAL
+  const createNewSpecialDish = useCallback(async (
+    dishName: string,
+    dishDescription: string,
+    dishPrice: number,
+    selectedProducts: {[categoryId: string]: Producto[]},
+    imageUrl?: string,
+    imageAlt?: string
+  ) => {
+    return saveSpecialDish({
+      dish_name: dishName,
+      dish_description: dishDescription,
+      dish_price: dishPrice,
+      image_url: imageUrl,
+      image_alt: imageAlt
+    }, selectedProducts, undefined, true);
+  }, [saveSpecialDish]);
+
   // ✅ FUNCIÓN PARA EDITAR PLATO ESPECIAL (carga selecciones y abre wizard simplificado)
   const editSpecialDish = useCallback(async (specialDish: SpecialDish) => {
     try {
       setLoadingStates(prev => ({ ...prev, loading: true }));
-      setCurrentSpecialDish(specialDish);
+      const transformedDish: SpecialDishData = {
+        ...specialDish,
+        dish_description: specialDish.dish_description || undefined,
+        image_url: specialDish.image_url || undefined,
+        image_alt: specialDish.image_alt || undefined,
+        status: specialDish.status as 'draft' | 'active' | 'inactive'
+      };
+      setCurrentSpecialDish(transformedDish);
       // Cargar selecciones de productos existentes
   const selections = await _getSpecialDishSelections(specialDish.id);
       const grouped: { [categoryId: string]: Producto[] } = {};
@@ -364,44 +448,18 @@ export const useSpecialData = () => {
   // ✅ FUNCIÓN PARA GUARDAR CAMBIOS DE UN ESPECIAL EXISTENTE
   const saveEditedSpecialDish = useCallback(async (imageUrl?: string, imageAlt?: string) => {
     if (!currentSpecialDish) return;
-    try {
-      setLoadingStates(prev => ({ ...prev, saving: true }));
-      await updateSpecialDish(currentSpecialDish.id, {
-        dish_name: dishName,
-        dish_description: dishDescription,
-        dish_price: dishPrice,
-        image_url: imageUrl ?? currentSpecialDish.image_url ?? null,
-        image_alt: imageAlt ?? currentSpecialDish.image_alt ?? null
-      });
-      await insertSpecialDishSelections(currentSpecialDish.id, selectedProducts);
-      // Recalcular métricas y marcar completo
-  const totalProductsEdit = Object.values(selectedProducts).reduce((acc: number, arr: Producto[]) => acc + arr.length, 0);
-  const categoriesConfiguredEdit = Object.values(selectedProducts).filter((arr: Producto[]) => arr.length > 0).length;
-      try {
-        await updateSpecialDish(currentSpecialDish.id, {
-          total_products_selected: totalProductsEdit as any,
-          categories_configured: categoriesConfiguredEdit as any,
-          setup_completed: true as any,
-          status: 'active' as any,
-          is_template: false as any
-        });
-      } catch (e) {
-        console.warn('No se pudo actualizar flags de especial (edición)', e);
-      }
-      const updated = await getRestaurantSpecialDishes(restaurantId!);
-      setSpecialDishes(updated);
-      if (imageUrl) {
-        setSpecialImages(prev => ({ ...prev, [currentSpecialDish.id]: imageUrl }));
-      }
-      showNotification('Especial actualizado');
+    const result = await saveSpecialDish({
+      dish_name: dishName,
+      dish_description: dishDescription,
+      dish_price: dishPrice,
+      image_url: imageUrl ?? currentSpecialDish.image_url ?? null,
+      image_alt: imageAlt ?? currentSpecialDish.image_alt ?? null
+    }, selectedProducts, currentSpecialDish.id, false);
+
+    if (result) {
       setCurrentView('list');
-    } catch (error) {
-      console.error('Error guardando edición', error);
-      showNotification('Error al guardar cambios', 'error');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, saving: false }));
     }
-  }, [currentSpecialDish, dishName, dishDescription, dishPrice, selectedProducts, restaurantId, showNotification]);
+  }, [currentSpecialDish, dishName, dishDescription, dishPrice, selectedProducts, saveSpecialDish]);
 
   // ✅ FUNCIÓN PARA OBTENER SELECCIONES AGRUPADAS (solo lectura / detalle)
   const fetchSpecialDishSelectionsGrouped = useCallback(async (specialDishId: string) => {
@@ -541,9 +599,15 @@ export const useSpecialData = () => {
   }, []);
 
   // ✅ FUNCIÓN PARA CERRAR WIZARD
-  const closeWizard = useCallback((force = false) => {
+  const closeWizard = useCallback(async (force = false) => {
     if (hasUnsavedChanges && !force) {
-      if (confirm('¿Estás seguro de cerrar? Tienes cambios sin guardar.')) {
+      const confirmed = await confirm({
+        title: 'Cambios sin guardar',
+        description: '¿Estás seguro de cerrar? Tienes cambios sin guardar.',
+        confirmText: 'Cerrar',
+        cancelText: 'Continuar editando'
+      });
+      if (confirmed) {
         setIsAnimating(false);
         setTimeout(() => setCurrentView('list'), 300);
         return true;
@@ -554,7 +618,41 @@ export const useSpecialData = () => {
       setTimeout(() => setCurrentView('list'), 300);
       return true;
     }
-  }, [hasUnsavedChanges]);
+  }, [hasUnsavedChanges, confirm]);
+
+  // ✅ SUBSCRIPCIÓN EN TIEMPO REAL PARA ACTUALIZACIONES LIVE
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel('special-dishes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'special_dishes',
+          filter: `restaurant_id=eq.${restaurantId}`
+        },
+        async (payload) => {
+          console.log('Special dish change detected:', payload);
+
+          // Recargar datos cuando hay cambios usando el repositorio
+          try {
+            const updatedDishes = await SpecialDishesRepository.getRestaurantSpecialDishes(restaurantId);
+            setSpecialDishes(updatedDishes);
+            showNotification('Datos de especiales actualizados en tiempo real');
+          } catch (error) {
+            console.error('Error recargando datos en tiempo real:', error);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, showNotification]);
 
   // ✅ CARGAR DATOS AL MONTAR
   useEffect(() => {
@@ -619,6 +717,14 @@ export const useSpecialData = () => {
     setFilters,
     filtersCombo,
     setFiltersCombo,
+
+    // Estados de paginación
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalCount,
+    setTotalCount,
     
     // Funciones principales
     showNotification,

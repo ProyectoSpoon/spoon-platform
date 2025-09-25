@@ -6,6 +6,7 @@ import { Users, Settings, FileText } from 'lucide-react';
 import { Tabs } from '@spoon/shared/components/ui/Tabs';
 import { usePermissions } from '@spoon/shared/hooks/usePermissions';
 import { SinPermisos } from '@spoon/shared/components/ui/SinPermisos';
+import { getUserRestaurant } from '@spoon/shared/lib/supabase';
 import { UsuariosTab } from './components/UsuariosTab';
 import { ConfiguracionRolesTab } from './components/ConfiguracionRolesTab';
 import { AuditoriaTab } from './components/AuditoriaTab';
@@ -99,20 +100,34 @@ export default function ConfiguracionUsuariosPage() {
     try {
       console.log('🔍 Cargando roles y permisos...');
       const { UsuariosService } = await import('@spoon/shared/services/usuarios');
+      const restaurant = await getUserRestaurant();
+      const restaurantId = restaurant?.id || '';
+
       const [rolesData, permisosData] = await Promise.all([
         UsuariosService.getRolesSistema(),
         UsuariosService.getPermisos()
       ]);
+
+      let customRolesData: { data: any[] | null; error: any } = { data: [], error: null };
+      if (restaurantId) {
+        customRolesData = await UsuariosService.getCustomRoles(restaurantId);
+      }
+
       console.log('🔍 Roles obtenidos:', rolesData);
+      console.log('🔍 Roles personalizados:', customRolesData);
       console.log('🔍 Permisos obtenidos:', permisosData);
-      
-      if (rolesData.data) setRoles(rolesData.data);
+
+      if (rolesData.data) {
+        const systemRoles = rolesData.data.map((r: any) => ({ ...r, isCustom: false }));
+        const customRoles = (customRolesData.data || []).map((r: any) => ({ ...r, isCustom: true }));
+        setRoles([...systemRoles, ...customRoles]);
+      }
       if (permisosData.data) setPermisos(permisosData.data);
     } catch (e) {
       console.error('Error cargando roles/permisos:', e);
     }
   }
-  
+
   // CAMBIAR ESTA CONDICIÓN: cargar roles tanto en usuarios como en roles
   if ((activeTab === 'usuarios' || activeTab === 'roles') && (roles.length === 0 || Object.keys(permisos).length === 0)) {
     loadRolesPermisos();
@@ -194,6 +209,7 @@ export default function ConfiguracionUsuariosPage() {
           <UsuariosTab
             usuarios={usuarios}
             roles={roles}
+            customRoles={roles.filter((r: any) => r.isCustom)}
             onRefresh={refrescarUsuarios}
             onNotification={addNotification}
           />

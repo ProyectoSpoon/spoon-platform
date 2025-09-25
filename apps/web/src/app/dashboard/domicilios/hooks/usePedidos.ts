@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 // Import directly from the shared supabase module to avoid barrel resolution issues
 import { supabase, getUserRestaurant } from '@spoon/shared/lib/supabase';
+import { useNotifications } from '@spoon/shared/Context/notification-context';
 import {
   PedidoDomicilio,
   NuevoPedido,
@@ -37,6 +38,9 @@ export const usePedidos = () => {
   const [limit, setLimit] = useState<number>(150); // limite inicial para historial / vista
   const [hasOpenCajaSession, setHasOpenCajaSession] = useState(false);
 
+  // ✅ NOTIFICACIONES CENTRALIZADAS
+  const { addNotification } = useNotifications();
+
   // Utilidad para refrescar el estado de "caja abierta" (usada en efectos y subscripciones)
   const refreshCajaSessionOpen = useCallback(async () => {
     if (!restaurantId) return;
@@ -55,13 +59,6 @@ export const usePedidos = () => {
       setHasOpenCajaSession(false);
     }
   }, [restaurantId]);
-
-  const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    const prefix = type === 'success' ? '✅' : '❌';
-    console[type === 'success' ? 'log' : 'error'](`${prefix} ${message}`);
-    // Reemplaza esto por una notificación visual si usas alguna librería
-    // toast.success(message) o toast.error(message)
-  }, []);
 
   // Cargar ID del restaurante
   useEffect(() => {
@@ -245,17 +242,25 @@ export const usePedidos = () => {
       if (error) throw error;
 
   await cargarPedidos();
-  showNotification(MESSAGES.PEDIDO_CREADO);
+  addNotification({
+    type: 'success',
+    title: 'Pedido creado',
+    message: MESSAGES.PEDIDO_CREADO
+  });
   return true;
 
     } catch (error) {
       console.error('Error creando pedido:', error);
-      showNotification(MESSAGES.ERROR_CREAR_PEDIDO, 'error');
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: MESSAGES.ERROR_CREAR_PEDIDO
+      });
   return false;
     } finally {
       setLoadingStates(prev => ({ ...prev, creando_pedido: false }));
     }
-  }, [restaurantId, cargarPedidos, showNotification]);
+  }, [restaurantId, cargarPedidos, addNotification]);
 
   const actualizarEstado = useCallback(async (data: ActualizarEstadoPedido) => {
     try {
@@ -291,15 +296,23 @@ export const usePedidos = () => {
       }
 
       await cargarPedidos();
-      showNotification(MESSAGES.PEDIDO_ACTUALIZADO);
+      addNotification({
+        type: 'success',
+        title: 'Estado actualizado',
+        message: MESSAGES.PEDIDO_ACTUALIZADO
+      });
 
     } catch (error) {
       console.error('Error actualizando estado:', error);
-      showNotification(MESSAGES.ERROR_ACTUALIZAR_ESTADO, 'error');
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: MESSAGES.ERROR_ACTUALIZAR_ESTADO
+      });
     } finally {
       setLoadingStates(prev => ({ ...prev, actualizando_estado: false }));
     }
-  }, [cargarPedidos, showNotification]);
+  }, [cargarPedidos, addNotification]);
 
   const registrarPago = useCallback(async (data: RegistrarPago) => {
     try {
@@ -309,7 +322,11 @@ export const usePedidos = () => {
       const { data: authSnapshot } = await supabase.auth.getUser();
       const user = authSnapshot?.user;
       if (!user) {
-        showNotification('Sesión expirada. Inicia sesión nuevamente.', 'error');
+        addNotification({
+          type: 'error',
+          title: 'Sesión expirada',
+          message: 'Inicia sesión nuevamente.'
+        });
         DEBUG && console.warn('[PagoDelivery][AUTH] Usuario no encontrado (authSnapshot.user es null)');
         return;
       }
@@ -325,7 +342,11 @@ export const usePedidos = () => {
         .limit(1)
         .maybeSingle();
       if (!sesionCheck) {
-        showNotification('No hay caja abierta. Abra caja para registrar el pago.', 'error');
+        addNotification({
+          type: 'error',
+          title: 'Caja cerrada',
+          message: 'No hay caja abierta. Abra caja para registrar el pago.'
+        });
         setHasOpenCajaSession(false);
         DEBUG && console.warn('[PagoDelivery][CAJA] No hay sesión abierta para restaurant', restaurantId);
         return;
@@ -336,7 +357,11 @@ export const usePedidos = () => {
       // 2. Obtener pedido local
       const pedido = estado.pedidos.find(p => p.id === data.pedido_id);
       if (!pedido) {
-        showNotification('Pedido no encontrado en memoria. Recarga.', 'error');
+        addNotification({
+          type: 'error',
+          title: 'Pedido no encontrado',
+          message: 'Pedido no encontrado en memoria. Recarga.'
+        });
         DEBUG && console.error('[PagoDelivery][PEDIDO] Pedido no encontrado en estado local', { pedido_id: data.pedido_id, pedidos_en_memoria: estado.pedidos.length });
         return;
       }
@@ -398,7 +423,11 @@ export const usePedidos = () => {
             DEBUG && console.log('[PagoDelivery][FALLBACK] Insert directo OK');
           } else {
             if ((insertErr as any).code === '23505') {
-              showNotification('Pago ya registrado en la sesión abierta.', 'error');
+              addNotification({
+                type: 'error',
+                title: 'Pago duplicado',
+                message: 'Pago ya registrado en la sesión abierta.'
+              });
               transaccionOk = true; // ya existe, consideramos ok
               DEBUG && console.warn('[PagoDelivery][FALLBACK] Duplicado detectado (23505)');
             } else {
@@ -419,7 +448,11 @@ export const usePedidos = () => {
         })
         .eq('id', data.pedido_id);
       if (pedidoError) {
-        showNotification('Error actualizando pedido como pagado', 'error');
+        addNotification({
+          type: 'error',
+          title: 'Error',
+          message: 'Error actualizando pedido como pagado'
+        });
         throw pedidoError;
       }
 
@@ -432,20 +465,32 @@ export const usePedidos = () => {
       }
 
   if (transaccionOk) {
-        showNotification('Pago registrado y transacción en caja', 'success');
+        addNotification({
+          type: 'success',
+          title: 'Pago registrado',
+          message: 'Pago registrado y transacción en caja'
+        });
       } else if (rpcIntentado) {
-        showNotification('Pago marcado. No se pudo registrar en caja (revisar permisos).', 'error');
+        addNotification({
+          type: 'error',
+          title: 'Pago parcial',
+          message: 'Pago marcado. No se pudo registrar en caja (revisar permisos).'
+        });
         DEBUG && console.warn('[PagoDelivery][RESULT] Pedido marcado pagado pero transacción NO registrada');
       }
 
       await cargarPedidos();
     } catch (e) {
       console.error('Error registrando pago delivery:', e);
-      showNotification('Error al registrar el pago', 'error');
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Error al registrar el pago'
+      });
     } finally {
       setLoadingStates(prev => ({ ...prev, registrando_pago: false }));
     }
-  }, [estado.pedidos, restaurantId, showNotification, cargarPedidos]);
+  }, [estado.pedidos, restaurantId, addNotification, cargarPedidos]);
 
   useEffect(() => {
     if (restaurantId) {
@@ -504,12 +549,10 @@ export const usePedidos = () => {
     actualizarEstado,
     registrarPago,
     cargarPedidos,
-  showNotification,
-  filtros: estado.filtros,
-  updateFiltros,
-  loadMore,
-  limit,
-  hasOpenCajaSession
+    filtros: estado.filtros,
+    updateFiltros,
+    loadMore,
+    limit,
+    hasOpenCajaSession
   };
 };
-

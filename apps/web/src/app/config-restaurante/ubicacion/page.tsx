@@ -112,7 +112,7 @@ export default function UbicacionPage() {
       city: cities.find(c => c.id === formData.city_id)?.name,
       trigger: 'formData change'
     });
-  }, [formData.latitude, formData.longitude]);
+  }, [formData.latitude, formData.longitude, formData.city_id, cities]);
 
   // Seguridad: timeout para evitar loading infinito
   useEffect(() => {
@@ -178,34 +178,34 @@ export default function UbicacionPage() {
   const [isValidatingConsistency, setIsValidatingConsistency] = useState(false);
   const [consistencyWarning, setConsistencyWarning] = useState<string | null>(null);
 
-  const validateAddressConsistency = async () => {
+  const validateAddressConsistency = useCallback(async () => {
     if (!formData.address || formData.latitude === 4.6097102 || isValidatingConsistency) return;
-    
+
     setIsValidatingConsistency(true);
     setConsistencyWarning(null);
-    
+
     try {
       // Hacer geocodificación inversa para verificar qué dirección corresponde a las coordenadas actuales
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${formData.latitude}&lon=${formData.longitude}&zoom=18&addressdetails=1`
       );
       const data = await response.json();
-      
+
       if (data && data.address) {
         const reverseAddress = data.address;
         const currentSearchAddress = formData.address.toLowerCase().trim();
-        
+
         // Verificar si la dirección actual es consistente con las coordenadas
-        const isConsistent = 
+        const isConsistent =
           (reverseAddress.road && currentSearchAddress.includes(reverseAddress.road.toLowerCase())) ||
           (reverseAddress.house_number && currentSearchAddress.includes(reverseAddress.house_number)) ||
           data.display_name.toLowerCase().includes(currentSearchAddress.split(' ')[0].toLowerCase());
-        
+
         if (!isConsistent) {
-          const suggestedAddress = reverseAddress.road && reverseAddress.house_number 
+          const suggestedAddress = reverseAddress.road && reverseAddress.house_number
             ? `${reverseAddress.road} # ${reverseAddress.house_number}`
             : reverseAddress.road || data.display_name.split(',')[0];
-            
+
           setConsistencyWarning(
             `La dirección "${formData.address}" podría no coincidir exactamente con la ubicación del marcador. ` +
             `La dirección más cercana es: "${suggestedAddress}"`
@@ -217,16 +217,16 @@ export default function UbicacionPage() {
     } finally {
       setIsValidatingConsistency(false);
     }
-  };
+  }, [formData.address, formData.latitude, formData.longitude, isValidatingConsistency]);
 
   // Validar consistencia cuando cambien las coordenadas
   useEffect(() => {
     const timeout = setTimeout(() => {
       validateAddressConsistency();
     }, 1000); // Debounce de 1 segundo
-    
+
     return () => clearTimeout(timeout);
-  }, [formData.latitude, formData.longitude, formData.address]);
+  }, [validateAddressConsistency]);
 
   const handleSave = async () => {
     console.log('🔄 Iniciando handleSave');
@@ -259,6 +259,7 @@ export default function UbicacionPage() {
         city: cities.find((c) => c.id === formData.city_id)?.name || "",
         state: departments.find((d) => d.id === formData.department_id)?.name || "",
         country: countries.find((c) => c.id === formData.country_id)?.name || "",
+        setup_step: 2,
         updated_at: new Date().toISOString(),
       };
       
@@ -538,4 +539,3 @@ export default function UbicacionPage() {
     </div>
   );
 }
-

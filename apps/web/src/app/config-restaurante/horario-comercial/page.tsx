@@ -236,7 +236,8 @@ export default function HorarioComercialPage() {
     try {
       setGuardando(true);
       await updateRestaurant(restaurantId, {
-        business_hours: horarios
+        business_hours: horarios,
+        setup_step: 3
       });
       return true;
     } catch (error) {

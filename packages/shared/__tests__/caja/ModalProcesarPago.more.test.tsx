@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import { NotificationProvider } from '@spoon/shared/Context/notification-provider';
 import { ModalProcesarPago } from '../../../../apps/web/src/app/dashboard/caja/pages/modals/ModalProcesarPago';
 
 describe('ModalProcesarPago - non-cash flows', () => {
@@ -9,12 +10,14 @@ describe('ModalProcesarPago - non-cash flows', () => {
     const orden = { id: 'o1', tipo: 'mesa' as const, identificador: 'Mesa 2', monto_total: 1000 } as any;
 
     render(
-      <ModalProcesarPago
-        orden={orden}
-        isOpen
-        onClose={onClose}
-        onConfirmar={onConfirmar}
-      />
+      <NotificationProvider>
+        <ModalProcesarPago
+          orden={orden}
+          isOpen
+          onClose={onClose}
+          onConfirmar={onConfirmar}
+        />
+      </NotificationProvider>
     );
 
     // Cambia a tarjeta

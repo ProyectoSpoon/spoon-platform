@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, UserPlus, Edit3, Mail, Phone, Calendar, Clock, Users } from 'lucide-react';
 import { Button } from '@spoon/shared/components/ui/Button';
 import { Input } from '@spoon/shared/components/ui/Input';
@@ -25,6 +25,7 @@ const DialogCast = Dialog as any;
 interface UsuariosTabProps {
   usuarios: UsuarioRestaurante[];
   roles: RoleSistema[];
+  customRoles?: any[];
   onRefresh: () => void;
   onNotification: (notification: any) => void;
 }
@@ -32,14 +33,10 @@ interface UsuariosTabProps {
 export const UsuariosTab: React.FC<UsuariosTabProps> = ({
   usuarios,
   roles,
+  customRoles = [],
   onRefresh,
   onNotification
 }) => {
-  // AGREGAR ESTOS CONSOLE.LOG TEMPORALES
-  console.log('🔍 UsuariosTab - Props recibidas:');
-  console.log('  usuarios:', usuarios?.length, usuarios);
-  console.log('  roles:', roles?.length, roles);
-  console.log('  roles detallados:', roles);
   const [filtroRol, setFiltroRol] = useState<string>('todos');
   const [busqueda, setBusqueda] = useState('');
   const [modalInvitar, setModalInvitar] = useState(false);
@@ -66,19 +63,72 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
   // Filtrar y buscar usuarios
   const usuariosFiltrados = useMemo(() => {
     return usuarios.filter(usuario => {
-      const cumpleFiltroRol = filtroRol === 'todos' || 
-        usuario.user_roles?.[0]?.system_roles?.name === filtroRol;
-      
+      // Determinar el rol del usuario (sistema o personalizado)
+      const rolSistema = usuario.user_roles?.[0]?.system_roles;
+      const customRoleId = usuario.user_roles?.[0]?.custom_role_id;
+      const rolPersonalizado = customRoleId ? customRoles.find(cr => cr.id === customRoleId) : null;
+
+      // Obtener el nombre del rol para filtrar
+      const nombreRolActual = rolPersonalizado ? rolPersonalizado.name : rolSistema?.name;
+
+      const cumpleFiltroRol = filtroRol === 'todos' || nombreRolActual === filtroRol;
+
       const cumpleBusqueda = busqueda === '' ||
         `${usuario.first_name} ${usuario.last_name}`.toLowerCase().includes(busqueda.toLowerCase()) ||
         usuario.email.toLowerCase().includes(busqueda.toLowerCase());
 
       return cumpleFiltroRol && cumpleBusqueda;
     });
-  }, [usuarios, filtroRol, busqueda]);
+  }, [usuarios, filtroRol, busqueda, customRoles]);
 
-  // Manejar invitación de usuario
-  const handleInvitarUsuario = async () => {
+  // Obtener roles disponibles usando el método del sistema
+  const [rolesDisponibles, setRolesDisponibles] = useState<any[]>([]);
+  const [cargandoRoles, setCargandoRoles] = useState(false);
+
+  useEffect(() => {
+    const cargarRoles = async () => {
+      setCargandoRoles(true);
+      try {
+        // Usar el método existente que funciona con roles del sistema
+        const { data, error } = await UsuariosService.getRolesSistema();
+        if (!error && data) {
+          // Filtrar para excluir propietario y mapear al formato esperado
+          const rolesFiltrados = data
+            .filter(rol => rol.name !== 'propietario')
+            .map(rol => ({
+              id: rol.id,
+              name: rol.name,
+              type: 'system',
+              description: rol.description,
+              is_system: true
+            }));
+          setRolesDisponibles(rolesFiltrados);
+        }
+      } catch (error) {
+        console.error('Error cargando roles:', error);
+        // Fallback: usar roles prop
+        if (roles.length > 0) {
+          const rolesFiltrados = roles
+            .filter(rol => rol.name !== 'propietario')
+            .map(rol => ({
+              id: rol.id,
+              name: rol.name,
+              type: 'system',
+              description: rol.description,
+              is_system: true
+            }));
+          setRolesDisponibles(rolesFiltrados);
+        }
+      } finally {
+        setCargandoRoles(false);
+      }
+    };
+
+    cargarRoles();
+  }, [roles]);
+
+  // Manejar creación directa de usuario
+  const handleCrearUsuario = async () => {
     if (!formInvitar.first_name || !formInvitar.last_name || !formInvitar.email || !formInvitar.role_id) {
       onNotification({
         type: 'error',
@@ -89,14 +139,33 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
     }
 
     try {
-      const { data, error } = await UsuariosService.invitarUsuario(formInvitar);
-      
+      // Si es un rol personalizado, extraer el ID real
+      let roleIdToSend = formInvitar.role_id;
+      if (formInvitar.role_id.startsWith('custom_')) {
+        const customRoleId = formInvitar.role_id.replace('custom_', '');
+        roleIdToSend = customRoleId;
+      }
+
+      const userData = {
+        first_name: formInvitar.first_name,
+        last_name: formInvitar.last_name,
+        email: formInvitar.email,
+        phone: formInvitar.phone,
+        role_id: roleIdToSend,
+        // La contraseña temporal se genera automáticamente
+      };
+
+      const { data, error } = await UsuariosService.crearUsuarioDirecto(userData);
+
       if (error) throw error;
 
+      // Mostrar contraseña temporal al administrador
+      const passwordTemporal = data?.password_temporal;
+      const instrucciones = data?.instrucciones;
       onNotification({
         type: 'success',
-        title: 'Usuario invitado',
-        message: `Se ha enviado una invitación a ${formInvitar.email}`
+        title: 'Usuario creado exitosamente',
+        message: instrucciones || `Usuario creado. Contraseña temporal: ${passwordTemporal}. Compártela de forma segura con el usuario.`
       });
 
       setModalInvitar(false);
@@ -110,11 +179,11 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
       });
       onRefresh();
     } catch (error) {
-      console.error('Error invitando usuario:', error);
+      console.error('Error creando usuario:', error);
       onNotification({
         type: 'error',
         title: 'Error',
-        message: 'No se pudo enviar la invitación'
+        message: 'No se pudo crear el usuario'
       });
     }
   };
@@ -124,9 +193,16 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
     if (!modalEditar.usuario) return;
 
     try {
+      // Si es un rol personalizado, extraer el ID real
+      let roleIdToSend = formEditar.role_id;
+      if (formEditar.role_id.startsWith('custom_')) {
+        const customRoleId = formEditar.role_id.replace('custom_', '');
+        roleIdToSend = customRoleId;
+      }
+
       const { error } = await UsuariosService.cambiarRolUsuario(
         modalEditar.usuario.id,
-        formEditar.role_id,
+        roleIdToSend,
         'Rol actualizado desde configuración'
       );
 
@@ -213,12 +289,12 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
             Gestiona los miembros de tu equipo
           </p>
         </div>
-        <ButtonCast 
+        <ButtonCast
           onClick={() => setModalInvitar(true)}
           className="flex items-center gap-2"
         >
           <UserPlusCast className="h-4 w-4" />
-          Invitar Usuario
+          Crear Usuario
         </ButtonCast>
       </div>
 
@@ -234,6 +310,11 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
             {roles.map(rol => (
               <option key={rol.id} value={rol.name}>
                 {getRoleLabel(rol.name)}
+              </option>
+            ))}
+            {customRoles.map(rol => (
+              <option key={`filter_${rol.id}`} value={rol.name}>
+                {rol.name} (Personalizado)
               </option>
             ))}
           </SelectCast>
@@ -260,7 +341,16 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
           </div>
         ) : (
           usuariosFiltrados.map(usuario => {
-            const rol = usuario.user_roles?.[0]?.system_roles;
+            const rolSistema = usuario.user_roles?.[0]?.system_roles;
+            const customRoleId = usuario.user_roles?.[0]?.custom_role_id;
+
+            // Buscar rol personalizado si existe
+            const rolPersonalizado = customRoleId ? customRoles.find(cr => cr.id === customRoleId) : null;
+
+            // Determinar qué rol mostrar
+            const rolDisplay = rolPersonalizado || rolSistema;
+            const esPersonalizado = !!rolPersonalizado;
+
             return (
               <div
                 key={usuario.id}
@@ -272,7 +362,7 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
                     <div className="w-12 h-12 rounded-full bg-[color:var(--sp-info-100)] flex items-center justify-center font-semibold text-[color:var(--sp-info-700)]">
                       {usuario.first_name[0]}{usuario.last_name[0]}
                     </div>
-                    
+
                     {/* Info del usuario */}
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-[color:var(--sp-neutral-900)] truncate">
@@ -291,9 +381,10 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
                         )}
                       </div>
                       <div className="flex items-center gap-4 mt-2">
-                        {rol && (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(rol.name)}`}>
-                            {getRoleLabel(rol.name)}
+                        {rolDisplay && (
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${esPersonalizado ? 'bg-purple-100 text-purple-800' : getRoleColor(rolDisplay.name)}`}>
+                            {esPersonalizado ? rolDisplay.name : getRoleLabel(rolDisplay.name)}
+                            {esPersonalizado && ' ⭐'}
                           </span>
                         )}
                         <div className="flex items-center gap-1 text-xs text-[color:var(--sp-neutral-500)]">
@@ -341,7 +432,7 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
       {/* Modal Invitar Usuario */}
   <DialogCast open={modalInvitar} onClose={() => setModalInvitar(false)}>
         <div className="p-6">
-          <h2 className="text-lg font-semibold mb-4">➕ Invitar Nuevo Usuario</h2>
+          <h2 className="text-lg font-semibold mb-4">➕ Crear Nuevo Usuario</h2>
           
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -377,6 +468,11 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
                   {getRoleLabel(rol.name)}
                 </option>
               ))}
+              {customRoles.map(rol => (
+                <option key={`custom_${rol.id}`} value={`custom_${rol.id}`}>
+                  {rol.name} (Personalizado)
+                </option>
+              ))}
             </SelectCast>
             <textarea
               placeholder="Mensaje personalizado (opcional)"
@@ -391,8 +487,8 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
             <ButtonCast variant="outline" onClick={() => setModalInvitar(false)}>
               Cancelar
             </ButtonCast>
-            <ButtonCast onClick={handleInvitarUsuario}>
-              📧 Enviar Invitación
+            <ButtonCast onClick={handleCrearUsuario}>
+              ➕ Crear Usuario
             </ButtonCast>
           </div>
         </div>
@@ -427,6 +523,11 @@ export const UsuariosTab: React.FC<UsuariosTabProps> = ({
                 {roles.map(rol => (
                   <option key={rol.id} value={rol.id}>
                     {getRoleLabel(rol.name)}
+                  </option>
+                ))}
+                {customRoles.map(rol => (
+                  <option key={`custom_${rol.id}`} value={`custom_${rol.id}`}>
+                    {rol.name} (Personalizado)
                   </option>
                 ))}
               </SelectCast>

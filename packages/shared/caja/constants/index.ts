@@ -1,1 +1,27 @@
+// Re-exportar todo de cajaConstants (constantes técnicas)
 export * from './cajaConstants';
+
+// Re-exportar selectivamente de messages para evitar conflictos
+export {
+  CAJA_ERROR_CODES,
+  CAJA_MESSAGES as CAJA_MESSAGES_MAP,
+  CAJA_LOG_MESSAGES,
+  ERROR_SEVERITY,
+  ERROR_SEVERITIES,
+  MSG_SESION_EXPIRADA,
+  MSG_CAJA_YA_ABIERTA,
+  MSG_SIN_SESION,
+  MSG_SIN_SESION_ACTIVA,
+  MSG_PERMISOS_ABRIR,
+  MSG_PERMISOS_CERRAR,
+  MSG_PERMISOS_PAGOS,
+  MSG_PERMISOS_VENTAS,
+  MSG_MONTO_RANGO,
+  MSG_MONTO_INSUFICIENTE,
+  MSG_ERROR_CONEXION_DB,
+  MSG_ERROR_DESCONOCIDO,
+  MSG_ABRIR_OK,
+  MSG_CERRAR_OK,
+  MSG_ABRIR_FALLO,
+  MSG_CERRAR_FALLO,
+} from './messages';

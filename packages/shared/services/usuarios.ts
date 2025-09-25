@@ -20,10 +20,16 @@ export interface UsuarioRestaurante {
   user_roles?: {
     id: string;
     role_id: string;
+    custom_role_id?: string;
     is_active: boolean;
     assigned_at: string;
     notes: string | null;
-    system_roles: {
+    system_roles?: {
+      id: string;
+      name: string;
+      description: string;
+    };
+    custom_roles?: {
       id: string;
       name: string;
       description: string;
@@ -377,10 +383,16 @@ export class UsuariosService {
       const roleIds = Array.from(byRoleId.keys());
       let slugCounts: Record<string, number> = {};
       if (roleIds.length > 0) {
-        const { data: roles, error: rolesErr } = await supabase
+        // Evitar 400 (Bad Request) cuando se usa in() con un solo id
+        const rolesQuery = supabase
           .from('system_roles')
-          .select('id, name')
-          .in('id', roleIds);
+          .select('id, name');
+
+        const { data: roles, error: rolesErr } =
+          roleIds.length === 1
+            ? await rolesQuery.eq('id', roleIds[0])
+            : await rolesQuery.in('id', roleIds);
+
         if (!rolesErr && roles) {
           roles.forEach((r: any) => {
             const c = byRoleId.get(r.id) || 0;
@@ -498,7 +510,80 @@ export class UsuariosService {
   }
 
   /**
-   * Invitar nuevo usuario
+   * Crear usuario directamente (sin invitación por email)
+   * SOLUCIÓN CRÍTICA: Usa función RPC para evitar restricciones RLS
+   * Los usuarios deben usar credenciales proporcionadas manualmente
+   */
+  static async crearUsuarioDirecto(datos: {
+    email: string;
+    first_name: string;
+    last_name: string;
+    phone: string;
+    role_id: string;
+  }): Promise<{ data: any | null; error: any }> {
+    try {
+      const user = await getCurrentUser();
+      const restaurant = await getUserRestaurant();
+
+      if (!user || !restaurant) {
+        return { data: null, error: new Error('Usuario o restaurante no encontrado') };
+      }
+
+      // Usar función RPC que evita restricciones RLS
+      const { data: resultado, error } = await supabase
+        .rpc('create_user_direct', {
+          p_email: datos.email,
+          p_first_name: datos.first_name,
+          p_last_name: datos.last_name,
+          p_phone: datos.phone,
+          p_role_id: datos.role_id,
+          p_restaurant_id: restaurant.id
+        });
+
+      if (error) {
+        console.error('Error creando usuario (RPC):', error);
+        return { data: null, error };
+      }
+
+      // El resultado ya incluye la contraseña temporal y las instrucciones
+      return {
+        data: {
+          usuario: {
+            id: resultado.user_id,
+            email: resultado.email,
+            first_name: datos.first_name,
+            last_name: datos.last_name,
+            phone: datos.phone,
+            is_active: true,
+            created_at: resultado.created_at
+          },
+          password_temporal: resultado.password_temporal,
+          instrucciones: resultado.instrucciones,
+          success: resultado.success
+        },
+        error: null,
+      };
+    } catch (error) {
+      console.error('Error en crearUsuarioDirecto:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Generar contraseña temporal segura
+   */
+  private static generarPasswordTemporal(): string {
+    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    return password;
+  }
+
+  /**
+   * Invitar nuevo usuario (versión legacy - requiere servidor SMTP)
+   * @deprecated Usar crearUsuarioDirecto en su lugar
    */
   static async invitarUsuario(datos: {
     email: string;
@@ -511,7 +596,7 @@ export class UsuariosService {
     try {
       const user = await getCurrentUser();
       const restaurant = await getUserRestaurant();
-      
+
       if (!user || !restaurant) {
         return { data: null, error: new Error('Usuario o restaurante no encontrado') };
       }
@@ -754,19 +839,43 @@ export class UsuariosService {
       );
 
       // Cargar nombres de roles
+      const rolesPromise =
+        roleIdList.length === 0
+          ? Promise.resolve({ data: [], error: null } as any)
+          : roleIdList.length === 1
+            ? supabase
+                .from('system_roles')
+                .select('id, name, description')
+                .eq('id', roleIdList[0])
+            : supabase
+                .from('system_roles')
+                .select('id, name, description')
+                .in('id', roleIdList);
+
+      const permsPromise =
+        permIdList.length === 0
+          ? Promise.resolve({ data: [], error: null } as any)
+          : permIdList.length === 1
+            ? supabase.from('permissions').select('id, name').eq('id', permIdList[0])
+            : supabase.from('permissions').select('id, name').in('id', permIdList);
+
+      const usersPromise =
+        userIdList.length === 0
+          ? Promise.resolve({ data: [], error: null } as any)
+          : userIdList.length === 1
+            ? supabase
+                .from('users')
+                .select('id, first_name, last_name, email')
+                .eq('id', userIdList[0])
+            : supabase
+                .from('users')
+                .select('id, first_name, last_name, email')
+                .in('id', userIdList);
+
       const [rolesRes, permsRes, usersRes] = await Promise.all([
-        roleIdList.length
-          ? supabase.from('system_roles').select('id, name, description').in('id', roleIdList)
-          : Promise.resolve({ data: [], error: null } as any),
-        permIdList.length
-          ? supabase.from('permissions').select('id, name').in('id', permIdList)
-          : Promise.resolve({ data: [], error: null } as any),
-        userIdList.length
-          ? supabase
-              .from('users')
-              .select('id, first_name, last_name, email')
-              .in('id', userIdList)
-          : Promise.resolve({ data: [], error: null } as any),
+        rolesPromise,
+        permsPromise,
+        usersPromise,
       ]);
 
       // Fallback específico: política recursiva en system_roles (42P17) -> usar catálogo por defecto
@@ -942,6 +1051,92 @@ export class UsuariosService {
       console.error('Error en exportarAuditoria:', error);
       return { data: null, error };
     }
+  }
+
+  /**
+   * Obtener todos los roles disponibles (sistema + personalizados)
+   */
+  static async getAvailableRoles(): Promise<{ data: RoleSistema[] | null; error: any }> {
+    try {
+      const restaurant = await getUserRestaurant();
+      if (!restaurant) {
+        return { data: null, error: new Error('No se encontró el restaurante') };
+      }
+
+      // Usar función RPC para obtener roles disponibles
+      const { data, error } = await supabase
+        .rpc('get_available_roles', {
+          p_restaurant_id: restaurant.id
+        });
+
+      if (error) {
+        console.error('Error obteniendo roles disponibles:', error);
+        return { data: null, error };
+      }
+
+      // Convertir el resultado al formato esperado
+      const roles: RoleSistema[] = (data || []).map((role: any) => ({
+        id: role.id,
+        name: role.name,
+        description: role.description || '',
+        is_system: role.is_system,
+        created_at: new Date().toISOString() // No tenemos created_at en el resultado RPC
+      }));
+
+      return { data: roles, error: null };
+    } catch (error) {
+      console.error('Error en getAvailableRoles:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Crear un rol personalizado
+   */
+  static async createCustomRole(roleData: {
+    name: string;
+    description?: string;
+    permissions?: string[];
+  }): Promise<{ data: any | null; error: any }> {
+    try {
+      const restaurant = await getUserRestaurant();
+      if (!restaurant) {
+        return { data: null, error: new Error('No se encontró el restaurante') };
+      }
+
+      // Usar función RPC para crear rol personalizado
+      const { data, error } = await supabase
+        .rpc('create_custom_role', {
+          p_restaurant_id: restaurant.id,
+          p_name: roleData.name,
+          p_description: roleData.description || null,
+          p_permissions: roleData.permissions || null
+        });
+
+      if (error) {
+        console.error('Error creando rol personalizado:', error);
+        return { data: null, error };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error en createCustomRole:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Obtener roles personalizados de un restaurante (legacy)
+   * @deprecated Usar getAvailableRoles en su lugar
+   */
+  static async getCustomRoles(restaurantId: string): Promise<{ data: any[] | null; error: any }> {
+    const { data, error } = await supabase
+      .from('custom_roles')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .eq('is_active', true)
+      .order('name');
+    return { data, error };
   }
 
   /**

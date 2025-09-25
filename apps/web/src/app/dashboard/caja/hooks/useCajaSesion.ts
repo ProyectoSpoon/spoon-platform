@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { supabase, getUserProfile } from '@spoon/shared/lib/supabase';
+import { supabase, getUserProfile, getActiveRoles } from '@spoon/shared/lib/supabase';
 import { getEstadoDisplay } from '@spoon/shared/utils/mesas';
 import { useMesas } from '@spoon/shared/hooks/mesas';
 
@@ -129,6 +129,17 @@ export const useCajaSesion = () => {
       setCierreEnCurso(true);
       setLoading(true);
       setError(null);
+
+      // Guard de permisos: si roles disponibles, exigir cajero/admin/propietario
+      try {
+        const roles = await getActiveRoles();
+        if (Array.isArray(roles) && roles.length > 0) {
+          const allowed = roles.some(r => ['cajero','admin','administrador','propietario'].includes(String(r).toLowerCase()));
+          if (!allowed) {
+            return { success: false, error: 'No tienes permisos para cerrar la caja' } as const;
+          }
+        }
+      } catch { /* ignore si no hay roles disponibles */ }
 
       const profile = await getUserProfile();
       const currentSesionId = sesionIdRef.current || (sesionActual as any)?.id;
@@ -449,7 +460,7 @@ export const useCajaSesion = () => {
       setCierreEnCurso(false);
       setLoading(false);
     }
-  }, [sesionActual]);
+  }, [sesionActual, getUserProfile, supabase, getEstadoDisplay, mesasCompletas]);
 
   const verificarSesionAbierta = useCallback(async () => {
     setLoading(true);
@@ -567,6 +578,51 @@ export const useCajaSesion = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Suscripción en tiempo real a INSERT de sesiones del restaurante (apertura desde otra pestaña/usuario)
+  useEffect(() => {
+    let channel: any = null;
+    (async () => {
+      try {
+        // Obtener restaurant_id para filtrar eventos
+        const profile = await getUserProfile();
+        const rid = profile?.restaurant_id;
+        if (!rid) return;
+
+        channel = (supabase as any)
+          .channel(`caja_sesiones_rest_${rid}`)
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'caja_sesiones',
+            filter: `restaurant_id=eq.${rid}`
+          }, (payload: any) => {
+            const nueva = payload?.new;
+            if (!nueva) return;
+            // Solo adoptar si actualmente no está abierta y la nueva es abierta
+            if (estadoCaja !== 'abierta' && (nueva as any).estado === 'abierta') {
+              sesionIdRef.current = (nueva as any).id ?? null;
+              setSesionActual({ ...(nueva as any), fechaApertura: (nueva as any).abierta_at } as any);
+              setEstadoCaja('abierta');
+              setRequiereSaneamiento(false);
+            }
+          })
+          .subscribe();
+      } catch { /* ignore */ }
+    })();
+
+    return () => {
+      try {
+        if (channel) {
+          if (typeof (supabase as any).removeChannel === 'function') {
+            (supabase as any).removeChannel(channel);
+          } else if (typeof (channel as any).unsubscribe === 'function') {
+            (channel as any).unsubscribe();
+          }
+        }
+      } catch { /* ignore */ }
+    };
+  }, [estadoCaja]);
+
   // Suscripción en tiempo real a cambios de la sesión activa para reflejar cierre desde otra pestaña / usuario
   useEffect(() => {
     if (!sesionActual?.id || estadoCaja !== 'abierta') return;
@@ -618,6 +674,17 @@ export const useCajaSesion = () => {
       try {
         setLoading(true);
         setError(null);
+
+        // Guard de permisos: si roles disponibles, exigir cajero/admin/propietario
+        try {
+          const roles = await getActiveRoles();
+          if (Array.isArray(roles) && roles.length > 0) {
+            const allowed = roles.some(r => ['cajero','admin','administrador','propietario'].includes(String(r).toLowerCase()));
+            if (!allowed) {
+              return { success: false, error: 'No tienes permisos para abrir la caja' } as const;
+            }
+          }
+        } catch { /* no bloquear si no se logran obtener roles */ }
 
         const profile = await getUserProfile();
         if (!profile?.restaurant_id) {

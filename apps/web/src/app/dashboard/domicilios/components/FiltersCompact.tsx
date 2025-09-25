@@ -24,7 +24,7 @@ export default function FiltersCompact({ tab, filtros, domiciliarios, onUpdateFi
       }
     }, 400);
     return () => clearTimeout(id);
-  }, [localBuscar]);
+  }, [localBuscar, filtros.buscar, onUpdateFiltros]);
 
   // Sync externo -> interno (por ejemplo al pulsar Reset)
   React.useEffect(() => {

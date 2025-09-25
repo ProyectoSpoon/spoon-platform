@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, getUserRestaurant } from '@spoon/shared/lib/supabase';
-import { 
-  MenuDelDiaSimple, 
-  CombinacionSimple, 
-  EstadoMenuDelDia 
+import { useNotifications } from '@spoon/shared/Context/notification-context';
+import {
+  MenuDelDiaSimple,
+  CombinacionSimple,
+  EstadoMenuDelDia
 } from '../types/domiciliosTypes';
 import { getBogotaDateISO } from '@spoon/shared/utils/datetime';
 
@@ -14,21 +15,13 @@ export const useMenuDelDia = () => {
   const [estado, setEstado] = useState<EstadoMenuDelDia>({
     menu: null,
     loading: true,
-    error: null 
+    error: null
   });
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
-  // ✅ FUNCIÓN PARA MOSTRAR NOTIFICACIONES
-  const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    if (type === 'success') {
-      console.log('✅ SUCCESS:', message);
-      alert('✅ ' + message);
-    } else {
-      console.error('❌ ERROR:', message);
-      alert('❌ ' + message);
-    }
-  }, []);
+  // ✅ NOTIFICACIONES CENTRALIZADAS
+  const { addNotification } = useNotifications();
 
   // ✅ CARGAR RESTAURANT ID
   useEffect(() => {
@@ -149,13 +142,21 @@ export const useMenuDelDia = () => {
       }));
 
       const mensaje = disponible ? 'Combinación activada' : 'Combinación desactivada';
-      showNotification(mensaje);
+      addNotification({
+        type: 'success',
+        title: 'Disponibilidad actualizada',
+        message: mensaje
+      });
 
     } catch (error) {
       console.error('Error actualizando disponibilidad:', error);
-      showNotification('Error al actualizar disponibilidad', 'error');
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Error al actualizar disponibilidad'
+      });
     }
-  }, [showNotification]);
+  }, [addNotification]);
 
   // ✅ OBTENER COMBINACIONES DISPONIBLES
   const combinacionesDisponibles = estado.menu?.combinaciones.filter(
@@ -213,13 +214,10 @@ export const useMenuDelDia = () => {
     // Datos derivados
     combinacionesDisponibles,
     combinacionesAgotadas,
-  totalCombinaciones: estado.menu?.combinaciones.filter(c => c.is_available).length || 0,
+    totalCombinaciones: estado.menu?.combinaciones.filter(c => c.is_available).length || 0,
 
     // Funciones
     cargarMenuDelDia,
-    actualizarDisponibilidad,
-    showNotification
+    actualizarDisponibilidad
   };
 };
-
-

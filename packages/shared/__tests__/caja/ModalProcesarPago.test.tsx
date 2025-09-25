@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import { NotificationProvider } from '@spoon/shared/Context/notification-provider';
 import { ModalProcesarPago } from '../../../../apps/web/src/app/dashboard/caja/pages/modals/ModalProcesarPago';
 
 const baseOrden = {
@@ -13,12 +14,14 @@ describe('ModalProcesarPago', () => {
   it('valida monto insuficiente en efectivo', async () => {
     const onConfirmar = jest.fn().mockResolvedValue({ success: false, error: 'Monto insuficiente' });
     render(
-      <ModalProcesarPago
-        orden={baseOrden}
-        isOpen={true}
-        onClose={() => {}}
-        onConfirmar={onConfirmar}
-      />
+      <NotificationProvider>
+        <ModalProcesarPago
+          orden={baseOrden}
+          isOpen={true}
+          onClose={() => {}}
+          onConfirmar={onConfirmar}
+        />
+      </NotificationProvider>
     );
 
   const input = screen.getByRole('spinbutton');
@@ -31,12 +34,14 @@ describe('ModalProcesarPago', () => {
   it('muestra cambio cuando aplica y llama onConfirmar', async () => {
     const onConfirmar = jest.fn().mockResolvedValue({ success: true, cambio: 500 });
     render(
-      <ModalProcesarPago
-        orden={baseOrden}
-        isOpen={true}
-        onClose={() => {}}
-        onConfirmar={onConfirmar}
-      />
+      <NotificationProvider>
+        <ModalProcesarPago
+          orden={baseOrden}
+          isOpen={true}
+          onClose={() => {}}
+          onConfirmar={onConfirmar}
+        />
+      </NotificationProvider>
     );
 
     // By default montoRecibido === total

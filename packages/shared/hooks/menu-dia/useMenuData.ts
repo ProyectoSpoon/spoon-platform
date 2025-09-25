@@ -2,12 +2,16 @@
 
 import { useState, useEffect, useCallback, Dispatch, SetStateAction } from 'react';
 import { getUserProfile, getUserRestaurant, supabase } from '@spoon/shared/lib/supabase';
+import { useToast } from '../../components/ui/Toast/use-toast';
 
 import { MenuApiService } from '../../services/menu-dia/menuApiService';
 import { Producto, MenuCombinacion, LoadingStates } from '../../types/menu-dia/menuTypes';
 import { DEFAULT_MENU_PRICE, DEFAULT_FILTERS, DEFAULT_COMBO_FILTERS, CATEGORIAS_MENU_CONFIG } from '../../constants/menu-dia/menuConstants';
 
 export const useMenuData = () => {
+  // ✅ HOOK DE TOAST PARA NOTIFICACIONES
+  const { toast } = useToast();
+
   // ✅ ESTADOS PRINCIPALES
   const [currentView, setCurrentView] = useState<'creation' | 'combinations' | 'analytics'>('creation');
   const [currentMenu, setCurrentMenu] = useState<any>(null);
@@ -20,7 +24,7 @@ export const useMenuData = () => {
   const [proteinQuantities, setProteinQuantities] = useState<{[productId: string]: number}>({});
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  
+
   // ✅ ESTADOS DE LOADING
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({
     saving: false,
@@ -36,17 +40,14 @@ export const useMenuData = () => {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [filtersCombo, setFiltersCombo] = useState(DEFAULT_COMBO_FILTERS);
 
-  // ✅ FUNCIÓN PARA NOTIFICACIONES SIMPLE (SIN TOAST EXTERNO)
+  // ✅ FUNCIÓN PARA NOTIFICACIONES CON TOAST SYSTEM
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
-    // Notificación simple con alert por ahora - puedes mejorar después
     if (type === 'success') {
-      
-      alert('✅ ' + message);
+      toast.success(message, 'Éxito');
     } else {
-      console.error('❌ ERROR:', message);
-      alert('❌ ' + message);
+      toast.error(message, 'Error');
     }
-  }, []);
+  }, [toast]);
 
   // ✅ FUNCIÓN PARA CARGAR PRODUCTOS POR CATEGORÍA
   const loadProductsForCategory = useCallback(async (categoryId: string) => {
@@ -146,7 +147,7 @@ export const useMenuData = () => {
 
           if (proteinQtyData && proteinQtyData.length > 0) {
             const quantities: {[productId: string]: number} = {};
-            proteinQtyData.forEach(item => {
+            proteinQtyData.forEach((item: any) => {
               quantities[item.protein_product_id] = item.planned_quantity;
             });
             setProteinQuantities(quantities);
@@ -229,4 +230,3 @@ export const useMenuData = () => {
     setCurrentView: Dispatch<SetStateAction<'creation' | 'combinations' | 'analytics'>>;
   };
 };
-

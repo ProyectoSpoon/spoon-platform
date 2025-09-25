@@ -1,15 +1,16 @@
-// apps/web/src/app/config-restaurante/informacion-general/page.tsx
+// apps/web/src/app/config-restaurante/logo-portada/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase, getUserProfile, getUserRestaurant } from '@spoon/shared/lib/supabase';
+import { ArrowLeft, Check, Upload, X, Image as ImageIcon, AlertTriangle } from 'lucide-react';
+import { getUserProfile, getUserRestaurant, updateRestaurant, supabase } from '@spoon/shared/lib/supabase';
+import { RestaurantService } from '@spoon/shared/services/restaurant';
 import { Button } from '@spoon/shared/components/ui/Button';
 import { Card } from '@spoon/shared/components/ui/Card';
 import { CardContent } from '@spoon/shared/components/ui/Card';
 import { CardHeader } from '@spoon/shared/components/ui/Card';
 import { CardTitle } from '@spoon/shared/components/ui/Card';
-import { Input } from '@spoon/shared/components/ui/Input';
 import { toast } from '@spoon/shared/components/ui/Toast';
 
 // Type casting to resolve React version conflicts
@@ -18,93 +19,63 @@ const CardComponent = Card as any;
 const CardContentComponent = CardContent as any;
 const CardHeaderComponent = CardHeader as any;
 const CardTitleComponent = CardTitle as any;
-const InputComponent = Input as any;
 
-interface RestaurantInfo {
-  name: string;
-  description: string;
-  phone: string;
-  email: string;
-  cuisineType: string;
+interface ArchivoImagen {
+  archivo: File | null;
+  previewUrl: string | null;
+  estado: 'pendiente' | 'cargando' | 'completado' | 'error';
+  error?: string;
+  url?: string | null;
 }
 
-interface CuisineType {
-  id: string;
-  name: string;
-  slug: string;
-  icon: string;
-  description: string;
+interface ImagenesData {
+  logo: ArchivoImagen;
+  portada: ArchivoImagen;
 }
 
-export default function InformacionGeneralPage() {
+const PLACEHOLDER_HOSTS = ['fake-cdn.spoon.com'];
+
+export default function LogoPortadaPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState<RestaurantInfo>({
-    name: '',
-    description: '',
-    phone: '',
-    email: '',
-    cuisineType: ''
+  const [imagenes, setImagenes] = useState<ImagenesData>({
+    logo: { archivo: null, previewUrl: null, estado: 'pendiente' },
+    portada: { archivo: null, previewUrl: null, estado: 'pendiente' }
   });
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userInfo, setUserInfo] = useState<any>(null);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
-  const [cuisineTypes, setCuisineTypes] = useState<CuisineType[]>([]);
-  
-  // Estados para tracking de pre-rellenado
-  const [isPhonePreFilled, setIsPhonePreFilled] = useState(false);
-  const [isEmailPreFilled, setIsEmailPreFilled] = useState(false);
+  const [restaurantData, setRestaurantData] = useState<any>(null);
 
-  // Función para cargar tipos de cocina
-  const loadCuisineTypes = async () => {
+  // Validación de archivos
+  const validarArchivo = useCallback((archivo: File): string | null => {
+    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+    const tamañoMaximo = 5 * 1024 * 1024; // 5MB
+
+    if (!tiposPermitidos.includes(archivo.type)) {
+      return 'Solo se permiten archivos JPG, JPEG, PNG y WebP';
+    }
+
+    if (archivo.size > tamañoMaximo) {
+      return 'El archivo no puede superar los 5MB';
+    }
+
+    return null;
+  }, []);
+
+  // Subir imagen a Supabase Storage
+  const subirImagen = useCallback(async (archivo: File, tipo: 'logo' | 'portada'): Promise<string> => {
     try {
-      const { data, error } = await supabase
-        .from('cuisine_types')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (error) throw error;
-      setCuisineTypes(data || []);
-      console.log('🍽️ Tipos de cocina cargados:', data?.length);
+      // Map 'portada' to service type 'cover'
+      const mappedType = tipo === 'portada' ? 'cover' : 'logo';
+      const { url } = await RestaurantService.uploadRestaurantImage({ file: archivo, type: mappedType as 'logo' | 'cover', restaurantId: restaurantId || undefined });
+      return url;
     } catch (error) {
-      console.error('Error cargando tipos de cocina:', error);
-      toast.error('Error cargando tipos de cocina');
-      // Fallback con tipos hardcodeados
-      setCuisineTypes([
-        { id: '1', name: 'Colombiana', slug: 'colombiana', icon: '🇨🇴', description: 'Comida tradicional colombiana' },
-        { id: '2', name: 'Italiana', slug: 'italiana', icon: '🍝', description: 'Pasta, pizza y cocina italiana' },
-        { id: '3', name: 'Mexicana', slug: 'mexicana', icon: '🌮', description: 'Tacos, enchiladas y cocina mexicana' }
-      ]);
+      console.error(`Error subiendo ${tipo}:`, error);
+      throw new Error(`No se pudo subir la imagen de ${tipo}`);
     }
-  };
-
-  // Pre-rellenar datos inteligentemente
-  const preRellenarDatos = (profile: any, restaurant: any = null) => {
-    // Si hay restaurante existente, priorizar sus datos
-    if (restaurant) {
-      setFormData({
-        name: restaurant.name || '',
-        description: restaurant.description || '',
-        phone: restaurant.contact_phone || profile?.phone || '',
-        email: restaurant.contact_email || profile?.email || '',
-        cuisineType: restaurant.cuisine_type || ''
-      });
-      setIsPhonePreFilled(!!profile?.phone && !restaurant.contact_phone);
-      setIsEmailPreFilled(!!profile?.email && !restaurant.contact_email);
-    } else {
-      setFormData({
-        name: '',
-        description: '',
-        phone: profile?.phone || '',
-        email: profile?.email || '',
-        cuisineType: ''
-      });
-      setIsPhonePreFilled(!!profile?.phone);
-      setIsEmailPreFilled(!!profile?.email);
-    }
-  };
+  }, [restaurantId]);
 
   // Cargar datos existentes
   useEffect(() => {
@@ -115,11 +86,53 @@ export default function InformacionGeneralPage() {
           getUserProfile(),
           getUserRestaurant()
         ]);
-        await loadCuisineTypes();
+
         if (profile) setUserInfo(profile);
-        if (restaurant) setRestaurantId(restaurant.id);
-        preRellenarDatos(profile, restaurant);
+        if (restaurant) {
+          setRestaurantId(restaurant.id);
+          setRestaurantData(restaurant);
+
+          // Pre-cargar imágenes existentes
+          if (restaurant.logo_url) {
+            let shouldUse = true;
+            try {
+              const u = new URL(restaurant.logo_url);
+              if (PLACEHOLDER_HOSTS.includes(u.host)) shouldUse = false; // Ignorar URLs placeholder antiguas
+            } catch {}
+            if (shouldUse) {
+            setImagenes(prev => ({
+              ...prev,
+              logo: {
+                archivo: null,
+                previewUrl: restaurant.logo_url,
+                estado: 'completado',
+                url: restaurant.logo_url
+              }
+            }));
+            }
+          }
+
+          if (restaurant.cover_image_url) {
+            let shouldUse = true;
+            try {
+              const u = new URL(restaurant.cover_image_url);
+              if (PLACEHOLDER_HOSTS.includes(u.host)) shouldUse = false;
+            } catch {}
+            if (shouldUse) {
+            setImagenes(prev => ({
+              ...prev,
+              portada: {
+                archivo: null,
+                previewUrl: restaurant.cover_image_url,
+                estado: 'completado',
+                url: restaurant.cover_image_url
+              }
+            }));
+            }
+          }
+        }
       } catch (error) {
+        console.error('Error cargando datos:', error);
         toast.error('Error al cargar la información');
       } finally {
         setLoading(false);
@@ -128,346 +141,481 @@ export default function InformacionGeneralPage() {
     loadData();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    if (name === 'phone') setIsPhonePreFilled(false);
-    if (name === 'email') setIsEmailPreFilled(false);
-  };
+  // Limpiar URLs de objeto al desmontar
+  useEffect(() => {
+    return () => {
+      if (imagenes.logo.previewUrl && imagenes.logo.archivo) {
+        URL.revokeObjectURL(imagenes.logo.previewUrl);
+      }
+      if (imagenes.portada.previewUrl && imagenes.portada.archivo) {
+        URL.revokeObjectURL(imagenes.portada.previewUrl);
+      }
+    };
+  }, [imagenes.logo, imagenes.portada]);
 
-  const validateForm = (): boolean => {
-    if (!formData.name.trim()) {
-      toast.error('Por favor, ingresa el nombre de tu restaurante');
-      return false;
-    }
-    if (!formData.phone.trim()) {
-      toast.error('El teléfono de contacto es necesario para que te encuentren');
-      return false;
-    }
-    const phoneRegex = /^[\+]?[0-9\\s\\-\\(\\)]{7,15}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      toast.error('Ingresa un teléfono válido (ej: +57 312 345 6789)');
-      return false;
-    }
-    if (!formData.email.trim()) {
-      toast.error('El email es necesario para contactos importantes');
-      return false;
-    }
-    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error('Ingresa un email válido (ej: contacto@turestaurante.com)');
-      return false;
-    }
-    return true;
-  };
+  // Manejar cambio de archivo
+  const manejarCambioArchivo = useCallback((tipo: 'logo' | 'portada', archivo: File | null) => {
+    setImagenes(prev => {
+      const imagenActual = prev[tipo];
 
-  // Guardar datos
+      // Limpiar URL anterior si existe
+      if (imagenActual.previewUrl && imagenActual.archivo) {
+        URL.revokeObjectURL(imagenActual.previewUrl);
+      }
+
+      if (!archivo) {
+        return {
+          ...prev,
+          [tipo]: { archivo: null, previewUrl: null, estado: 'pendiente' }
+        };
+      }
+
+      const error = validarArchivo(archivo);
+      if (error) {
+        toast.error(error);
+        return prev;
+      }
+
+      const previewUrl = URL.createObjectURL(archivo);
+
+      return {
+        ...prev,
+        [tipo]: {
+          archivo,
+          previewUrl,
+          estado: 'completado' as const,
+          error: undefined
+        }
+      };
+    });
+  }, [validarArchivo]);
+
+  // Eliminar imagen
+  const eliminarImagen = useCallback((tipo: 'logo' | 'portada') => {
+    setImagenes(prev => {
+      const imagenActual = prev[tipo];
+
+      // Limpiar URL de objeto si existe
+      if (imagenActual.previewUrl && imagenActual.archivo) {
+        URL.revokeObjectURL(imagenActual.previewUrl);
+      }
+
+      return {
+        ...prev,
+        [tipo]: { archivo: null, previewUrl: null, estado: 'pendiente' }
+      };
+    });
+  }, []);
+
+  // Guardar imágenes y completar configuración
   const handleSave = async () => {
-    if (!validateForm()) return;
+    if (!restaurantId) {
+      toast.error('No se encontró información del restaurante');
+      return;
+    }
+
     try {
       setSaving(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('Necesitas estar conectado para continuar');
-        return;
-      }
-      const selectedCuisineType = cuisineTypes.find(ct => ct.slug === formData.cuisineType);
-      if (restaurantId) {
-        const { error } = await supabase
-          .from('restaurants')
-          .update({
-            name: formData.name.trim(),
-            description: formData.description.trim() || null,
-            contact_phone: formData.phone.trim(),
-            contact_email: formData.email.trim(),
-            cuisine_type: formData.cuisineType,
-            cuisine_type_id: selectedCuisineType?.id || null,
-            setup_step: Math.max(1, 1),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', restaurantId);
-        if (error) throw error;
-        toast.success('✅ Información actualizada correctamente');
-      } else {
-        const { data, error } = await supabase
-          .from('restaurants')
-          .insert({
-            name: formData.name.trim(),
-            description: formData.description.trim() || null,
-            contact_phone: formData.phone.trim(),
-            contact_email: formData.email.trim(),
-            cuisine_type: formData.cuisineType,
-            cuisine_type_id: selectedCuisineType?.id || null,
-            owner_id: user.id,
-            setup_step: 1,
-            setup_completed: false,
-            status: 'configuring'
-          })
-          .select()
-          .single();
-        if (error) throw error;
-        const { error: userError } = await supabase
-          .from('users')
-          .update({ restaurant_id: data.id })
-          .eq('id', user.id);
-        if (userError) {
-          console.warn('No se pudo actualizar restaurant_id en usuario:', userError);
+
+      let logoUrl = restaurantData?.logo_url || null;
+      let portadaUrl = restaurantData?.cover_image_url || null;
+
+      // Subir logo si hay archivo nuevo
+      if (imagenes.logo.archivo && imagenes.logo.estado === 'completado') {
+        try {
+          setImagenes(prev => ({
+            ...prev,
+            logo: { ...prev.logo, estado: 'cargando' }
+          }));
+
+          logoUrl = await subirImagen(imagenes.logo.archivo, 'logo');
+
+          setImagenes(prev => ({
+            ...prev,
+            logo: { ...prev.logo, estado: 'completado', url: logoUrl }
+          }));
+        } catch (error) {
+          setImagenes(prev => ({
+            ...prev,
+            logo: { ...prev.logo, estado: 'error', error: 'Error al subir logo' }
+          }));
+          throw error;
         }
-        setRestaurantId(data.id);
-        toast.success('🎉 ¡Restaurante creado! Continuemos con la ubicación');
       }
+
+      // Subir portada si hay archivo nuevo
+      if (imagenes.portada.archivo && imagenes.portada.estado === 'completado') {
+        try {
+          setImagenes(prev => ({
+            ...prev,
+            portada: { ...prev.portada, estado: 'cargando' }
+          }));
+
+          portadaUrl = await subirImagen(imagenes.portada.archivo, 'portada');
+
+          setImagenes(prev => ({
+            ...prev,
+            portada: { ...prev.portada, estado: 'completado', url: portadaUrl }
+          }));
+        } catch (error) {
+          setImagenes(prev => ({
+            ...prev,
+            portada: { ...prev.portada, estado: 'error', error: 'Error al subir portada' }
+          }));
+          throw error;
+        }
+      }
+
+      // Actualizar restaurante con URLs y completar configuración
+      await updateRestaurant(restaurantId, {
+        logo_url: logoUrl,
+        cover_image_url: portadaUrl,
+        setup_step: 4,
+        setup_completed: true,
+        status: 'active',
+        updated_at: new Date().toISOString()
+      });
+
+      toast.success('🎉 ¡Configuración completada! Tu restaurante está listo');
+
+      // Redirigir al dashboard después de un breve delay
       setTimeout(() => {
-        router.push('/config-restaurante/ubicacion');
-      }, 1500);
+        router.push('/dashboard');
+      }, 2000);
+
     } catch (error) {
-      toast.error('No pudimos guardar la información. Por favor, intenta de nuevo.');
+      console.error('Error guardando imágenes:', error);
+      toast.error('Error al guardar las imágenes. Intenta nuevamente.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleBack = () => {
-    router.push('/config-restaurante');
+    router.push('/config-restaurante/horario-comercial');
   };
 
-  const isFormValid = formData.name.trim() && formData.phone.trim() && formData.email.trim();
+  // Verificar si hay al menos una imagen (opcional pero recomendado)
+  const tieneImagenes = imagenes.logo.estado === 'completado' || imagenes.portada.estado === 'completado';
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[--sp-surface] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--sp-primary-600)] mx-auto mb-4"></div>
-          <p className="text-[color:var(--sp-neutral-600)]">Cargando información...</p>
+          <p className="text-[color:var(--sp-neutral-600)]">Cargando configuración de imágenes...</p>
         </div>
       </div>
     );
   }
 
   return (
-  <div className="min-h-screen bg-[--sp-surface] p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        
+    <div className="min-h-screen bg-[--sp-surface] p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+
         {/* Header */}
-  <CardComponent>
+        <CardComponent>
           <CardHeaderComponent>
             <div className="flex items-center justify-between mb-4">
-              <ButtonComponent 
-                variant="outline" 
+              <ButtonComponent
+                variant="outline"
                 onClick={handleBack}
                 className="flex items-center gap-2"
               >
-                ← Volver
+                <ArrowLeft className="w-4 h-4" />
+                Volver
               </ButtonComponent>
-              
+
               <div className="text-center flex-1">
-    <span className="text-sm text-[color:var(--sp-neutral-500)] font-medium">Paso 1 de 4</span>
+                <span className="text-sm text-[color:var(--sp-neutral-500)] font-medium">Paso 4 de 4</span>
               </div>
-              
+
               <div className="w-20"></div>
             </div>
-            
+
             <CardTitleComponent>
-              Información General
+              Logo y Portada
             </CardTitleComponent>
-      <p className="text-[color:var(--sp-neutral-600)]">
-              Empecemos con los datos básicos de tu restaurante
+            <p className="text-[color:var(--sp-neutral-600)]">
+              Sube imágenes representativas de tu restaurante
             </p>
             {userInfo && (
-        <p className="text-xs text-[color:var(--sp-info-600)] mt-2">
-                👤 {userInfo.email} • {restaurantId ? `Editando restaurante` : 'Nuevo restaurante'}
+              <p className="text-xs text-[color:var(--sp-info-600)] mt-2">
+                👤 {userInfo.email} • {restaurantId ? `ID: ${restaurantId.slice(0, 8)}...` : "Configurando..."}
               </p>
             )}
           </CardHeaderComponent>
         </CardComponent>
 
-        {/* Formulario principal con jerarquía visual */}
-    <CardComponent>
+        {/* Vista previa combinada */}
+        <CardComponent>
           <CardContentComponent>
-            <div className="space-y-8">
-              {/* Nombre del restaurante */}
-      <div className="pb-2 border-b border-[color:var(--sp-neutral-200)]">
-                <InputComponent
-                  label="Nombre del Restaurante *"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Ej: Restaurante Doña María, El Rincón de la Abuela..."
-                  leftIcon={
-        <svg className="w-5 h-5 text-[color:var(--sp-primary-600)]" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.84L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.84l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
-                    </svg>
-                  }
-                  helperText="Escoge un nombre que represente tu restaurante y sea fácil de recordar"
-                />
-              </div>
-
-              {/* Contacto */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2 pb-2 border-b border-[color:var(--sp-neutral-200)]">
-                <div>
-                  <InputComponent
-                    label={`Teléfono del Restaurante * ${isPhonePreFilled ? '(Pre-llenado)' : ''}`}
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    placeholder="Ej: +57 312 345 6789"
-                    leftIcon={
-          <svg className="w-5 h-5 text-[color:var(--sp-primary-600)]" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
-                      </svg>
-                    }
-                    helperText={
-                      isPhonePreFilled 
-                        ? "💡 Usamos tu teléfono personal, pero puedes cambiarlo si prefieres uno diferente para el restaurante"
-                        : "Este será el teléfono de contacto público de tu restaurante"
-                    }
+            <h3 className="text-lg font-medium text-[color:var(--sp-neutral-900)] mb-4">Vista previa de tu perfil</h3>
+            <div className="relative">
+              {/* Portada */}
+              <div className="h-48 bg-gradient-to-r from-[color:var(--sp-primary-100)] to-[color:var(--sp-secondary-100)] rounded-lg overflow-hidden relative">
+                {imagenes.portada.previewUrl ? (
+                  <img
+                    src={imagenes.portada.previewUrl}
+                    alt="Portada del restaurante"
+                    className="w-full h-full object-cover"
                   />
-                </div>
-
-                <div>
-                  <InputComponent
-                    label={`Email del Restaurante * ${isEmailPreFilled ? '(Pre-llenado)' : ''}`}
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Ej: contacto@restaurante.com"
-                    leftIcon={
-          <svg className="w-5 h-5 text-[color:var(--sp-primary-600)]" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-                      </svg>
-                    }
-                    helperText={
-                      isEmailPreFilled 
-                        ? "💡 Usamos tu email personal, pero puedes usar uno específico para el restaurante si lo prefieres"
-                        : "Este será el email de contacto público de tu restaurante"
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Tipo de cocina */}
-              <div className="pt-2 pb-2 border-b border-[color:var(--sp-neutral-200)]">
-                <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">
-                  <svg className="inline w-5 h-5 text-[color:var(--sp-primary-600)] mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
-                  </svg>
-                  Tipo de Cocina
-                </label>
-                <select
-                  name="cuisineType"
-                  value={formData.cuisineType}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
-                >
-                  <option value="">Selecciona qué tipo de comida ofreces</option>
-                  {cuisineTypes.map(type => (
-                    <option key={type.id} value={type.slug}>
-                      {type.icon} {type.name}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-[color:var(--sp-neutral-500)] mt-1">
-                  Esto ayuda a los clientes a encontrar exactamente lo que buscan
-                </p>
-                {cuisineTypes.length === 0 && (
-                  <p className="text-xs text-[color:var(--sp-warning-600)] mt-1">
-                    ⚠️ No se pudieron cargar los tipos de cocina. Intenta recargar la página.
-                  </p>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-[color:var(--sp-neutral-400)]">
+                      <ImageIcon className="w-12 h-12 mx-auto mb-2" />
+                      <p className="text-sm">Portada del restaurante</p>
+                    </div>
+                  </div>
                 )}
+
+                {/* Logo superpuesto */}
+                <div className="absolute bottom-4 left-4">
+                  <div className="w-16 h-16 bg-[--sp-surface] rounded-full p-1 shadow-lg">
+                    {imagenes.logo.previewUrl ? (
+                      <img
+                        src={imagenes.logo.previewUrl}
+                        alt="Logo del restaurante"
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[color:var(--sp-neutral-200)] rounded-full flex items-center justify-center">
+                        <ImageIcon className="w-6 h-6 text-[color:var(--sp-neutral-400)]" />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              {/* Descripción */}
-              <div className="pt-2">
-                <label className="block text-sm font-medium text-[color:var(--sp-neutral-700)] mb-2">
-                  Descripción del Restaurante (Opcional)
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder="Cuéntanos sobre tu restaurante: ¿qué lo hace especial? ¿Cuál es tu plato estrella? ¿Qué ambiente ofreces?"
-                  rows={4}
-                  className="w-full p-3 border border-[color:var(--sp-neutral-300)] rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-[color:var(--sp-primary-500)]"
-                />
-                <p className="text-xs text-[color:var(--sp-neutral-500)] mt-1">
-                  Una buena descripción ayuda a los clientes a conocer tu restaurante antes de visitarlo
+              {/* Información del restaurante */}
+              <div className="mt-4 p-4 bg-[--sp-surface] rounded-lg">
+                <h4 className="font-semibold text-[color:var(--sp-neutral-900)]">
+                  {restaurantData?.name || 'Nombre del restaurante'}
+                </h4>
+                <p className="text-sm text-[color:var(--sp-neutral-600)] mt-1">
+                  {restaurantData?.description || 'Descripción del restaurante aparecerá aquí'}
                 </p>
+                <div className="flex items-center gap-4 mt-2 text-xs text-[color:var(--sp-neutral-500)]">
+                  <span>📍 {restaurantData?.address || 'Dirección'}</span>
+                  <span>📞 {restaurantData?.contact_phone || 'Teléfono'}</span>
+                </div>
               </div>
             </div>
           </CardContentComponent>
         </CardComponent>
 
-        {/* Botones de navegación mejorados */}
+        {/* Upload de imágenes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          {/* Logo */}
+          <CardComponent>
+            <CardContentComponent>
+              <h3 className="text-lg font-medium text-[color:var(--sp-neutral-900)] mb-4">Logo del Restaurante</h3>
+
+              {/* Preview del logo */}
+              <div className="mb-4">
+                <div className="w-32 h-32 mx-auto border-2 border-dashed border-[color:var(--sp-neutral-300)] rounded-lg overflow-hidden relative">
+                  {imagenes.logo.previewUrl ? (
+                    <>
+                      <img
+                        src={imagenes.logo.previewUrl}
+                        alt="Logo preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() => eliminarImagen('logo')}
+                        className="absolute top-1 right-1 w-6 h-6 bg-[color:var(--sp-error-500)] text-[--sp-on-error] rounded-full flex items-center justify-center hover:bg-[color:var(--sp-error-600)] transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center text-[color:var(--sp-neutral-400)]">
+                        <ImageIcon className="w-8 h-8 mx-auto mb-2" />
+                        <p className="text-xs">Sin logo</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Input de archivo */}
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => manejarCambioArchivo('logo', e.target.files?.[0] || null)}
+                  className="hidden"
+                  id="logo-upload"
+                />
+                <label
+                  htmlFor="logo-upload"
+                  className="flex items-center justify-center w-full p-3 border-2 border-dashed border-[color:var(--sp-primary-300)] rounded-lg cursor-pointer hover:border-[color:var(--sp-primary-400)] transition-colors"
+                >
+                  <div className="text-center">
+                    <Upload className="w-6 h-6 text-[color:var(--sp-primary-600)] mx-auto mb-2" />
+                    <p className="text-sm text-[color:var(--sp-primary-700)]">
+                      {imagenes.logo.archivo ? 'Cambiar logo' : 'Seleccionar logo'}
+                    </p>
+                    <p className="text-xs text-[color:var(--sp-neutral-500)] mt-1">
+                      JPG, PNG, WebP • Máx 5MB
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Estado de carga/error */}
+              {imagenes.logo.estado === 'cargando' && (
+                <div className="mt-2 p-2 bg-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded text-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[color:var(--sp-info-600)] mx-auto mb-1"></div>
+                  <p className="text-xs text-[color:var(--sp-info-700)]">Subiendo logo...</p>
+                </div>
+              )}
+
+              {imagenes.logo.error && (
+                <div className="mt-2 p-2 bg-[color:var(--sp-error-50)] border border-[color:var(--sp-error-200)] rounded">
+                  <p className="text-xs text-[color:var(--sp-error-700)] flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    {imagenes.logo.error}
+                  </p>
+                </div>
+              )}
+            </CardContentComponent>
+          </CardComponent>
+
+          {/* Portada */}
+          <CardComponent>
+            <CardContentComponent>
+              <h3 className="text-lg font-medium text-[color:var(--sp-neutral-900)] mb-4">Imagen de Portada</h3>
+
+              {/* Preview de la portada */}
+              <div className="mb-4">
+                <div className="aspect-video w-full border-2 border-dashed border-[color:var(--sp-neutral-300)] rounded-lg overflow-hidden relative">
+                  {imagenes.portada.previewUrl ? (
+                    <>
+                      <img
+                        src={imagenes.portada.previewUrl}
+                        alt="Portada preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() => eliminarImagen('portada')}
+                        className="absolute top-2 right-2 w-6 h-6 bg-[color:var(--sp-error-500)] text-[--sp-on-error] rounded-full flex items-center justify-center hover:bg-[color:var(--sp-error-600)] transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center text-[color:var(--sp-neutral-400)]">
+                        <ImageIcon className="w-12 h-12 mx-auto mb-2" />
+                        <p className="text-sm">Sin portada</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Input de archivo */}
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => manejarCambioArchivo('portada', e.target.files?.[0] || null)}
+                  className="hidden"
+                  id="portada-upload"
+                />
+                <label
+                  htmlFor="portada-upload"
+                  className="flex items-center justify-center w-full p-3 border-2 border-dashed border-[color:var(--sp-secondary-300)] rounded-lg cursor-pointer hover:border-[color:var(--sp-secondary-400)] transition-colors"
+                >
+                  <div className="text-center">
+                    <Upload className="w-6 h-6 text-[color:var(--sp-secondary-600)] mx-auto mb-2" />
+                    <p className="text-sm text-[color:var(--sp-secondary-700)]">
+                      {imagenes.portada.archivo ? 'Cambiar portada' : 'Seleccionar portada'}
+                    </p>
+                    <p className="text-xs text-[color:var(--sp-neutral-500)] mt-1">
+                      JPG, PNG, WebP • Máx 5MB
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Estado de carga/error */}
+              {imagenes.portada.estado === 'cargando' && (
+                <div className="mt-2 p-2 bg-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded text-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[color:var(--sp-info-600)] mx-auto mb-1"></div>
+                  <p className="text-xs text-[color:var(--sp-info-700)]">Subiendo portada...</p>
+                </div>
+              )}
+
+              {imagenes.portada.error && (
+                <div className="mt-2 p-2 bg-[color:var(--sp-error-50)] border border-[color:var(--sp-error-200)] rounded">
+                  <p className="text-xs text-[color:var(--sp-error-700)] flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    {imagenes.portada.error}
+                  </p>
+                </div>
+              )}
+            </CardContentComponent>
+          </CardComponent>
+        </div>
+
+        {/* Botones de navegación */}
         <CardComponent>
           <CardContentComponent>
             <div className="flex justify-between items-center">
-              <ButtonComponent 
-                variant="outline" 
+              <ButtonComponent
+                variant="outline"
                 onClick={handleBack}
                 className="flex items-center gap-2"
                 disabled={saving}
               >
-                ← Configuración
+                <ArrowLeft className="w-4 h-4" />
+                Horarios
               </ButtonComponent>
-              
-      <ButtonComponent
+
+              <ButtonComponent
                 onClick={handleSave}
-                disabled={saving || !isFormValid}
-                loading={saving}
-                variant={isFormValid ? "default" : "secondary"}
+                disabled={saving}
+                variant="success"
                 className="flex items-center gap-2"
               >
                 {saving ? (
                   <>
-        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[--sp-on-primary]"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[--sp-on-success]"></div>
                     Guardando...
                   </>
-                ) : isFormValid ? (
-                  'Continuar a Ubicación →'
                 ) : (
-                  'Completa los campos obligatorios'
+                  <>
+                    <Check className="w-4 h-4" />
+                    Completar Configuración
+                  </>
                 )}
               </ButtonComponent>
             </div>
-            {!isFormValid && (
-              <div className="mt-3 p-3 bg-[color:var(--sp-warning-50)] border border-[color:var(--sp-warning-200)] rounded-lg">
-                <p className="text-sm text-[color:var(--sp-warning-700)]">
-                  📝 <strong>Campos obligatorios:</strong>
+
+            {!tieneImagenes && (
+              <div className="mt-3 p-3 bg-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded-lg">
+                <p className="text-sm text-[color:var(--sp-info-700)]">
+                  💡 <strong>Recomendación:</strong> Sube al menos una imagen para que tu restaurante se vea más atractivo para los clientes.
                 </p>
-                <ul className="text-xs text-[color:var(--sp-warning-600)] mt-1 space-y-1">
-                  {!formData.name.trim() && <li>• Nombre del restaurante</li>}
-                  {!formData.phone.trim() && <li>• Teléfono de contacto</li>}
-                  {!formData.email.trim() && <li>• Email de contacto</li>}
-                </ul>
               </div>
             )}
           </CardContentComponent>
         </CardComponent>
 
-        {/* Progreso visual mejorado */}
-        <CardComponent className="bg-[color:var(--sp-info-50)] border-[color:var(--sp-info-200)]">
+        {/* Información final */}
+        <CardComponent className="bg-[color:var(--sp-success-50)] border-[color:var(--sp-success-200)]">
           <CardContentComponent>
             <div className="flex items-center gap-3">
-              <svg className="w-8 h-8 text-[color:var(--sp-info-600)]" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.84L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.84l-7-3z"/>
-              </svg>
+              <Check className="text-[color:var(--sp-success-600)] w-6 h-6" />
               <div>
-                <h3 className="font-bold text-[color:var(--sp-info-800)]">Información Básica</h3>
-                <p className="text-sm text-[color:var(--sp-info-700)]">
-                  Esta información aparecerá en tu perfil público y ayudará a los clientes a encontrarte y contactarte.
+                <h3 className="font-bold text-[color:var(--sp-success-800)]">¡Último paso!</h3>
+                <p className="text-sm text-[color:var(--sp-success-700)]">
+                  Al guardar, completarás la configuración y podrás empezar a usar SPOON con tu restaurante.
                 </p>
-                <div className="flex items-center gap-4 text-xs text-[color:var(--sp-info-600)] mt-2">
-                  {cuisineTypes.length > 0 && (
-                    <span>✅ {cuisineTypes.length} tipos de cocina disponibles</span>
-                  )}
-                  {isPhonePreFilled && <span>📱 Teléfono pre-rellenado</span>}
-                  {isEmailPreFilled && <span>📧 Email pre-rellenado</span>}
-                </div>
               </div>
             </div>
           </CardContentComponent>
@@ -476,5 +624,3 @@ export default function InformacionGeneralPage() {
     </div>
   );
 }
-
-

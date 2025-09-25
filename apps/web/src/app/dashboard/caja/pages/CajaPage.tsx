@@ -6,9 +6,7 @@ const Card = CardRaw as any; // Cast temporal para conflictos de tipos React dup
 const CardContent = CardContentRaw as any;
 
 // Hooks
-import { useCaja } from '../hooks/useCaja';
-import { useCajaSesion } from '../hooks/useCajaSesion';
-import { useGastos } from '../hooks/useGastos';
+import { useCaja, useCajaSesion, useGastos } from '@spoon/shared/caja';
 import { useSaldoCalculado } from '../hooks/useSaldoCalculado';
 
 // Componentes
@@ -30,7 +28,7 @@ import { ModalCierreCaja } from '../components/ModalCierreCaja';
 
 // Types
 import { OrdenPendiente } from '../types/cajaTypes';
-import { supabase, getUserProfile, getCierresCajaRecientes } from '@spoon/shared/lib/supabase';
+import { getCierresCajaRecientes } from '@spoon/shared/lib/supabase';
 import { toast } from '@spoon/shared/components/ui/Toast';
 
 type TabActiva = 'movimientos' | 'arqueo' | 'reportes';
@@ -56,7 +54,8 @@ export default function CajaPage() {
   periodo,
   setPeriodo,
   fechaFinFiltro,
-  setFechaFinFiltro
+  setFechaFinFiltro,
+  registrarVentaDirecta
   } = useCaja();
   const { gastos, crearGasto, loading: loadingGastos } = useGastos();
   // Feature flag (panel de seguridad opcional)
@@ -226,18 +225,7 @@ export default function CajaPage() {
       return;
     }
     // Verificar rol: solo cajero/admin
-    try {
-      const profile = await getUserProfile();
-      const role = (profile as any)?.role;
-  if (role !== 'cajero' && role !== 'admin' && role !== 'restaurant_owner') {
-        alert('No tienes permisos para registrar ventas');
-        return;
-      }
-    } catch {
-      // Si falla el perfil, por seguridad no permitir
-      alert('No se pudo verificar permisos del usuario');
-      return;
-    }
+    // Chequeo de permisos puede centralizarse en el hook o UI superior si aplica
     setModals(prev => ({ ...prev, nuevaVenta: true }));
   };
 
@@ -461,49 +449,12 @@ export default function CajaPage() {
         onClose={() => setModals(prev => ({ ...prev, nuevaVenta: false }))}
         loading={loading}
         onConfirmar={async (venta) => {
-          if (requiereSaneamiento) {
-            return { success: false, error: 'Sesión previa detectada. Debes cerrar la sesión anterior antes de registrar ventas.' } as any;
-          }
-          try {
-            if (!sesionActual?.id) {
-              return { success: false, error: 'No hay sesión de caja abierta' };
-            }
-            const profile = await getUserProfile();
-            if (!profile?.id) {
-              return { success: false, error: 'Usuario no autenticado' };
-            }
-            const montoCambio = venta.metodoPago === 'efectivo' && (venta.montoRecibido || 0) > 0
-              ? Math.max(0, (venta.montoRecibido as number) - venta.total)
-              : 0;
-
-      // Insertar transacción directa (asegurando timestamp usado por métricas)
-      const { data, error: errIns } = await supabase
-              .from('transacciones_caja')
-              .insert({
-                caja_sesion_id: sesionActual.id,
-                orden_id: null,
-                tipo_orden: 'directa',
-                metodo_pago: venta.metodoPago,
-                monto_total: venta.total,
-                monto_recibido: venta.metodoPago === 'efectivo' ? (venta.montoRecibido || venta.total) : venta.total,
-    monto_cambio: montoCambio,
-    cajero_id: (profile as any).id,
-    procesada_at: new Date().toISOString()
-              })
-              .select('id')
-              .single();
-
-            if (errIns) {
-              return { success: false, error: (errIns as any).message || 'Error registrando la transacción' };
-            }
-
-            // Refrescar métricas/listas (aunque hay realtime, forzamos)
+          const res = await registrarVentaDirecta(venta);
+          if (res.success) {
             setModals(prev => ({ ...prev, nuevaVenta: false }));
             await refrescar();
-            return { success: true, cambio: montoCambio };
-          } catch (e: any) {
-            return { success: false, error: e?.message || 'Error inesperado' };
           }
+          return res as any;
         }}
       />
 

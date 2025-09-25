@@ -8,6 +8,62 @@
 import React, { useState, useEffect } from 'react';
 // Iconos temporalmente como emojis (lucide-react removido por conflicto de tipos)
 
+// Componente de Skeleton Loading
+const SpecialCardSkeleton = () => (
+  <div className="bg-[color:var(--sp-surface-elevated)] rounded-lg shadow-sm border border-[color:var(--sp-border)] p-5 sm:p-6 animate-pulse">
+    {/* Imagen skeleton */}
+    <div className="w-full aspect-video rounded-md bg-[color:var(--sp-neutral-200)] mb-4"></div>
+
+    {/* Header skeleton */}
+    <div className="flex flex-col mb-4 gap-3">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="h-5 bg-[color:var(--sp-neutral-200)] rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-[color:var(--sp-neutral-200)] rounded w-full mb-1"></div>
+          <div className="h-4 bg-[color:var(--sp-neutral-200)] rounded w-2/3"></div>
+        </div>
+        <div className="flex items-center gap-1 ml-4">
+          <div className="h-6 w-16 bg-[color:var(--sp-neutral-200)] rounded-full"></div>
+          <div className="h-6 w-20 bg-[color:var(--sp-neutral-200)] rounded-full"></div>
+        </div>
+      </div>
+    </div>
+
+    {/* Precio skeleton */}
+    <div className="mb-4">
+      <div className="flex items-center gap-2">
+        <div className="w-4 h-4 bg-[color:var(--sp-neutral-200)] rounded"></div>
+        <div className="h-8 bg-[color:var(--sp-neutral-200)] rounded w-24"></div>
+      </div>
+    </div>
+
+    {/* Estadísticas skeleton */}
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm mb-4">
+      <div className="flex items-center gap-1">
+        <div className="w-4 h-4 bg-[color:var(--sp-neutral-200)] rounded"></div>
+        <div className="h-4 bg-[color:var(--sp-neutral-200)] rounded w-16"></div>
+      </div>
+      <div className="flex items-center gap-1">
+        <div className="w-4 h-4 bg-[color:var(--sp-neutral-200)] rounded"></div>
+        <div className="h-4 bg-[color:var(--sp-neutral-200)] rounded w-20"></div>
+      </div>
+    </div>
+
+    {/* Estado skeleton */}
+    <div className="mb-4">
+      <div className="h-6 bg-[color:var(--sp-neutral-200)] rounded-full w-32"></div>
+    </div>
+
+    {/* Acciones skeleton */}
+    <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-[color:var(--sp-border)] mt-auto">
+      <div className="h-9 bg-[color:var(--sp-neutral-200)] rounded-lg w-20"></div>
+      <div className="h-9 bg-[color:var(--sp-neutral-200)] rounded-lg w-16"></div>
+      <div className="h-9 bg-[color:var(--sp-neutral-200)] rounded-lg w-20"></div>
+      <div className="h-9 bg-[color:var(--sp-neutral-200)] rounded-lg w-20"></div>
+    </div>
+  </div>
+);
+
 interface SpecialesPageProps {
   specialData: any; // Por ahora any, luego tipamos correctamente
 }
@@ -20,7 +76,8 @@ export default function SpecialesPage({ specialData }: SpecialesPageProps) {
     setCurrentSpecialDish,
   toggleSpecialForToday,
     deleteSpecialDishComplete,
-    loadingStates
+    loadingStates,
+    initialLoading
   } = specialData;
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -93,7 +150,14 @@ export default function SpecialesPage({ specialData }: SpecialesPageProps) {
       </div>
 
       {/* ✅ LISTA DE ESPECIALES O ESTADO VACÍO */}
-      {specialDishes.length > 0 ? (
+      {initialLoading ? (
+        // Loading skeletons
+        <div className="grid gap-5 sm:gap-6 grid-cols-1 xs:grid-cols-2 md:grid-cols-2 lg:[grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <SpecialCardSkeleton key={index} />
+          ))}
+        </div>
+      ) : specialDishes.length > 0 ? (
         <div
           className="grid gap-5 sm:gap-6 grid-cols-1 xs:grid-cols-2 md:grid-cols-2 lg:[grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]"
         >

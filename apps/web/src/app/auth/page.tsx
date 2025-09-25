@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, MapPin, Star, Bell, Truck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { EmailField, PasswordField, InputFieldV2 } from '@spoon/shared/patterns/FormFieldsV2';
-import { getUserProfile, getUserRestaurant } from '@spoon/shared/lib/supabase';
+import { getUserProfile, getUserRestaurant, signInWithGoogle } from '@spoon/shared/lib/supabase';
 import { useLogin } from './useLogin';
 import { useRegister } from './useRegister';
 import { usePasswordRecovery } from './usePasswordRecovery';
@@ -107,34 +107,63 @@ const AuthPage = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-[color:var(--sp-primary-50)] via-[color:var(--sp-primary-100)] to-[color:var(--sp-primary-200)]">
       {/* Columna izquierda - Información/promoción */}
-  <div className="hidden md:flex w-1/2 flex-col justify-center items-center bg-gradient-to-br from-[color:var(--sp-primary-200)] via-[color:var(--sp-primary-100)] to-[color:var(--sp-primary-50)] p-12 relative">
-        <img src="/images/spoon-logo.jpg" alt="Spoon Logo" className="mx-auto h-[120px] w-auto mb-6" />
-  <h1 className="text-4xl font-bold text-[color:var(--sp-on-primary)] mb-6 text-center drop-shadow-lg">
-          {modoRegistro ? 'Únete a la revolución gastronómica' : 'Conecta con más clientes en tu zona'}
-        </h1>
-  <p className="text-lg text-[color:var(--sp-on-primary)]/90 mb-8 text-center">
-          {modoRegistro
-            ? 'Crea tu cuenta y empieza a digitalizar tu restaurante hoy mismo'
-            : 'Expande tu negocio con nuestra plataforma de gestión de restaurantes y domicilios'}
-        </p>
-        <div className="grid grid-cols-2 gap-6 w-full max-w-lg">
-          <div className="bg-[color:var(--sp-surface-elevated)]/20 backdrop-blur-sm p-6 rounded-xl">
-            <h3 className="text-[color:var(--sp-primary-500)] font-semibold mb-2">Geolocalización</h3>
-            <p className="text-[color:var(--sp-on-primary)]/90">Alcanza clientes en cualquier zona y optimiza tus entregas</p>
-          </div>
-          <div className="bg-[color:var(--sp-surface-elevated)]/20 backdrop-blur-sm p-6 rounded-xl">
-            <h3 className="text-[color:var(--sp-primary-500)] font-semibold mb-2">Sistema de Reseñas</h3>
-            <p className="text-[color:var(--sp-on-primary)]/90">Mejora tu servicio con feedback real de los clientes</p>
-          </div>
-          <div className="bg-[color:var(--sp-surface-elevated)]/20 backdrop-blur-sm p-6 rounded-xl">
-            <h3 className="text-[color:var(--sp-primary-500)] font-semibold mb-2">Notificaciones</h3>
-            <p className="text-[color:var(--sp-on-primary)]/90">Mantén informados a tus clientes sobre sus pedidos</p>
-          </div>
-          <div className="bg-[color:var(--sp-surface-elevated)]/20 backdrop-blur-sm p-6 rounded-xl">
-            <h3 className="text-[color:var(--sp-primary-500)] font-semibold mb-2">Gestión de Domicilios</h3>
-            <p className="text-[color:var(--sp-on-primary)]/90">Control total sobre tus entregas y repartidores</p>
+      <div className="hidden md:flex w-1/2 flex-col justify-center items-center bg-gradient-to-br from-[color:var(--sp-primary-200)] via-[color:var(--sp-primary-100)] to-[color:var(--sp-primary-50)] p-12 relative overflow-hidden">
+        <div className="w-full max-w-xl mx-auto">
+          <img src="/images/spoon-logo.jpg" alt="Spoon Logo" className="h-[72px] w-auto mb-6 opacity-95" />
+          <h1 className="text-4xl md:text-5xl font-extrabold leading-tight text-[color:var(--sp-on-primary)] mb-4 drop-shadow-sm">
+            {modoRegistro ? 'Únete a la revolución gastronómica' : 'Conecta con más clientes en tu zona'}
+          </h1>
+          <p className="text-base md:text-lg text-[color:var(--sp-on-primary)]/90 mb-8">
+            {modoRegistro
+              ? 'Crea tu cuenta y empieza a digitalizar tu restaurante hoy mismo.'
+              : 'Expande tu negocio con nuestra plataforma de gestión de restaurantes y domicilios.'}
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-[color:var(--sp-surface-elevated)]/25 backdrop-blur p-4 rounded-xl flex items-start gap-3">
+              <div className="shrink-0 rounded-lg p-2 bg-[color:var(--sp-primary-600)]/10 text-[color:var(--sp-primary-700)]">
+                <MapPin className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-[color:var(--sp-primary-700)] font-semibold">Geolocalización</h3>
+                <p className="text-[color:var(--sp-on-primary)]/90 text-sm">Alcanza clientes en cualquier zona y optimiza tus entregas</p>
+              </div>
+            </div>
+
+            <div className="bg-[color:var(--sp-surface-elevated)]/25 backdrop-blur p-4 rounded-xl flex items-start gap-3">
+              <div className="shrink-0 rounded-lg p-2 bg-[color:var(--sp-primary-600)]/10 text-[color:var(--sp-primary-700)]">
+                <Star className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-[color:var(--sp-primary-700)] font-semibold">Sistema de Reseñas</h3>
+                <p className="text-[color:var(--sp-on-primary)]/90 text-sm">Mejora tu servicio con feedback real de los clientes</p>
+              </div>
+            </div>
+
+            <div className="bg-[color:var(--sp-surface-elevated)]/25 backdrop-blur p-4 rounded-xl flex items-start gap-3">
+              <div className="shrink-0 rounded-lg p-2 bg-[color:var(--sp-primary-600)]/10 text-[color:var(--sp-primary-700)]">
+                <Bell className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-[color:var(--sp-primary-700)] font-semibold">Notificaciones</h3>
+                <p className="text-[color:var(--sp-on-primary)]/90 text-sm">Mantén informados a tus clientes sobre sus pedidos</p>
+              </div>
+            </div>
+
+            <div className="bg-[color:var(--sp-surface-elevated)]/25 backdrop-blur p-4 rounded-xl flex items-start gap-3">
+              <div className="shrink-0 rounded-lg p-2 bg-[color:var(--sp-primary-600)]/10 text-[color:var(--sp-primary-700)]">
+                <Truck className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-[color:var(--sp-primary-700)] font-semibold">Gestión de Domicilios</h3>
+                <p className="text-[color:var(--sp-on-primary)]/90 text-sm">Control total sobre tus entregas y repartidores</p>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* elemento decorativo sutil */}
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 -right-24 w-[28rem] h-[28rem] rounded-full bg-[color:var(--sp-primary-300)] opacity-40 blur-3xl" />
       </div>
       {/* Columna derecha - Formulario */}
   <div className="w-full md:w-1/2 bg-[color:var(--sp-surface)] flex items-center justify-center p-8 relative">
@@ -252,6 +281,26 @@ const AuthPage = () => {
               <button type="submit" disabled={cargando} className="w-full py-3 px-4 rounded-lg text-[color:var(--sp-on-primary)] bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)]">
                 {cargando ? (<span>Creando cuenta...</span>) : 'Crear cuenta'}
               </button>
+              <div className="relative my-4 flex items-center justify-center">
+                <span className="h-px w-full bg-[color:var(--sp-neutral-200)]" />
+                <span className="absolute bg-[color:var(--sp-surface)] px-3 text-sm text-[color:var(--sp-neutral-500)]">o</span>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const redirectTo = `${window.location.origin}/auth/callback`;
+                    await signInWithGoogle(redirectTo);
+                  } catch (e) {
+                    console.error(e);
+                    toast.error('No se pudo iniciar con Google');
+                  }
+                }}
+                className="w-full py-3 px-4 rounded-lg border border-[color:var(--sp-neutral-300)] bg-[color:var(--sp-surface-elevated)] hover:bg-[color:var(--sp-surface)] flex items-center justify-center gap-2"
+              >
+                <img src="/google.svg" alt="Google" className="h-5 w-5" />
+                <span>Continuar con Google</span>
+              </button>
             </form>
           ) : (
             <form onSubmit={manejarLogin} className="space-y-6">
@@ -293,6 +342,22 @@ const AuthPage = () => {
               )}
               <button type="submit" disabled={cargando} className="w-full py-3 px-4 rounded-lg text-[color:var(--sp-on-primary)] bg-[color:var(--sp-primary-600)] hover:bg-[color:var(--sp-primary-700)]">
                 {cargando ? (<span>Iniciando sesión...</span>) : 'Iniciar sesión'}
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const redirectTo = `${window.location.origin}/auth/callback`;
+                    await signInWithGoogle(redirectTo);
+                  } catch (e) {
+                    console.error(e);
+                    toast.error('No se pudo iniciar con Google');
+                  }
+                }}
+                className="w-full py-3 px-4 rounded-lg border border-[color:var(--sp-neutral-300)] bg-[color:var(--sp-surface-elevated)] hover:bg-[color:var(--sp-surface)] flex items-center justify-center gap-2"
+              >
+                <img src="/google.svg" alt="Google" className="h-5 w-5" />
+                <span>Continuar con Google</span>
               </button>
               <div className="text-right">
                 <button type="button" onClick={() => setMostrarRecuperar(true)} className="text-sm text-[color:var(--sp-primary-600)] hover:text-[color:var(--sp-primary-700)]">

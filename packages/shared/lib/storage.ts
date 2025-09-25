@@ -1,5 +1,20 @@
 // Unified Storage Service (Supabase-first, pluggable)
-import { supabase, supabaseAdmin } from './supabase';
+import { supabase } from './supabase';
+
+// Import supabaseAdmin only when needed (server-side)
+let supabaseAdmin: any = null;
+if (typeof window === 'undefined') {
+  // Server-side only
+  const { createClient } = require('@supabase/supabase-js');
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (serviceRoleKey) {
+    supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      db: { schema: 'public' }
+    });
+  }
+}
 
 export interface UploadParams {
   bucket: string;
@@ -82,17 +97,34 @@ export async function ensureBucket(name: string, options?: EnsureBucketOptions):
 
 /** Upload a file to a bucket (defaults to upsert true). */
 export async function uploadFile({ bucket, path, body, contentType, cacheControl, upsert = true, makePublic }: UploadParams): Promise<UploadResult> {
-  const { data, error } = await supabase.storage.from(bucket).upload(path, body as any, {
-    contentType,
-    cacheControl: cacheControl?.toString(),
-    upsert,
-  });
-  if (error) throw error;
-  const result: UploadResult = { bucket, path: (data as any)?.path || path };
-  if (makePublic) {
-    result.publicUrl = getPublicUrl({ bucket, path: result.path });
+  try {
+    const { data, error } = await supabase.storage.from(bucket).upload(path, body as any, {
+      contentType,
+      cacheControl: cacheControl?.toString(),
+      upsert,
+    });
+    if (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        const hint = /row-level security|rls/i.test(error.message || '')
+          ? 'Falta policy INSERT (y quizá UPDATE si upsert=true) en storage.objects para bucket=' + bucket
+          : undefined;
+        // eslint-disable-next-line no-console
+        console.error('[storage.upload] error', { bucket, path, error, hint });
+      }
+      throw error;
+    }
+    const result: UploadResult = { bucket, path: (data as any)?.path || path };
+    if (makePublic) {
+      result.publicUrl = getPublicUrl({ bucket, path: result.path });
+    }
+    return result;
+  } catch (e: any) {
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.warn('[storage.upload] caught exception', { bucket, path, message: e?.message });
+    }
+    throw e;
   }
-  return result;
 }
 
 /** Get a public URL (bucket must be public or path must be exposed by policy). */

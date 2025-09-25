@@ -23,7 +23,8 @@ import {
   Bell,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ClipboardList
 } from 'lucide-react';
 
 // Type casting to fix React version conflicts in monorepo
@@ -72,6 +73,13 @@ const menuItems = [
     icon: Menu,
     description: 'Control de tus mesas',
     
+  },
+  {
+    label: 'Comandas',
+    href: '/comandas',
+    icon: ClipboardList,
+    description: 'Toma de órdenes',
+    badge: 'NUEVO',
   },
   {
     label: 'Configuración',
@@ -127,9 +135,12 @@ function Sidebar({ collapsed, onToggle, onSignOut }: { collapsed: boolean; onTog
       </div>
 
       {/* Navegación principal */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = (
+            pathname === item.href ||
+            (item.href === '/comandas' && (pathname === '/comandas' || pathname.startsWith('/comandas')))
+          );
           const IconComponent = item.icon as any;
           
           return (
@@ -148,23 +159,21 @@ function Sidebar({ collapsed, onToggle, onSignOut }: { collapsed: boolean; onTog
               }`} />
               
               {!collapsed && (
-                <>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm truncate">
-                        {item.label}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm truncate">
+                      {item.label}
+                    </span>
+                    {item.badge && (
+                      <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-600)] rounded-full">
+                        {item.badge}
                       </span>
-                      {item.badge && (
-                        <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-600)] rounded-full">
-                          {item.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-[color:var(--sp-neutral-500)] truncate">
-                      {item.description}
-                    </p>
+                    )}
                   </div>
-                </>
+                  <p className="text-xs text-[color:var(--sp-neutral-500)] truncate">
+                    {item.description}
+                  </p>
+                </div>
               )}
             </LinkComponent>
           );

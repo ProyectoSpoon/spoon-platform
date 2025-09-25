@@ -297,7 +297,7 @@ export default function ConfiguracionPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [activeTab, activeUsersTab, rolesPermisosAttempt]);
+  }, [activeTab, activeUsersTab, rolesPermisosAttempt, addNotification]);
 
   // Funciones para refrescar datos de usuarios
   const refrescarUsuarios = async () => {
