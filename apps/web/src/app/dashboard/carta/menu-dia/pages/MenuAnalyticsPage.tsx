@@ -14,6 +14,7 @@ const ChevronRightComponent = ChevronRight as any;
 
 import { MenuApiService } from '@spoon/shared/services/menu-dia/menuApiService';
 import { CATEGORIAS_MENU_CONFIG, CATEGORY_ICONS } from '@spoon/shared/constants/menu-dia/menuConstants';
+import ProductImage from '@spoon/shared/components/ProductImage';
 
 interface ProductUsage {
   id: string;
@@ -320,12 +321,14 @@ export default function MenuAnalyticsPage({ menuData, onReprogramarMenu }: Props
                       <tr key={product.id} className="hover:bg-[color:var(--sp-neutral-50)]">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-[color:var(--sp-primary-100)] flex items-center justify-center">
-                                <span className="text-sm font-medium text-[color:var(--sp-primary-600)]">
-                                  {getIconForCategory(product.category_name)}
-                                </span>
-                              </div>
+                            <div className="flex-shrink-0">
+                              <ProductImage
+                                product={{ name: product.product_name }}
+                                size={40}
+                                className="rounded-lg"
+                                fallbackIcon={getIconForCategory(product.category_name)}
+                                showFallback={true}
+                              />
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-[color:var(--sp-neutral-900)]">

@@ -80,6 +80,20 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
           >
             Cierres de caja
           </ButtonComponent>
+          <ButtonComponent
+            variant="ghost"
+            size="sm"
+            onClick={() => onTabChange('reportes')}
+            role="tab"
+            aria-selected={tabActiva === 'reportes'}
+            className={
+              tabActiva === 'reportes'
+                ? 'bg-[color:var(--sp-surface)] text-[color:var(--sp-on-surface)] shadow-sm focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 active:ring-2 active:ring-[color:var(--sp-focus)] active:ring-offset-2'
+                : 'text-[color:var(--sp-on-surface)]/80 hover:text-[color:var(--sp-on-surface)] focus-visible:ring-2 focus-visible:ring-[color:var(--sp-focus)] focus-visible:ring-offset-2 active:ring-2 active:ring-[color:var(--sp-focus)] active:ring-offset-2'
+            }
+          >
+            Reportes
+          </ButtonComponent>
         </nav>
       </div>
 
@@ -165,4 +179,3 @@ export const FiltrosToolbar: React.FC<FiltrosToolbarProps> = ({
     </div>
   );
 };
-

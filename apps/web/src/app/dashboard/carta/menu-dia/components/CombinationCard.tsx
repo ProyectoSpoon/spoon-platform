@@ -3,6 +3,7 @@
 import React from 'react';
 import { MenuCombinacion, LoadingStates } from '@spoon/shared/types/menu-dia/menuTypes';
 import { Edit3, RefreshCw, Check, X, Trash2 } from 'lucide-react';
+import ProductImage from '@spoon/shared/components/ProductImage';
 
 // Type casting for React type conflicts
 const Edit3Component = Edit3 as any;
@@ -75,6 +76,41 @@ export default function CombinationCard({
             combo.descripcion || 'Combinación del menú del día'
           )}
         </div>
+
+        {/* Ingredientes visuales */}
+        {!combo.isEditing && (
+          <div className="flex items-center gap-2 py-1">
+            {combo.principio && (
+              <div className="flex items-center gap-1">
+                <ProductImage
+                  product={combo.principio}
+                  size={20}
+                  className="flex-shrink-0"
+                  fallbackIcon="🍽️"
+                  showFallback={true}
+                />
+                <span className="text-xs text-[color:var(--sp-neutral-600)] truncate max-w-20">
+                  {combo.principio.name}
+                </span>
+              </div>
+            )}
+            {combo.proteina && (
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-[color:var(--sp-neutral-400)]">+</span>
+                <ProductImage
+                  product={combo.proteina}
+                  size={20}
+                  className="flex-shrink-0"
+                  fallbackIcon="🍗"
+                  showFallback={true}
+                />
+                <span className="text-xs text-[color:var(--sp-neutral-600)] truncate max-w-20">
+                  {combo.proteina.name}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Precio */}
         <div className="space-y-2 pt-2 border-t border-[color:var(--sp-neutral-200)]">
@@ -176,4 +212,3 @@ export default function CombinationCard({
     </div>
   );
 }
-

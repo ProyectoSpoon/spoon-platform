@@ -315,7 +315,9 @@ export const MenuApiService = {
   async createDailyMenu(restaurantId: string, menuPrice: number, _selectedProducts: any, _proteinQuantities: any) {
     // Usar fecha de hoy en zona America/Bogota
     const today = getBogotaDateISO('dateOnly');
-    const expiresAt = getBogotaDateISO('full'); // Para timestamp completo
+    // Set expires_at to end of the next day (24 hours from now) to avoid constraint violation
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000); // Add 24 hours
+    const expiresAt = new Date(tomorrow.getTime() - (5 * 60 * 60 * 1000)).toISOString(); // Bogota time
 
     // Upsert para evitar conflicto único (restaurant_id, menu_date)
     const { data: upserted, error: menuError } = await supabase

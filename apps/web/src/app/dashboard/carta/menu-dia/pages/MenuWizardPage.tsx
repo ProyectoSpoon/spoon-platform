@@ -12,6 +12,7 @@ import { CATEGORIAS_MENU_CONFIG, CATEGORY_ICONS, DEFAULT_PROTEIN_QUANTITY } from
 import { MenuApiService } from '@spoon/shared/services/menu-dia/menuApiService';
 import { createMenuTemplate } from '@spoon/shared/lib/supabase';
 import { Producto, LoadingStates, MenuCombinacion, MenuFilters, ComboFilters } from '@spoon/shared/types/menu-dia/menuTypes';
+import ProductImage from '@spoon/shared/components/ProductImage';
 
 // Tipos importados desde shared para evitar duplicación
 
@@ -454,16 +455,21 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
                             `}
                           >
                             <div className="flex items-center gap-3 flex-1">
-                              <div
-                                className={`
-                                  w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium shrink-0
-                                  ${isSelected
-                                    ? 'bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-700)]'
-                                    : 'bg-[color:var(--sp-neutral-100)] text-[color:var(--sp-neutral-600)]'}
-                                `}
-                              >
-                                {isSelected ? '✓' : getIconForCategory(currentCategory.nombre)}
-                              </div>
+                              {isSelected ? (
+                                <div
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium shrink-0 bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-700)]"
+                                >
+                                  ✓
+                                </div>
+                              ) : (
+                                <ProductImage
+                                  product={producto}
+                                  size={32}
+                                  className="shrink-0"
+                                  fallbackIcon={getIconForCategory(currentCategory.nombre)}
+                                  showFallback={true}
+                                />
+                              )}
                               <div className="min-w-0 flex-1">
                                 <h4 className="font-medium text-[color:var(--sp-neutral-900)] text-sm leading-tight">
                                   {producto.name}
@@ -537,10 +543,19 @@ export default function MenuWizardPage({ menuData, menuState, onClose, onComplet
                             <span className="bg-[color:var(--sp-info-100)] text-[color:var(--sp-info-800)] text-xs px-2 py-1 rounded-full">{products.length}</span>
                           </div>
                           {products.length > 0 ? (
-                            <div className="space-y-1">
-                              {products.slice(0, 3).map((producto: Producto) => (
-                                <p key={producto.id} className="text-xs text-[color:var(--sp-neutral-600)]">• {producto.name}</p>
-                              ))}
+                          <div className="space-y-1">
+                            {products.slice(0, 3).map((producto: Producto) => (
+                              <div key={producto.id} className="flex items-center gap-2">
+                                <ProductImage
+                                  product={producto}
+                                  size={16}
+                                  className="flex-shrink-0"
+                                  fallbackIcon={getIconForCategory(categoria.nombre)}
+                                  showFallback={true}
+                                />
+                                <p className="text-xs text-[color:var(--sp-neutral-600)] truncate">{producto.name}</p>
+                              </div>
+                            ))}
                               {products.length > 3 && (
                                 <p className="text-xs text-[color:var(--sp-neutral-500)]">... y {products.length - 3} más</p>
                               )}

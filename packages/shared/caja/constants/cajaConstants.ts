@@ -12,13 +12,21 @@ export const formatCurrency = (amount: number): string => {
 };
 
 export const CAJA_CONFIG = {
-  MONTO_MINIMO_APERTURA: 50000,
-  MONTO_MAXIMO_APERTURA: 1000000,
-  DENOMINACIONES: [
-    1000, 2000, 5000, 10000, 20000, 50000, 100000
+  MONTO_INICIAL_DEFAULT: 5000000,  // $50,000 pesos en centavos
+  REFRESH_INTERVAL: 30000,         // 30 segundos
+  DENOMINACIONES_EFECTIVO: [       // Billetes para cálculos
+    { valor: 10000000, label: '$100,000' },
+    { valor: 5000000, label: '$50,000' },
+    // ... más denominaciones
   ],
-  AUTO_REFRESH_INTERVAL: 30000,
-  MONTO_INICIAL_DEFAULT: 100000
+  // Configuración de cierre automático
+  CIERRE_AUTOMATICO: {
+    TIEMPO_AVISO_1: 1 * 60 * 60 * 1000,    // 1 hora - primera notificación
+    TIEMPO_AVISO_2: 2 * 60 * 60 * 1000,    // 2 horas - segunda notificación
+    TIEMPO_ESPERA_RESPUESTA: 5 * 60 * 1000, // 5 minutos - espera respuesta después de 3ra hora
+    TIEMPO_AUTO_CIERRE: 3 * 60 * 60 * 1000, // 3 horas - cierre automático si no hay respuesta
+    INTERVALO_CHECK: 15 * 60 * 1000,       // Revisar cada 15 minutos
+  }
 };
 
 export const CAJA_MESSAGES = {

@@ -14,13 +14,13 @@ export function Toaster() {
   return (
     <div
       aria-live="assertive"
-      className="fixed inset-0 z-50 flex items-end justify-center px-4 py-6 pointer-events-none sm:p-6 sm:items-start sm:justify-end"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 pointer-events-none"
     >
-      <div className="w-full flex flex-col items-center space-y-4 sm:items-end">
+      <div className="w-full flex flex-col items-center space-y-4">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className="animate-in slide-in-from-top-full duration-300 sm:slide-in-from-right-full"
+            className="animate-in slide-in-from-top-full duration-300"
           >
             <Toast toast={toast} onClose={removeToast} />
           </div>

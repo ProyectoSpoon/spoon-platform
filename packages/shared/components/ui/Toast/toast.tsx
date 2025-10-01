@@ -12,28 +12,28 @@ export interface ToastComponentProps {
 // Fondo y borde aplican la misma variable con opacidad
 const typeStyles = {
   success: {
-    bg: 'bg-[color:var(--sp-success)]/10 border-[color:var(--sp-success)]/30',
-    icon: 'text-[color:var(--sp-success)]',
-    title: 'text-[color:var(--sp-success)]',
-    description: 'text-[color:var(--sp-success)]',
+    bg: 'bg-[color:var(--sp-success)]/20 border-[color:var(--sp-success)]/40',
+    icon: 'text-white',
+    title: 'text-white font-semibold',
+    description: 'text-white font-medium',
   },
   error: {
-    bg: 'bg-[color:var(--sp-error)]/10 border-[color:var(--sp-error)]/30',
-    icon: 'text-[color:var(--sp-error)]',
-    title: 'text-[color:var(--sp-error)]',
-    description: 'text-[color:var(--sp-error)]',
+    bg: 'bg-[color:var(--sp-error)]/20 border-[color:var(--sp-error)]/40',
+    icon: 'text-white',
+    title: 'text-white font-semibold',
+    description: 'text-white font-medium',
   },
   warning: {
-    bg: 'bg-[color:var(--sp-warning)]/10 border-[color:var(--sp-warning)]/30',
-    icon: 'text-[color:var(--sp-warning)]',
-    title: 'text-[color:var(--sp-warning)]',
-    description: 'text-[color:var(--sp-warning)]',
+    bg: 'bg-[color:var(--sp-warning)]/20 border-[color:var(--sp-warning)]/40',
+    icon: 'text-black',
+    title: 'text-black font-semibold',
+    description: 'text-black font-medium',
   },
   info: {
-    bg: 'bg-[color:var(--sp-info)]/10 border-[color:var(--sp-info)]/30',
-    icon: 'text-[color:var(--sp-info)]',
-    title: 'text-[color:var(--sp-info)]',
-    description: 'text-[color:var(--sp-info)]',
+    bg: 'bg-[color:var(--sp-info)]/20 border-[color:var(--sp-info)]/40',
+    icon: 'text-white',
+    title: 'text-white font-semibold',
+    description: 'text-white font-medium',
   },
 };
 

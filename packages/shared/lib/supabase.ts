@@ -228,8 +228,11 @@ export const getGastosDelDia = async (restaurantId: string, fechaISO?: string) =
   const fecha = fechaISO || new Date().toISOString().split('T')[0];
   const { data, error } = await supabase
     .from('gastos_caja')
-    .select('*')
-    .eq('restaurant_id', restaurantId)
+    .select(`
+      *,
+      caja_sesiones!inner(restaurant_id)
+    `)
+    .eq('caja_sesiones.restaurant_id', restaurantId)
     .gte('registrado_at', `${fecha}T00:00:00`)
     .lt('registrado_at', `${fecha}T23:59:59`);
 
@@ -321,6 +324,980 @@ export const eliminarGastoCaja = async (gastoId: string) => {
     return data;
   } catch (error) {
     console.error('Error in eliminarGastoCaja:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtener cierres de caja recientes (sesiones cerradas) con agregados básicos.
+ * MVP: últimos N (default 30) ordenados por cierre más reciente.
+ * NOTA: optimizable con vista materializada o tabla resumen a futuro.
+ */
+type CierreCajaResumen = {
+  id: string;
+  abierta_at: string;
+  cerrada_at: string;
+  cajero_id: string;
+  monto_inicial: number;
+  saldo_final_reportado?: number | null;
+  total_ventas_centavos: number;
+  total_efectivo_centavos: number;
+  total_gastos_centavos: number;
+};
+
+export const getCierresCajaRecientes = async (restaurantId: string, limite: number = 30): Promise<CierreCajaResumen[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('caja_sesiones')
+      .select(`
+        id,
+        abierta_at,
+        cerrada_at,
+        cajero_id,
+        monto_inicial,
+        saldo_final_reportado,
+        transacciones_caja!inner(
+          monto_total,
+          metodo_pago
+        ),
+        gastos_caja(
+          monto
+        )
+      `)
+      .eq('restaurant_id', restaurantId)
+      .eq('estado', 'cerrada')
+      .not('cerrada_at', 'is', null)
+      .order('cerrada_at', { ascending: false })
+      .limit(limite);
+
+    if (error) {
+      console.error('Error loading recent caja cierres:', error);
+      return [];
+    }
+
+    // Aggregate the data
+    const cierres = data?.map(sesion => {
+      const transacciones = sesion.transacciones_caja || [];
+      const gastos = sesion.gastos_caja || [];
+
+      const total_ventas_centavos = transacciones.reduce((sum: number, t: any) => sum + (t.monto_total || 0) * 100, 0);
+      const total_efectivo_centavos = transacciones
+        .filter((t: any) => t.metodo_pago === 'efectivo')
+        .reduce((sum: number, t: any) => sum + (t.monto_total || 0) * 100, 0);
+      const total_gastos_centavos = gastos.reduce((sum: number, g: any) => sum + (g.monto || 0) * 100, 0);
+
+      return {
+        id: sesion.id,
+        abierta_at: sesion.abierta_at,
+        cerrada_at: sesion.cerrada_at,
+        cajero_id: sesion.cajero_id,
+        monto_inicial: sesion.monto_inicial,
+        saldo_final_reportado: sesion.saldo_final_reportado,
+        total_ventas_centavos,
+        total_efectivo_centavos,
+        total_gastos_centavos
+      };
+    }) || [];
+
+    return cierres;
+  } catch (error) {
+    console.error('Error in getCierresCajaRecientes:', error);
+    return [];
+  }
+};
+
+/**
+ * Detalle de un cierre (sesión de caja cerrada) con agregados básicos.
+ * No incluye todavía diferencia real (faltan campos de saldo final reportado en schema actual).
+ */
+export const getCierreCajaDetalle = async (sesionId: string) => {
+  try {
+    // Get session details
+    const { data: sesion, error: sesionError } = await supabase
+      .from('caja_sesiones')
+      .select('*')
+      .eq('id', sesionId)
+      .eq('estado', 'cerrada')
+      .single();
+
+    if (sesionError || !sesion) {
+      console.error('Error loading caja sesion:', sesionError);
+      return null;
+    }
+
+    // Get transactions
+    const { data: transacciones, error: transaccionesError } = await supabase
+      .from('transacciones_caja')
+      .select(`
+        *,
+        caja_sesiones!inner(restaurant_id),
+        users!transacciones_caja_cajero_id_fkey(first_name, last_name, email)
+      `)
+      .eq('caja_sesion_id', sesionId);
+
+    if (transaccionesError) {
+      console.error('Error loading transacciones:', transaccionesError);
+    }
+
+    // Get expenses
+    const { data: gastos, error: gastosError } = await supabase
+      .from('gastos_caja')
+      .select('*')
+      .eq('caja_sesion_id', sesionId);
+
+    if (gastosError) {
+      console.error('Error loading gastos:', gastosError);
+    }
+
+    // Calculate aggregates
+    const transaccionesData = transacciones || [];
+    const gastosData = gastos || [];
+
+    const total_ventas_centavos = transaccionesData.reduce((sum: number, t: any) => sum + (t.monto_total || 0) * 100, 0);
+    const total_efectivo_centavos = transaccionesData
+      .filter((t: any) => t.metodo_pago === 'efectivo')
+      .reduce((sum: number, t: any) => sum + (t.monto_total || 0) * 100, 0);
+    const total_tarjeta_centavos = transaccionesData
+      .filter((t: any) => t.metodo_pago === 'tarjeta')
+      .reduce((sum: number, t: any) => sum + (t.monto_total || 0) * 100, 0);
+    const total_digital_centavos = transaccionesData
+      .filter((t: any) => t.metodo_pago === 'digital')
+      .reduce((sum: number, t: any) => sum + (t.monto_total || 0) * 100, 0);
+    const total_gastos_centavos = gastosData.reduce((sum: number, g: any) => sum + (g.monto || 0) * 100, 0);
+
+    const efectivo_teorico_centavos = (sesion.monto_inicial * 100) + total_efectivo_centavos - total_gastos_centavos;
+
+    return {
+      sesion,
+      transacciones: transaccionesData,
+      gastos: gastosData,
+      agregados: {
+        total_ventas_centavos,
+        total_efectivo_centavos,
+        total_tarjeta_centavos,
+        total_digital_centavos,
+        total_gastos_centavos,
+        efectivo_teorico_centavos
+      }
+    };
+  } catch (error) {
+    console.error('Error in getCierreCajaDetalle:', error);
+    return null;
+  }
+};
+
+/**
+ * Ensure a favorite combination exists for the given core components.
+ * If none found, it will create one (schema-compatible: omits optional columns).
+ * Matching rule: restaurant + principio + proteina + (entrada or null) + (bebida or null).
+ * Note: We ignore acompañamientos when matching to avoid array-order issues.
+ */
+export const ensureFavoriteCombination = async (data: {
+  restaurant_id: string;
+  combination_name: string;
+  combination_description?: string | null;
+  combination_price?: number | null;
+  principio_product_id: string;
+  proteina_product_id: string;
+  entrada_product_id?: string | null;
+  bebida_product_id?: string | null;
+  acompanamiento_products?: string[];
+}): Promise<any> => {
+  try {
+    // First, try to find existing combination
+    const { data: existing, error: findError } = await supabase
+      .from('favorite_combinations')
+      .select('*')
+      .eq('restaurant_id', data.restaurant_id)
+      .eq('principio_product_id', data.principio_product_id)
+      .eq('proteina_product_id', data.proteina_product_id)
+      .eq('entrada_product_id', data.entrada_product_id || null)
+      .eq('bebida_product_id', data.bebida_product_id || null)
+      .maybeSingle();
+
+    if (findError && findError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      console.error('Error finding favorite combination:', findError);
+      throw findError;
+    }
+
+    if (existing) {
+      return existing;
+    }
+
+    // Create new combination
+    const { data: created, error: createError } = await supabase
+      .from('favorite_combinations')
+      .insert({
+        restaurant_id: data.restaurant_id,
+        combination_name: data.combination_name,
+        combination_description: data.combination_description,
+        combination_price: data.combination_price,
+        principio_product_id: data.principio_product_id,
+        proteina_product_id: data.proteina_product_id,
+        entrada_product_id: data.entrada_product_id,
+        bebida_product_id: data.bebida_product_id,
+        acompanamiento_products: data.acompanamiento_products || []
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Error creating favorite combination:', createError);
+      throw createError;
+    }
+
+    return created;
+  } catch (error) {
+    console.error('Error in ensureFavoriteCombination:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a favorite combination by its core components.
+ * Matching rule mirrors ensureFavoriteCombination: restaurant + principio + proteina + entrada/null + bebida/null.
+ */
+export const deleteFavoriteCombinationByComponents = async (match: {
+  restaurant_id: string;
+  principio_product_id?: string | null;
+  proteina_product_id?: string | null;
+  entrada_product_id?: string | null;
+  bebida_product_id?: string | null;
+}): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('favorite_combinations')
+      .delete()
+      .eq('restaurant_id', match.restaurant_id)
+      .eq('principio_product_id', match.principio_product_id || null)
+      .eq('proteina_product_id', match.proteina_product_id || null)
+      .eq('entrada_product_id', match.entrada_product_id || null)
+      .eq('bebida_product_id', match.bebida_product_id || null);
+
+    if (error) {
+      console.error('Error deleting favorite combination by components:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in deleteFavoriteCombinationByComponents:', error);
+    throw error;
+  }
+};
+
+/**
+ * Create a favorite combination
+ */
+export const createFavoriteCombination = async (data: {
+  restaurant_id: string;
+  combination_name: string;
+  combination_description?: string;
+  combination_price?: number | null;
+  entrada_product_id?: string;
+  principio_product_id: string;
+  proteina_product_id: string;
+  bebida_product_id?: string;
+  acompanamiento_products?: string[];
+}): Promise<any> => {
+  try {
+    const { data: created, error } = await supabase
+      .from('favorite_combinations')
+      .insert({
+        restaurant_id: data.restaurant_id,
+        combination_name: data.combination_name,
+        combination_description: data.combination_description,
+        combination_price: data.combination_price,
+        entrada_product_id: data.entrada_product_id,
+        principio_product_id: data.principio_product_id,
+        proteina_product_id: data.proteina_product_id,
+        bebida_product_id: data.bebida_product_id,
+        acompanamiento_products: data.acompanamiento_products || []
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating favorite combination:', error);
+      throw error;
+    }
+
+    return created;
+  } catch (error) {
+    console.error('Error in createFavoriteCombination:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get favorite combinations for a restaurant
+ */
+export const getFavoriteCombinations = async (restaurant_id: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('favorite_combinations')
+      .select('*')
+      .eq('restaurant_id', restaurant_id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading favorite combinations:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getFavoriteCombinations:', error);
+    return [];
+  }
+};
+
+/**
+ * Delete a favorite combination by ID
+ */
+export const deleteFavoriteCombination = async (id: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('favorite_combinations')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting favorite combination:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in deleteFavoriteCombination:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update favorite combination name
+ */
+export const updateFavoriteCombinationName = async (id: string, name: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('favorite_combinations')
+      .update({ combination_name: name })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating favorite combination name:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in updateFavoriteCombinationName:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get menu templates for a restaurant
+ */
+export const getMenuTemplates = async (restaurant_id: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('menu_templates')
+      .select('*')
+      .eq('restaurant_id', restaurant_id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading menu templates:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getMenuTemplates:', error);
+    return [];
+  }
+};
+
+/**
+ * Get products for a specific template
+ */
+export const getTemplateProducts = async (template_id: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('menu_template_products')
+      .select('*')
+      .eq('template_id', template_id)
+      .order('selection_order', { ascending: true });
+
+    if (error) {
+      console.error('Error loading template products:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getTemplateProducts:', error);
+    return [];
+  }
+};
+
+/**
+ * Delete a menu template by ID
+ */
+export const deleteMenuTemplate = async (id: string): Promise<void> => {
+  try {
+    // First delete associated products
+    const { error: productsError } = await supabase
+      .from('menu_template_products')
+      .delete()
+      .eq('template_id', id);
+
+    if (productsError) {
+      console.error('Error deleting template products:', productsError);
+      // Continue with template deletion
+    }
+
+    // Then delete the template
+    const { error: templateError } = await supabase
+      .from('menu_templates')
+      .delete()
+      .eq('id', id);
+
+    if (templateError) {
+      console.error('Error deleting menu template:', templateError);
+      throw templateError;
+    }
+  } catch (error) {
+    console.error('Error in deleteMenuTemplate:', error);
+    throw error;
+  }
+};
+
+/**
+ * Create a menu template with associated products
+ */
+export const createMenuTemplate = async (
+  templateData: {
+    restaurant_id: string;
+    template_name: string;
+    template_description?: string;
+    menu_price?: number | null;
+  },
+  products: Array<{
+    universal_product_id: string;
+    category_id?: string | null;
+    category_name?: string | null;
+    product_name?: string | null;
+    selection_order?: number;
+  }>
+): Promise<any> => {
+  try {
+    // Create the template first
+    const { data: template, error: templateError } = await supabase
+      .from('menu_templates')
+      .insert({
+        restaurant_id: templateData.restaurant_id,
+        template_name: templateData.template_name,
+        template_description: templateData.template_description,
+        menu_price: templateData.menu_price
+      })
+      .select()
+      .single();
+
+    if (templateError) {
+      console.error('Error creating menu template:', templateError);
+      throw templateError;
+    }
+
+    // Add products to the template
+    if (products && products.length > 0) {
+      const templateProducts = products.map((product, index) => ({
+        template_id: template.id,
+        universal_product_id: product.universal_product_id,
+        category_id: product.category_id,
+        category_name: product.category_name,
+        product_name: product.product_name,
+        selection_order: product.selection_order || index
+      }));
+
+      const { error: productsError } = await supabase
+        .from('menu_template_products')
+        .insert(templateProducts);
+
+      if (productsError) {
+        console.error('Error adding products to menu template:', productsError);
+        // Don't throw here, template was created successfully
+      }
+    }
+
+    return template;
+  } catch (error) {
+    console.error('Error in createMenuTemplate:', error);
+    throw error;
+  }
+};
+
+// ✅ SPECIAL DISHES FUNCTIONS
+
+export interface SpecialDish {
+  id: string;
+  restaurant_id: string;
+  dish_name: string;
+  dish_description: string | null;
+  dish_price: number;
+  is_active: boolean;
+  is_template: boolean;
+  status: string;
+  total_products_selected: number;
+  categories_configured: number;
+  setup_completed: boolean;
+  created_at: string;
+  updated_at: string;
+  image_url?: string | null;
+  image_alt?: string | null;
+}
+
+export interface SpecialDishSelection {
+  id: string;
+  special_dish_id: string;
+  universal_product_id: string;
+  category_id: string;
+  category_name: string;
+  product_name: string;
+  selection_order: number;
+  is_required: boolean;
+  selected_at: string;
+}
+
+export interface SpecialCombination {
+  id: string;
+  special_dish_id: string;
+  combination_name: string;
+  combination_description: string | null;
+  combination_price: number;
+  entrada_product_id: string | null;
+  principio_product_id: string | null;
+  proteina_product_id: string;
+  acompanamiento_products: string[] | null;
+  bebida_product_id: string | null;
+  is_available: boolean;
+  is_favorite: boolean;
+  is_featured: boolean;
+  available_today: boolean;
+  max_daily_quantity: number | null;
+  current_sold_quantity: number;
+  generated_at: string;
+  updated_at: string;
+}
+
+/**
+ * Obtener especiales disponibles hoy para un restaurante
+ */
+export const getAvailableSpecialsToday = async (restaurantId: string): Promise<any> => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('daily_special_activations')
+      .select(`
+        id,
+        special_dish_id,
+        is_active,
+        daily_price_override,
+        daily_max_quantity,
+        notes,
+        activated_at,
+        special_dishes:special_dish_id (
+          dish_name,
+          dish_price,
+          dish_description,
+          image_url,
+          image_alt
+        )
+      `)
+      .eq('restaurant_id', restaurantId)
+      .eq('activation_date', today)
+      .eq('is_active', true);
+
+    if (error) {
+      console.error('Error loading available specials today:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getAvailableSpecialsToday:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtener especiales disponibles hoy para un restaurante (alias)
+ */
+export const getRestaurantSpecialDishes = async (restaurantId: string): Promise<SpecialDish[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('special_dishes')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading restaurant special dishes:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getRestaurantSpecialDishes:', error);
+    return [];
+  }
+};
+
+/**
+ * Crear un nuevo plato especial
+ */
+export const createSpecialDish = async (restaurantId: string, dishData: {
+  dish_name: string;
+  dish_description?: string;
+  dish_price: number;
+  image_url?: string | null;
+  image_alt?: string | null;
+}): Promise<SpecialDish> => {
+  try {
+    const { data, error } = await supabase
+      .from('special_dishes')
+      .insert({
+        restaurant_id: restaurantId,
+        dish_name: dishData.dish_name,
+        dish_description: dishData.dish_description,
+        dish_price: dishData.dish_price,
+        image_url: dishData.image_url,
+        image_alt: dishData.image_alt,
+        is_active: true,
+        is_template: true,
+        status: 'draft',
+        total_products_selected: 0,
+        categories_configured: 0,
+        setup_completed: false
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating special dish:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in createSpecialDish:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualizar plato especial
+ */
+export const updateSpecialDish = async (specialDishId: string, updates: Partial<SpecialDish>): Promise<SpecialDish> => {
+  try {
+    const { data, error } = await supabase
+      .from('special_dishes')
+      .update(updates)
+      .eq('id', specialDishId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating special dish:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in updateSpecialDish:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtener selecciones de productos para un plato especial
+ */
+export const getSpecialDishSelections = async (specialDishId: string): Promise<SpecialDishSelection[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('special_dish_selections')
+      .select('*')
+      .eq('special_dish_id', specialDishId)
+      .order('selection_order', { ascending: true });
+
+    if (error) {
+      console.error('Error loading special dish selections:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getSpecialDishSelections:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtener combinaciones de un plato especial
+ */
+export const getSpecialCombinations = async (specialDishId: string): Promise<SpecialCombination[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('special_combinations')
+      .select('*')
+      .eq('special_dish_id', specialDishId)
+      .order('generated_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading special combinations:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getSpecialCombinations:', error);
+    return [];
+  }
+};
+
+/**
+ * Insertar selecciones de productos para un plato especial
+ */
+export const insertSpecialDishSelections = async (specialDishId: string, selectedProducts: any): Promise<void> => {
+  try {
+    // First delete existing selections
+    await supabase
+      .from('special_dish_selections')
+      .delete()
+      .eq('special_dish_id', specialDishId);
+
+    // Insert new selections
+    const selections = Object.entries(selectedProducts).map(([categoryId, products]: [string, any]) => ({
+      special_dish_id: specialDishId,
+      universal_product_id: products.product_id,
+      category_id: categoryId,
+      category_name: products.category_name,
+      product_name: products.product_name,
+      selection_order: products.selection_order || 0,
+      is_required: products.is_required || false,
+      selected_at: new Date().toISOString()
+    }));
+
+    const { error } = await supabase
+      .from('special_dish_selections')
+      .insert(selections);
+
+    if (error) {
+      console.error('Error inserting special dish selections:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in insertSpecialDishSelections:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generar combinaciones automáticas para un plato especial
+ */
+export const generateSpecialCombinations = async (specialDishId: string, dishName: string, dishPrice: number): Promise<SpecialCombination[]> => {
+  try {
+    // Get selections first
+    const selections = await getSpecialDishSelections(specialDishId);
+
+    if (selections.length === 0) {
+      return [];
+    }
+
+    // Group by category
+    const categories = selections.reduce((acc, selection) => {
+      if (!acc[selection.category_id]) {
+        acc[selection.category_id] = [];
+      }
+      acc[selection.category_id].push(selection);
+      return acc;
+    }, {} as Record<string, SpecialDishSelection[]>);
+
+    // Generate combinations (simplified - just one combination for now)
+    const combination = {
+      special_dish_id: specialDishId,
+      combination_name: `${dishName} - Combinación Estándar`,
+      combination_description: `Combinación automática generada para ${dishName}`,
+      combination_price: dishPrice,
+      entrada_product_id: categories.entradas?.[0]?.universal_product_id || null,
+      principio_product_id: categories.principios?.[0]?.universal_product_id || null,
+      proteina_product_id: categories.proteinas?.[0]?.universal_product_id || '',
+      acompanamiento_products: categories.acompañamientos?.map(s => s.universal_product_id) || [],
+      bebida_product_id: categories.bebidas?.[0]?.universal_product_id || null,
+      is_available: true,
+      is_favorite: false,
+      is_featured: false,
+      available_today: true,
+      max_daily_quantity: null,
+      current_sold_quantity: 0,
+      generated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('special_combinations')
+      .insert(combination)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error generating special combinations:', error);
+      throw error;
+    }
+
+    return [data];
+  } catch (error) {
+    console.error('Error in generateSpecialCombinations:', error);
+    return [];
+  }
+};
+
+/**
+ * Activar/Desactivar especial para hoy
+ */
+export const toggleSpecialToday = async (restaurantId: string, specialDishId: string, activate?: boolean, maxQuantity?: number, notes?: string): Promise<any> => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    if (activate) {
+      // Check if already exists
+      const { data: existing } = await supabase
+        .from('daily_special_activations')
+        .select('id')
+        .eq('restaurant_id', restaurantId)
+        .eq('special_dish_id', specialDishId)
+        .eq('activation_date', today)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing
+        const { data, error } = await supabase
+          .from('daily_special_activations')
+          .update({
+            is_active: true,
+            daily_max_quantity: maxQuantity,
+            notes,
+            activated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      } else {
+        // Create new
+        const { data, error } = await supabase
+          .from('daily_special_activations')
+          .insert({
+            restaurant_id: restaurantId,
+            special_dish_id: specialDishId,
+            activation_date: today,
+            is_active: true,
+            daily_max_quantity: maxQuantity,
+            notes,
+            activated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+    } else {
+      // Deactivate
+      const { data, error } = await supabase
+        .from('daily_special_activations')
+        .update({
+          is_active: false,
+          deactivated_at: new Date().toISOString()
+        })
+        .eq('restaurant_id', restaurantId)
+        .eq('special_dish_id', specialDishId)
+        .eq('activation_date', today)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+  } catch (error) {
+    console.error('Error in toggleSpecialToday:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualizar combinación especial
+ */
+export const updateSpecialCombination = async (combinationId: string, updates: any): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('special_combinations')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', combinationId);
+
+    if (error) {
+      console.error('Error updating special combination:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in updateSpecialCombination:', error);
+    throw error;
+  }
+};
+
+/**
+ * Eliminar plato especial completo
+ */
+export const deleteSpecialDish = async (specialDishId: string): Promise<void> => {
+  try {
+    // Delete in order: combinations, selections, activations, then dish
+    await supabase.from('special_combinations').delete().eq('special_dish_id', specialDishId);
+    await supabase.from('special_dish_selections').delete().eq('special_dish_id', specialDishId);
+    await supabase.from('daily_special_activations').delete().eq('special_dish_id', specialDishId);
+
+    const { error } = await supabase
+      .from('special_dishes')
+      .delete()
+      .eq('id', specialDishId);
+
+    if (error) {
+      console.error('Error deleting special dish:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in deleteSpecialDish:', error);
+    throw error;
+  }
+};
+
+/**
+ * Eliminar combinación especial
+ */
+export const deleteSpecialCombination = async (combinationId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('special_combinations')
+      .delete()
+      .eq('id', combinationId);
+
+    if (error) {
+      console.error('Error deleting special combination:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in deleteSpecialCombination:', error);
     throw error;
   }
 };

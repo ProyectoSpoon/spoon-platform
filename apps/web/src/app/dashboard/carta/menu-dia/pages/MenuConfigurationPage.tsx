@@ -13,6 +13,7 @@ const AlertTriangleComponent = AlertTriangle as any;
 import { CATEGORIAS_MENU_CONFIG, CATEGORY_ICONS } from '@spoon/shared/constants/menu-dia/menuConstants';
 import { createMenuTemplate } from '@spoon/shared/lib/supabase';
 import { Producto, LoadingStates } from '@spoon/shared/types/menu-dia/menuTypes';
+import ProductImage from '@spoon/shared/components/ProductImage';
 
 interface MenuData {
   selectedProducts: {[categoryId: string]: Producto[]};
@@ -191,12 +192,14 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
                       <tr key={`${categoryId}-${producto.id}`} className="hover:bg-[color:var(--sp-neutral-50)]">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-[color:var(--sp-primary-100)] flex items-center justify-center">
-                                <span className="text-sm font-medium text-[color:var(--sp-primary-600)]">
-                                  {getIconForCategory(categoryName)}
-                                </span>
-                              </div>
+                            <div className="flex-shrink-0">
+                              <ProductImage
+                                product={producto}
+                                size={40}
+                                className="rounded-lg"
+                                fallbackIcon={getIconForCategory(categoryName)}
+                                showFallback={true}
+                              />
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-[color:var(--sp-neutral-900)]">
@@ -278,5 +281,3 @@ export default function MenuConfigurationPage({ menuData, onOpenWizard, onCreate
     </div>
   );
 }
-
-

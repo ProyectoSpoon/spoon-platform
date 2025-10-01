@@ -18,6 +18,7 @@ import { EmptyStates } from '../components/EmptyState';
 import { CierresList, CierreCajaItem } from '../components/cierres/CierresList';
 import CierreDetalle from '../components/cierres/CierreDetalle';
 import { SecurityPanel } from '../components/SecurityPanel';
+import { ReportesCaja } from '@spoon/shared/caja/components/ReportesCaja';
 
 // Modals
 import { ModalProcesarPago } from './modals/ModalProcesarPago';
@@ -404,6 +405,8 @@ export default function CajaPage() {
                     onSelect={(id) => setCierreSeleccionado(id)}
                   />
                 </div>
+              ) : tabActiva === 'reportes' ? (
+                <ReportesCaja />
               ) : (
                 EmptyStates.proximamente()
               )}

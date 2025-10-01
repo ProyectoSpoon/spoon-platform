@@ -4,7 +4,7 @@
 -- 1. Create the storage bucket (if it doesn't exist)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
-  'restaurant-images',
+  'restaurant-images', 
   'restaurant-images',
   true,
   5242880, -- 5MB limit

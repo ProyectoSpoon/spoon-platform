@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNotifications } from '@spoon/shared/Context/notification-context';
 import ImagenesForm from './ImagenesForm';
 import HorariosForm from './HorariosForm';
-import { GeneralInfoForm } from '@spoon/shared/components/ui/components/GeneralInfoForm';
+import { PerfilRestauranteForm } from '@spoon/shared/components/ui/components/PerfilRestauranteForm';
 import { UbicacionForm } from '@spoon/shared/components/ui/components/UbicacionForm';
 import { Info, Clock, Upload, Users } from 'lucide-react';
 import { Tabs } from '@spoon/shared/components/ui/Tabs';
@@ -25,7 +25,7 @@ const ClockCast = Clock as any;
 const UploadCast = Upload as any;
 const UsersCast = Users as any;
 const TabsCast = Tabs as any;
-const GeneralInfoFormCast = GeneralInfoForm as any;
+const PerfilRestauranteFormCast = PerfilRestauranteForm as any;
 const UbicacionFormCast = UbicacionForm as any;
 const SinPermisosCast = SinPermisos as any;
 
@@ -415,16 +415,12 @@ export default function ConfiguracionPage() {
       <div className="mt-2">
         {activeTab === 'info' && (
           <div id="general" ref={anchorGeneralRef} className="scroll-mt-24">
-          <GeneralInfoFormCast
-            formData={generalInfo}
-            onChange={handleGeneralChange}
-            onSubmit={handleGeneralSubmit}
-            saving={savingGeneral}
-            readOnly={!editGeneral}
-            showSave={editGeneral}
-            onCancel={() => setEditGeneral(false)}
-            onToggleEdit={() => setEditGeneral(true)}
-          />
+            <PerfilRestauranteFormCast
+              readOnly={!editGeneral}
+              showSave={editGeneral}
+              onCancel={() => setEditGeneral(false)}
+              onToggleEdit={() => setEditGeneral(!editGeneral)}
+            />
           </div>
         )}
 

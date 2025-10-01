@@ -121,6 +121,15 @@ export default function MenuDiaPage() {
           return;
         }
 
+        // 23514: check constraint violation (future expiration)
+        if (error?.code === '23514' && /check_future_expiration/i.test(error?.message || '')) {
+          menuData.showNotification(
+            '⚠️ Fecha inválida: El menú debe expirar en el futuro. Ve a "Productos Día" y cambia la fecha de finalización a mañana o después.',
+            'error'
+          );
+          return;
+        }
+
         // 403/42501: falla de RLS/permiso en Supabase
         const isRls = error?.status === 403 || error?.code === '42501' || /row-level security/i.test(error?.message || '');
         if (isRls) {
