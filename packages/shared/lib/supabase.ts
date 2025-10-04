@@ -1302,6 +1302,425 @@ export const deleteSpecialCombination = async (combinationId: string): Promise<v
   }
 };
 
+// ✅ AUTHENTICATION FUNCTIONS
+
+// Función para iniciar sesión con email y contraseña
+export const signInUser = async (email: string, password: string) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      console.error('Error signing in user:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in signInUser:', error);
+    throw error;
+  }
+};
+
+// Función para registrar un nuevo usuario
+export const signUpUser = async (userData: {
+  email: string;
+  password?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+}) => {
+  try {
+    if (!userData.password) {
+      throw new Error('Password is required for user registration');
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+      options: {
+        data: {
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          phone: userData.phone
+        }
+      }
+    });
+
+    if (error) {
+      console.error('Error signing up user:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in signUpUser:', error);
+    throw error;
+  }
+};
+
+// Función para iniciar sesión con Google
+export const signInWithGoogle = async (redirectTo?: string) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectTo || `${window.location.origin}/auth/callback`
+      }
+    });
+
+    if (error) {
+      console.error('Error signing in with Google:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in signInWithGoogle:', error);
+    throw error;
+  }
+};
+
+// Función para asegurar que el perfil del usuario existe desde la sesión actual
+export const ensureUserProfileFromSession = async () => {
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      console.error('No authenticated user found');
+      return null;
+    }
+
+    // Obtener o crear perfil de usuario
+    let { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error('Error checking user profile:', profileError);
+      throw profileError;
+    }
+
+    // Si no existe el perfil, crearlo desde los datos de auth
+    if (!profile) {
+      const profileData = {
+        id: user.id,
+        email: user.email,
+        first_name: user.user_metadata?.first_name || '',
+        last_name: user.user_metadata?.last_name || '',
+        phone: user.user_metadata?.phone || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data: newProfile, error: createError } = await supabase
+        .from('users')
+        .insert(profileData)
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating user profile:', createError);
+        throw createError;
+      }
+
+      profile = newProfile;
+    }
+
+    return profile;
+  } catch (error) {
+    console.error('Error in ensureUserProfileFromSession:', error);
+    throw error;
+  }
+};
+
+// ✅ USER/ROLE MANAGEMENT FUNCTIONS
+
+// Función para verificar si el usuario tiene alguno de los roles especificados
+export const hasAnyRole = async (roles: string[]): Promise<boolean> => {
+  try {
+    const userRoles = await getActiveRoles();
+    return userRoles.some((userRole: any) =>
+      userRole.system_role && roles.includes(userRole.system_role.name)
+    );
+  } catch (error) {
+    console.error('Error in hasAnyRole:', error);
+    return false;
+  }
+};
+
+// Función para obtener el ID del restaurante actual del usuario
+export const getCurrentRestaurantId = async (): Promise<string | null> => {
+  try {
+    const profile = await getUserProfile();
+    return profile?.restaurant_id || null;
+  } catch (error) {
+    console.error('Error in getCurrentRestaurantId:', error);
+    return null;
+  }
+};
+
+// ✅ CAJA/SESSION FUNCTIONS
+
+// Función para obtener la sesión activa de caja del restaurante
+export const getSesionCajaActiva = async (restaurantId: string) => {
+  try {
+    const { data: sesion, error } = await supabase
+      .from('caja_sesiones')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .eq('estado', 'abierta')
+      .order('abierta_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error loading active caja session:', error);
+      return null;
+    }
+
+    return sesion;
+  } catch (error) {
+    console.error('Error in getSesionCajaActiva:', error);
+    return null;
+  }
+};
+
+// ✅ MESA/TABLE MANAGEMENT FUNCTIONS
+
+// Función para obtener las mesas de un restaurante
+export const getMesasRestaurante = async (restaurantId: string) => {
+  try {
+    const { data: mesas, error } = await supabase
+      .from('mesas')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .order('numero', { ascending: true });
+
+    if (error) {
+      console.error('Error loading restaurant mesas:', error);
+      return [];
+    }
+
+    return mesas || [];
+  } catch (error) {
+    console.error('Error in getMesasRestaurante:', error);
+    return [];
+  }
+};
+
+// Función para obtener los detalles de una mesa específica
+export const getDetallesMesa = async (mesaId: string) => {
+  try {
+    const { data: mesa, error } = await supabase
+      .from('mesas')
+      .select('*')
+      .eq('id', mesaId)
+      .single();
+
+    if (error) {
+      console.error('Error loading mesa details:', error);
+      return null;
+    }
+
+    return mesa;
+  } catch (error) {
+    console.error('Error in getDetallesMesa:', error);
+    return null;
+  }
+};
+
+// Función para crear una orden en una mesa
+export const crearOrdenMesa = async (mesaId: string, ordenData: {
+  items: Array<{
+    producto_id: string;
+    cantidad: number;
+    precio_unitario: number;
+    notas?: string;
+  }>;
+  notas?: string;
+}) => {
+  try {
+    const user = await getCurrentUser();
+    const profile = await getUserProfile();
+
+    if (!user || !profile?.restaurant_id) {
+      throw new Error('Usuario no autenticado o sin restaurante asignado');
+    }
+
+    // Verificar que la mesa pertenece al restaurante
+    const mesaDetails = await getDetallesMesa(mesaId);
+    if (!mesaDetails || mesaDetails.restaurant_id !== profile.restaurant_id) {
+      throw new Error('Mesa no encontrada o no pertenece al restaurante');
+    }
+
+    // Verificar sesión de caja activa
+    const sesionCaja = await getSesionCajaActiva(profile.restaurant_id);
+    if (!sesionCaja) {
+      throw new Error('No hay una sesión de caja abierta');
+    }
+
+    // Calcular total
+    const total = ordenData.items.reduce((sum, item) =>
+      sum + (item.cantidad * item.precio_unitario), 0
+    );
+
+    // Crear la orden
+    const { data: orden, error: ordenError } = await supabase
+      .from('ordenes')
+      .insert({
+        mesa_id: mesaId,
+        restaurant_id: profile.restaurant_id,
+        usuario_id: user.id,
+        caja_sesion_id: sesionCaja.id,
+        total,
+        estado: 'abierta',
+        notas: ordenData.notas,
+        creada_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (ordenError) {
+      console.error('Error creating orden:', ordenError);
+      throw ordenError;
+    }
+
+    // Crear items de la orden
+    if (ordenData.items && ordenData.items.length > 0) {
+      const ordenItems = ordenData.items.map(item => ({
+        orden_id: orden.id,
+        producto_id: item.producto_id,
+        cantidad: item.cantidad,
+        precio_unitario: item.precio_unitario,
+        subtotal: item.cantidad * item.precio_unitario,
+        notas: item.notas
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('orden_items')
+        .insert(ordenItems);
+
+      if (itemsError) {
+        console.error('Error creating orden items:', itemsError);
+        // No lanzamos error aquí, la orden ya está creada
+      }
+    }
+
+    return orden;
+  } catch (error) {
+    console.error('Error in crearOrdenMesa:', error);
+    throw error;
+  }
+};
+
+// Función para actualizar el estado básico de una mesa
+export const actualizarMesaBasica = async (mesaId: string, updates: {
+  estado?: string;
+  capacidad?: number;
+  notas?: string;
+}) => {
+  try {
+    const { data: mesa, error } = await supabase
+      .from('mesas')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', mesaId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating mesa:', error);
+      throw error;
+    }
+
+    return mesa;
+  } catch (error) {
+    console.error('Error in actualizarMesaBasica:', error);
+    throw error;
+  }
+};
+
+// ✅ ORDER FUNCTIONS
+
+// Función para agregar items a una orden existente
+export const agregarItemsAOrden = async (ordenId: string, items: Array<{
+  producto_id: string;
+  cantidad: number;
+  precio_unitario: number;
+  notas?: string;
+}>) => {
+  try {
+    const user = await getCurrentUser();
+    const profile = await getUserProfile();
+
+    if (!user || !profile?.restaurant_id) {
+      throw new Error('Usuario no autenticado o sin restaurante asignado');
+    }
+
+    // Verificar que la orden existe y pertenece al restaurante
+    const { data: orden, error: ordenError } = await supabase
+      .from('ordenes')
+      .select('*')
+      .eq('id', ordenId)
+      .eq('restaurant_id', profile.restaurant_id)
+      .single();
+
+    if (ordenError || !orden) {
+      throw new Error('Orden no encontrada o no pertenece al restaurante');
+    }
+
+    // Crear items de la orden
+    const ordenItems = items.map(item => ({
+      orden_id: ordenId,
+      producto_id: item.producto_id,
+      cantidad: item.cantidad,
+      precio_unitario: item.precio_unitario,
+      subtotal: item.cantidad * item.precio_unitario,
+      notas: item.notas
+    }));
+
+    const { data: newItems, error: itemsError } = await supabase
+      .from('orden_items')
+      .insert(ordenItems)
+      .select();
+
+    if (itemsError) {
+      console.error('Error adding items to orden:', itemsError);
+      throw itemsError;
+    }
+
+    // Actualizar total de la orden
+    const totalIncremento = items.reduce((sum, item) =>
+      sum + (item.cantidad * item.precio_unitario), 0
+    );
+
+    const { error: updateError } = await supabase
+      .from('ordenes')
+      .update({
+        total: (orden.total || 0) + totalIncremento,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', ordenId);
+
+    if (updateError) {
+      console.error('Error updating orden total:', updateError);
+      // No lanzamos error crítico aquí
+    }
+
+    return newItems;
+  } catch (error) {
+    console.error('Error in agregarItemsAOrden:', error);
+    throw error;
+  }
+};
+
 // ✅ PRELOAD USER AND RESTAURANT DATA
 // Función para precargar datos de usuario y restaurante al inicio
 export const preloadUserAndRestaurant = async (): Promise<{
