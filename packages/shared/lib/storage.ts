@@ -137,4 +137,68 @@ export const ingredientImageUtils = {
   }
 };
 
+// Storage service utilities
+export const storageService = {
+  uploadFile: async ({
+    bucket,
+    path,
+    body,
+    contentType,
+    cacheControl,
+    upsert = false,
+    makePublic = false
+  }: {
+    bucket: string;
+    path: string;
+    body: File | Blob | Uint8Array;
+    contentType?: string;
+    cacheControl?: string;
+    upsert?: boolean;
+    makePublic?: boolean;
+  }): Promise<{ publicUrl?: string }> => {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(path, body, {
+        contentType,
+        cacheControl,
+        upsert
+      });
+
+    if (error) throw error;
+
+    if (makePublic) {
+      return { publicUrl: getPublicUrl({ bucket, path }) };
+    }
+
+    return {};
+  }
+};
+
+// Utility function to get public URL for storage objects
+export const getPublicUrl = ({ bucket, path }: { bucket: string; path: string }): string => {
+  const { data } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(path);
+  return data.publicUrl || '';
+};
+
+// Safe filename utility: normalize file names for storage
+export const safeFileName = (fileName: string): string => {
+  return fileName
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/[^a-z0-9\-_.]/g, '-') // Replace invalid chars with hyphens
+    .replace(/-+/g, '-') // Collapse multiple hyphens
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+};
+
+// Build object path utility: join path segments cleanly
+export const buildObjectPath = (segments: string[]): string => {
+  return segments
+    .map(segment => segment.replace(/^\/+|\/+$/g, '')) // Remove leading/trailing slashes
+    .filter(segment => segment.length > 0) // Remove empty segments
+    .join('/');
+};
+
 export default ingredientImageUtils;
