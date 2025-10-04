@@ -1722,6 +1722,42 @@ export const agregarItemsAOrden = async (ordenId: string, items: Array<{
 };
 
 /**
+ * Obtener transacciones del día para un restaurante
+ * Función de compatibilidad para hooks de caja
+ */
+export const getTransaccionesDelDia = async (restaurantId: string, fechaISO?: string): Promise<{ transacciones: any[]; totalTransacciones: number }> => {
+  try {
+    const fecha = fechaISO || new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+      .from('transacciones_caja')
+      .select(`
+        *,
+        caja_sesiones!inner(restaurant_id),
+        users!transacciones_caja_cajero_id_fkey(first_name, last_name, email)
+      `)
+      .eq('caja_sesiones.restaurant_id', restaurantId)
+      .gte('created_at', `${fecha}T00:00:00`)
+      .lt('created_at', `${fecha}T23:59:59`);
+
+    if (error) {
+      console.error('Error loading transacciones del día:', error);
+      return { transacciones: [], totalTransacciones: 0 };
+    }
+
+    const transacciones = data || [];
+    const totalTransacciones = transacciones.reduce((sum: number, trans: any) => sum + (trans.monto_total || 0), 0);
+
+    return {
+      transacciones,
+      totalTransacciones
+    };
+  } catch (error) {
+    console.error('Error in getTransaccionesDelDia:', error);
+    return { transacciones: [], totalTransacciones: 0 };
+  }
+};
+
+/**
  * Obtener reportes de ventas por período
  * Función de compatibilidad para ReportesAvanzados.tsx
  */
