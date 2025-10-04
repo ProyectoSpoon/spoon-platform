@@ -1758,6 +1758,71 @@ export const getTransaccionesDelDia = async (restaurantId: string, fechaISO?: st
 };
 
 /**
+ * Obtener transacciones y gastos en un rango de fechas
+ * Función de compatibilidad para hooks de caja
+ */
+export const getTransaccionesYGastosEnRango = async (
+  restaurantId: string,
+  fechaInicio: string,
+  fechaFin: string
+): Promise<{
+  transacciones: any[];
+  gastos: any[];
+  totalTransacciones: number;
+  totalGastos: number;
+}> => {
+  try {
+    // Get transactions
+    const { data: transacciones, error: transError } = await supabase
+      .from('transacciones_caja')
+      .select(`
+        *,
+        caja_sesiones!inner(restaurant_id),
+        users!transacciones_caja_cajero_id_fkey(first_name, last_name)
+      `)
+      .eq('caja_sesiones.restaurant_id', restaurantId)
+      .gte('created_at', fechaInicio)
+      .lt('created_at', fechaFin)
+      .order('created_at', { ascending: true });
+
+    if (transError) {
+      console.error('Error loading transacciones en rango:', transError);
+      return { transacciones: [], gastos: [], totalTransacciones: 0, totalGastos: 0 };
+    }
+
+    // Get expenses
+    const { data: gastos, error: gastosError } = await supabase
+      .from('gastos_caja')
+      .select(`
+        *,
+        caja_sesiones!inner(restaurant_id)
+      `)
+      .eq('caja_sesiones.restaurant_id', restaurantId)
+      .gte('registrado_at', fechaInicio)
+      .lt('registrado_at', fechaFin)
+      .order('registrado_at', { ascending: true });
+
+    if (gastosError) {
+      console.error('Error loading gastos en rango:', gastosError);
+      return { transacciones: [], gastos: [], totalTransacciones: 0, totalGastos: 0 };
+    }
+
+    const totalTransacciones = (transacciones || []).reduce((sum: number, trans: any) => sum + (trans.monto_total || 0), 0);
+    const totalGastos = (gastos || []).reduce((sum: number, gasto: any) => sum + (gasto.monto || 0), 0);
+
+    return {
+      transacciones: transacciones || [],
+      gastos: gastos || [],
+      totalTransacciones,
+      totalGastos
+    };
+  } catch (error) {
+    console.error('Error in getTransaccionesYGastosEnRango:', error);
+    return { transacciones: [], gastos: [], totalTransacciones: 0, totalGastos: 0 };
+  }
+};
+
+/**
  * Obtener reportes de ventas por período
  * Función de compatibilidad para ReportesAvanzados.tsx
  */
