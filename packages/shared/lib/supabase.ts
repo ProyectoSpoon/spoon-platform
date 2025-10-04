@@ -1721,6 +1721,36 @@ export const agregarItemsAOrden = async (ordenId: string, items: Array<{
   }
 };
 
+/**
+ * Obtener reportes de ventas por período
+ * Función de compatibilidad para ReportesAvanzados.tsx
+ */
+export const getReportesVentas = async (restaurantId: string, fechaInicio: string, fechaFin: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('transacciones_caja')
+      .select(`
+        *,
+        caja_sesiones!inner(restaurant_id),
+        users!transacciones_caja_cajero_id_fkey(first_name, last_name)
+      `)
+      .eq('caja_sesiones.restaurant_id', restaurantId)
+      .gte('created_at', fechaInicio)
+      .lt('created_at', fechaFin)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading ventas report:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getReportesVentas:', error);
+    return [];
+  }
+};
+
 // ✅ PRELOAD USER AND RESTAURANT DATA
 // Función para precargar datos de usuario y restaurante al inicio
 export const preloadUserAndRestaurant = async (): Promise<{
