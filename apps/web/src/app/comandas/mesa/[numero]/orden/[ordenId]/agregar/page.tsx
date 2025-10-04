@@ -76,11 +76,9 @@ export default function AgregarProductosPage({ params }: { params: { numero: str
     try {
       setAdding(combo.id);
       await agregarItemsAOrden(ordenId, [{
-        tipoItem: tipo,
+        producto_id: combo.id,
         cantidad: 1,
-        precioUnitario: Number(combo.combination_price) || 0,
-        combinacionId: tipo === 'menu_dia' ? combo.id : undefined,
-        combinacionEspecialId: tipo === 'especial' ? combo.id : undefined
+        precio_unitario: Number(combo.combination_price) || 0,
       }]);
       // Volver a la orden para ver el agregado
       router.replace(`/comandas/mesa/${numeroMesa}/orden/${ordenId}`);

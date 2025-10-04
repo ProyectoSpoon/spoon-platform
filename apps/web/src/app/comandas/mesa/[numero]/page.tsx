@@ -90,7 +90,13 @@ export default function ComandaPorMesaPage({ params }: { params: { numero: strin
       setCheckingOrden(true);
       try {
         setDebug((d) => [...d, `[Mesa ${numeroMesa}] Buscando orden activa…`]);
-        const detalles = await getDetallesMesa(restaurantId, numeroMesa);
+        const mesas = await getMesasRestaurante(restaurantId!);
+        const mesaSeleccionada = mesas.find(m => Number(m.numero) === numeroMesa);
+        if (!mesaSeleccionada) {
+          setOrdenActivaId(null);
+          return;
+        }
+        const detalles = await getDetallesMesa(mesaSeleccionada.id);
         if (!mounted) return;
         const primera = detalles.ordenes?.[0];
         setOrdenActivaId(primera ? String(primera.id) : null);
@@ -146,9 +152,13 @@ export default function ComandaPorMesaPage({ params }: { params: { numero: strin
     if (!restaurantId || !cajaOpen) return;
     try {
       setCreating(true);
-      const nueva = await crearOrdenMesa({
-        restaurantId,
-        numeroMesa,
+      const mesas = await getMesasRestaurante(restaurantId);
+      const mesaSeleccionada = mesas.find(m => Number(m.numero) === numeroMesa);
+      if (!mesaSeleccionada) {
+        alert('Mesa no encontrada.');
+        return;
+      }
+      const nueva = await crearOrdenMesa(mesaSeleccionada.id, {
         items: []
       });
       router.replace(`/comandas/mesa/${numeroMesa}/orden/${nueva.id}`);

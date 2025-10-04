@@ -69,7 +69,7 @@ export default function LogoPortadaPage() {
     try {
       // Map 'portada' to service type 'cover'
       const mappedType = tipo === 'portada' ? 'cover' : 'logo';
-      const { url } = await RestaurantService.uploadRestaurantImage({ file: archivo, type: mappedType as 'logo' | 'cover', restaurantId: restaurantId || undefined });
+      const { url } = await RestaurantService.uploadRestaurantImage({ file: archivo, type: mappedType as 'logo' | 'cover' });
       return url;
     } catch (error) {
       console.error(`Error subiendo ${tipo}:`, error);
