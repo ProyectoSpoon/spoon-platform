@@ -291,7 +291,7 @@ export default function SpecialDishWizard({
               <div className="grid grid-cols-1 gap-6">
                 <div>
                   <label htmlFor="special-name" className="block text-sm font-medium mb-2 text-[color:var(--sp-neutral-700)]">
-                    Nombre <span className="text-red-500" aria-label="requerido">*</span>
+                    Nombre <span className="text-[color:var(--sp-error-500)]" aria-label="requerido">*</span>
                   </label>
                   <input
                     id="special-name"
@@ -303,7 +303,7 @@ export default function SpecialDishWizard({
                     aria-describedby="name-help"
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-transparent ${
                       specialData.name.trim().length > 0 && specialData.name.trim().length < 3
-                        ? 'border-red-300 focus:border-red-500'
+                        ? 'border-[color:var(--sp-error-300)] focus:border-[color:var(--sp-error-500)]'
                         : 'border-[color:var(--sp-neutral-300)]'
                     }`}
                   />
@@ -313,7 +313,7 @@ export default function SpecialDishWizard({
                 </div>
                 <div>
                   <label htmlFor="special-description" className="block text-sm font-medium mb-2 text-[color:var(--sp-neutral-700)]">
-                    Descripción <span className="text-red-500" aria-label="requerido">*</span>
+                    Descripción <span className="text-[color:var(--sp-error-500)]" aria-label="requerido">*</span>
                   </label>
                   <textarea
                     id="special-description"
@@ -326,7 +326,7 @@ export default function SpecialDishWizard({
                     aria-describedby="description-help"
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[color:var(--sp-primary-500)] focus:border-transparent ${
                       specialData.description.trim().length > 0 && specialData.description.trim().length < 10
-                        ? 'border-red-300 focus:border-red-500'
+                        ? 'border-[color:var(--sp-error-300)] focus:border-[color:var(--sp-error-500)]'
                         : 'border-[color:var(--sp-neutral-300)]'
                     }`}
                   />

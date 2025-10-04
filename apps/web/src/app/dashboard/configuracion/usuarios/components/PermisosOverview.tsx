@@ -109,7 +109,7 @@ export const PermisosOverview: React.FC<PermisosOverviewProps> = ({ onNotificati
 
   // Obtener color de severidad
   const getSeverityColor = (isCritical: boolean) => {
-    return isCritical ? 'text-red-600 bg-red-50' : 'text-amber-600 bg-amber-50';
+    return isCritical ? 'text-[color:var(--sp-error-600)] bg-[color:var(--sp-error-50)]' : 'text-[color:var(--sp-warning-600)] bg-[color:var(--sp-warning-50)]';
   };
 
   if (cargando) {
@@ -127,8 +127,8 @@ export const PermisosOverview: React.FC<PermisosOverviewProps> = ({ onNotificati
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-[color:var(--sp-surface)] rounded-lg border border-[color:var(--sp-neutral-200)] p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <ShieldCast className="h-5 w-5 text-blue-600" />
+            <div className="w-10 h-10 rounded-full bg-[color:var(--sp-info-100)] flex items-center justify-center">
+              <ShieldCast className="h-5 w-5 text-[color:var(--sp-info-600)]" />
             </div>
             <div>
               <div className="text-2xl font-bold text-[color:var(--sp-neutral-900)]">
@@ -143,8 +143,8 @@ export const PermisosOverview: React.FC<PermisosOverviewProps> = ({ onNotificati
 
         <div className="bg-[color:var(--sp-surface)] rounded-lg border border-[color:var(--sp-neutral-200)] p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-              <AlertTriangleCast className="h-5 w-5 text-red-600" />
+            <div className="w-10 h-10 rounded-full bg-[color:var(--sp-error-100)] flex items-center justify-center">
+              <AlertTriangleCast className="h-5 w-5 text-[color:var(--sp-error-600)]" />
             </div>
             <div>
               <div className="text-2xl font-bold text-[color:var(--sp-neutral-900)]">
@@ -159,8 +159,8 @@ export const PermisosOverview: React.FC<PermisosOverviewProps> = ({ onNotificati
 
         <div className="bg-[color:var(--sp-surface)] rounded-lg border border-[color:var(--sp-neutral-200)] p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-              <SettingsCast className="h-5 w-5 text-green-600" />
+            <div className="w-10 h-10 rounded-full bg-[color:var(--sp-success-100)] flex items-center justify-center">
+              <SettingsCast className="h-5 w-5 text-[color:var(--sp-success-600)]" />
             </div>
             <div>
               <div className="text-2xl font-bold text-[color:var(--sp-neutral-900)]">
@@ -205,7 +205,7 @@ export const PermisosOverview: React.FC<PermisosOverviewProps> = ({ onNotificati
                   </div>
                   <div className="flex items-center gap-2">
                     {permisosCriticos.length > 0 && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)]">
                         {permisosCriticos.length} críticos
                       </span>
                     )}
@@ -227,7 +227,7 @@ export const PermisosOverview: React.FC<PermisosOverviewProps> = ({ onNotificati
                         key={permiso.id}
                         className={`p-3 rounded-lg border ${
                           permiso.is_critical
-                            ? 'border-red-200 bg-red-50'
+                            ? 'border-[color:var(--sp-error-200)] bg-[color:var(--sp-error-50)]'
                             : 'border-[color:var(--sp-neutral-200)] bg-[color:var(--sp-surface)]'
                         }`}
                       >
@@ -238,7 +238,7 @@ export const PermisosOverview: React.FC<PermisosOverviewProps> = ({ onNotificati
                                 {permiso.name}
                               </h5>
                               {permiso.is_critical && (
-                                <AlertTriangleCast className="h-4 w-4 text-red-500 flex-shrink-0" />
+                                <AlertTriangleCast className="h-4 w-4 text-[color:var(--sp-error-500)] flex-shrink-0" />
                               )}
                             </div>
                             <p className="text-xs text-[color:var(--sp-neutral-600)] mb-2">
@@ -246,12 +246,12 @@ export const PermisosOverview: React.FC<PermisosOverviewProps> = ({ onNotificati
                             </p>
                             <div className="flex items-center gap-2">
                               {permiso.is_critical ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)]">
                                   <XCircleCast className="h-3 w-3 mr-1" />
                                   Crítico
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-[color:var(--sp-success-100)] text-[color:var(--sp-success-800)]">
                                   <CheckCircleCast className="h-3 w-3 mr-1" />
                                   Estándar
                                 </span>
@@ -270,18 +270,18 @@ export const PermisosOverview: React.FC<PermisosOverviewProps> = ({ onNotificati
       </div>
 
       {/* Información adicional */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <ShieldCast className="h-5 w-5 text-blue-600 mt-0.5" />
+          <ShieldCast className="h-5 w-5 text-[color:var(--sp-info-600)] mt-0.5" />
           <div>
-            <h4 className="font-medium text-blue-900 mb-1">
+            <h4 className="font-medium text-[color:var(--sp-info-900)] mb-1">
               Sistema de Permisos
             </h4>
-            <p className="text-sm text-blue-800 mb-2">
-              Los permisos marcados como "críticos" requieren especial atención ya que afectan
+            <p className="text-sm text-[color:var(--sp-info-800)] mb-2">
+              Los permisos marcados como &ldquo;críticos&rdquo; requieren especial atención ya que afectan
               funciones sensibles del sistema como finanzas, configuración y seguridad.
             </p>
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-[color:var(--sp-info-700)]">
               <strong>Recomendación:</strong> Asigna permisos críticos solo a roles de alta confianza
               y limita su uso a usuarios autorizados.
             </p>

@@ -293,16 +293,16 @@ export const RolesTab: React.FC<RolesTabProps> = ({ onNotification, onRefresh })
             >
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-4 flex-1">
-                  <div className="w-12 h-12 rounded-full bg-[color:var(--sp-purple-100)] flex items-center justify-center">
-                    <ShieldCast className="h-6 w-6 text-[color:var(--sp-purple-700)]" />
+                  <div className="w-12 h-12 rounded-full bg-[color:var(--sp-primary-100)] flex items-center justify-center">
+                    <ShieldCast className="h-6 w-6 text-[color:var(--sp-primary-700)]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-[color:var(--sp-neutral-900)] truncate">
                         {rol.name}
                       </h3>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        Personalizado
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[color:var(--sp-primary-100)] text-[color:var(--sp-primary-800)]">
+                        Personal
                       </span>
                     </div>
                     {rol.description && (
@@ -331,7 +331,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({ onNotification, onRefresh })
                     variant="outline"
                     size="sm"
                     onClick={() => handleEliminarRol(rol.id, rol.name)}
-                    className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                    className="flex items-center gap-1 text-[color:var(--sp-error-600)] hover:text-[color:var(--sp-error-700)]"
                   >
                     <Trash2Cast className="h-3 w-3" />
                     Eliminar
@@ -397,7 +397,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({ onNotification, onRefresh })
                             {permiso.description}
                           </div>
                           {permiso.is_critical && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)] mt-1">
                               Crítico
                             </span>
                           )}
@@ -482,7 +482,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({ onNotification, onRefresh })
                               {permiso.description}
                             </div>
                             {permiso.is_critical && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-[color:var(--sp-error-100)] text-[color:var(--sp-error-800)] mt-1">
                                 Crítico
                               </span>
                             )}

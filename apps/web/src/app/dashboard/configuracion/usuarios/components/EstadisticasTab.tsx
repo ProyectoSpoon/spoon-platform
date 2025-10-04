@@ -117,13 +117,13 @@ export const EstadisticasTab: React.FC<EstadisticasTabProps> = ({ onNotification
   // Obtener color para el tipo de actividad
   const getColorActividad = (tipo: string) => {
     const colores: Record<string, string> = {
-      'usuario_creado': 'text-green-600 bg-green-100',
-      'rol_asignado': 'text-blue-600 bg-blue-100',
-      'usuario_activado': 'text-green-600 bg-green-100',
-      'usuario_desactivado': 'text-red-600 bg-red-100',
-      'permiso_modificado': 'text-purple-600 bg-purple-100'
+      'usuario_creado': 'text-[color:var(--sp-success-600)] bg-[color:var(--sp-success-100)]',
+      'rol_asignado': 'text-[color:var(--sp-info-600)] bg-[color:var(--sp-info-100)]',
+      'usuario_activado': 'text-[color:var(--sp-success-600)] bg-[color:var(--sp-success-100)]',
+      'usuario_desactivado': 'text-[color:var(--sp-error-600)] bg-[color:var(--sp-error-100)]',
+      'permiso_modificado': 'text-[color:var(--sp-primary-600)] bg-[color:var(--sp-primary-100)]'
     };
-    return colores[tipo] || 'text-gray-600 bg-gray-100';
+    return colores[tipo] || 'text-[color:var(--sp-neutral-600)] bg-[color:var(--sp-neutral-100)]';
   };
 
   // Obtener icono para el tipo de actividad
@@ -183,8 +183,8 @@ export const EstadisticasTab: React.FC<EstadisticasTabProps> = ({ onNotification
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-[color:var(--sp-surface)] rounded-lg border border-[color:var(--sp-neutral-200)] p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <UsersCast className="h-5 w-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-full bg-[color:var(--sp-info-100)] flex items-center justify-center">
+                <UsersCast className="h-5 w-5 text-[color:var(--sp-info-600)]" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[color:var(--sp-neutral-900)]">
@@ -199,8 +199,8 @@ export const EstadisticasTab: React.FC<EstadisticasTabProps> = ({ onNotification
 
           <div className="bg-[color:var(--sp-surface)] rounded-lg border border-[color:var(--sp-neutral-200)] p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                <ActivityCast className="h-5 w-5 text-green-600" />
+              <div className="w-10 h-10 rounded-full bg-[color:var(--sp-success-100)] flex items-center justify-center">
+                <ActivityCast className="h-5 w-5 text-[color:var(--sp-success-600)]" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[color:var(--sp-neutral-900)]">
@@ -209,7 +209,7 @@ export const EstadisticasTab: React.FC<EstadisticasTabProps> = ({ onNotification
                 <div className="text-sm text-[color:var(--sp-neutral-600)]">
                   Usuarios Activos
                 </div>
-                <div className="text-xs text-green-600 flex items-center gap-1">
+                <div className="text-xs text-[color:var(--sp-success-600)] flex items-center gap-1">
                   <TrendingUpCast className="h-3 w-3" />
                   {metricasCalculadas.porcentajeActivos.toFixed(1)}%
                 </div>
@@ -219,8 +219,8 @@ export const EstadisticasTab: React.FC<EstadisticasTabProps> = ({ onNotification
 
           <div className="bg-[color:var(--sp-surface)] rounded-lg border border-[color:var(--sp-neutral-200)] p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <ShieldCast className="h-5 w-5 text-purple-600" />
+              <div className="w-10 h-10 rounded-full bg-[color:var(--sp-primary-100)] flex items-center justify-center">
+                <ShieldCast className="h-5 w-5 text-[color:var(--sp-primary-600)]" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[color:var(--sp-neutral-900)]">
@@ -235,8 +235,8 @@ export const EstadisticasTab: React.FC<EstadisticasTabProps> = ({ onNotification
 
           <div className="bg-[color:var(--sp-surface)] rounded-lg border border-[color:var(--sp-neutral-200)] p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                <UserPlusCast className="h-5 w-5 text-orange-600" />
+              <div className="w-10 h-10 rounded-full bg-[color:var(--sp-warning-100)] flex items-center justify-center">
+                <UserPlusCast className="h-5 w-5 text-[color:var(--sp-warning-600)]" />
               </div>
               <div>
                 <div className="text-2xl font-bold text-[color:var(--sp-neutral-900)]">
@@ -263,7 +263,7 @@ export const EstadisticasTab: React.FC<EstadisticasTabProps> = ({ onNotification
                 <div key={item.rol} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${
-                      ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-red-500'][index % 5]
+                      ['bg-[color:var(--sp-info-500)]', 'bg-[color:var(--sp-success-500)]', 'bg-[color:var(--sp-primary-500)]', 'bg-[color:var(--sp-warning-500)]', 'bg-[color:var(--sp-error-500)]'][index % 5]
                     }`} />
                     <span className="text-sm font-medium text-[color:var(--sp-neutral-900)]">
                       {item.rol}
@@ -324,35 +324,35 @@ export const EstadisticasTab: React.FC<EstadisticasTabProps> = ({ onNotification
       </div>
 
       {/* Información adicional */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+      <div className="bg-gradient-to-r from-[color:var(--sp-info-50)] to-[color:var(--sp-info-50)] border border-[color:var(--sp-info-200)] rounded-lg p-6">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-            <TrendingUpCast className="h-6 w-6 text-blue-600" />
+          <div className="w-12 h-12 rounded-full bg-[color:var(--sp-info-100)] flex items-center justify-center">
+            <TrendingUpCast className="h-6 w-6 text-[color:var(--sp-info-600)]" />
           </div>
           <div>
-            <h4 className="font-semibold text-blue-900 mb-2">
+            <h4 className="font-semibold text-[color:var(--sp-info-900)] mb-2">
               Insights del Sistema
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-blue-800 mb-1">
+                <p className="text-[color:var(--sp-info-800)] mb-1">
                   <strong>Tasa de actividad:</strong> {metricasCalculadas?.porcentajeActivos.toFixed(1)}% de usuarios activos
                 </p>
-                <p className="text-blue-800 mb-1">
+                <p className="text-[color:var(--sp-info-800)] mb-1">
                   <strong>Roles más comunes:</strong> {metricasCalculadas?.distribucionRoles[0]?.rol || 'N/A'}
                 </p>
               </div>
               <div>
-                <p className="text-blue-800 mb-1">
+                <p className="text-[color:var(--sp-info-800)] mb-1">
                   <strong>Eventos recientes:</strong> {actividadReciente.length} en los últimos días
                 </p>
-                <p className="text-blue-800">
+                <p className="text-[color:var(--sp-info-800)]">
                   <strong>Cobertura de roles:</strong> {metricasCalculadas?.rolesActivos || 0} roles configurados
                 </p>
               </div>
             </div>
-            <div className="mt-3 p-3 bg-blue-100 rounded-lg">
-              <p className="text-blue-800 text-sm">
+            <div className="mt-3 p-3 bg-[color:var(--sp-info-100)] rounded-lg">
+              <p className="text-[color:var(--sp-info-800)] text-sm">
                 💡 <strong>Recomendación:</strong> Mantén una distribución equilibrada de roles
                 y monitorea la actividad para identificar patrones de uso.
               </p>
