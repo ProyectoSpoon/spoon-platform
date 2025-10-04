@@ -1725,7 +1725,7 @@ export const agregarItemsAOrden = async (ordenId: string, items: Array<{
  * Obtener reportes de ventas por período
  * Función de compatibilidad para ReportesAvanzados.tsx
  */
-export const getReportesVentas = async (restaurantId: string, fechaInicio: string, fechaFin: string): Promise<any[]> => {
+export const getReportesVentas = async (restaurantId: string, periodo: { fechaInicio: string; fechaFin: string }): Promise<{ data: any[] | null; error: any }> => {
   try {
     const { data, error } = await supabase
       .from('transacciones_caja')
@@ -1735,19 +1735,14 @@ export const getReportesVentas = async (restaurantId: string, fechaInicio: strin
         users!transacciones_caja_cajero_id_fkey(first_name, last_name)
       `)
       .eq('caja_sesiones.restaurant_id', restaurantId)
-      .gte('created_at', fechaInicio)
-      .lt('created_at', fechaFin)
+      .gte('created_at', periodo.fechaInicio)
+      .lt('created_at', periodo.fechaFin)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error loading ventas report:', error);
-      return [];
-    }
-
-    return data || [];
+    return { data, error };
   } catch (error) {
     console.error('Error in getReportesVentas:', error);
-    return [];
+    return { data: null, error };
   }
 };
 
