@@ -71,15 +71,48 @@ export function ReportesAvanzados() {
       }
       
       const { data, error: reporteError } = await getReportesVentas(restaurantId, periodo);
-      
+
       if (reporteError) {
         throw reporteError;
       }
-      
+
       if (process.env.NODE_ENV !== 'production') {
         console.log('📊 Datos de reporte recibidos:', data);
       }
-      setEstadisticas(data);
+
+      // Procesar datos crudos en estadísticas esperadas
+      if (data && Array.isArray(data)) {
+        const totalVentas = data.reduce((sum, trans) => sum + (trans.monto_total || 0), 0);
+        const totalTransacciones = data.length;
+
+        const ventasPorMetodo = data.reduce((acc, trans) => {
+          const metodo = trans.metodo_pago || 'otros';
+          acc[metodo] = (acc[metodo] || 0) + (trans.monto_total || 0);
+          return acc;
+        }, {} as Record<string, number>);
+
+        const ventasPorDia = data.reduce((acc, trans) => {
+          const fecha = new Date(trans.created_at).toISOString().split('T')[0];
+          acc[fecha] = (acc[fecha] || 0) + (trans.monto_total || 0);
+          return acc;
+        }, {} as Record<string, number>);
+
+        const ventasPorHora = data.reduce((acc, trans) => {
+          const hora = new Date(trans.created_at).getHours();
+          acc[hora] = (acc[hora] || 0) + (trans.monto_total || 0);
+          return acc;
+        }, {} as Record<number, number>);
+
+        setEstadisticas({
+          totalVentas,
+          totalTransacciones,
+          ventasPorMetodo,
+          ventasPorDia,
+          ventasPorHora
+        });
+      } else {
+        setEstadisticas(null);
+      }
       
     } catch (err) {
       console.error('❌ Error cargando reportes:', err);
