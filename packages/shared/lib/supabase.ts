@@ -1892,6 +1892,9 @@ export type TransaccionCaja = {
   monto_total: number;
   metodo_pago: string;
   cajero_id: string;
+  monto_recibido?: number;
+  monto_cambio?: number;
+  procesada_at?: string;
   // Otros campos según se necesiten
 };
 
