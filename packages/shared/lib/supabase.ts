@@ -1,20 +1,48 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// ✅ SUPABASE CLIENT - Lazy init to avoid build/prerender crashes
+let _supabase: SupabaseClient | null = null;
 
-// ✅ SUPABASE CLIENT - Instancia única
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  },
-  db: {
-    schema: 'public'
+const initSupabase = (): SupabaseClient => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // During Next.js static generation or SSR on Vercel, env may be unavailable.
+  // Avoid throwing at import-time; only throw when actually used on server.
+  if (!url || !anon) {
+    if (typeof window === 'undefined') {
+      // Return a proxy that throws on access if used server-side without envs
+      return new Proxy({} as any, {
+        get() {
+          throw new Error(
+            'Supabase client accessed on the server without NEXT_PUBLIC_SUPABASE_URL/ANON_KEY. Ensure calls run in client components or provide env vars at build/runtime.'
+          );
+        }
+      }) as unknown as SupabaseClient;
+    }
+    throw new Error('Missing Supabase env vars: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
   }
-});
+
+  return createClient(url, anon, {
+    auth: {
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    },
+    db: { schema: 'public' }
+  });
+};
+
+export const supabase = new Proxy({} as any, {
+  get(_target, prop: string | symbol) {
+    if (!_supabase) {
+      _supabase = initSupabase();
+    }
+    const value = (_supabase as any)[prop];
+    return typeof value === 'function' ? value.bind(_supabase) : value;
+  }
+}) as unknown as SupabaseClient;
 
 // ✅ TIMEZONE HELPER PARA BOGOTÁ (UTC-5)
 export const getBogotaDateISO = (format: 'dateOnly' | 'full' = 'dateOnly'): string => {

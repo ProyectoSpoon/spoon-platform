@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ClipboardList, LogOut, Lock } from 'lucide-react';
 import { hasAnyRole, getActiveRoles, supabase, getCurrentRestaurantId, getMesasRestaurante, getSesionCajaActiva } from '@spoon/shared/lib/supabase';
@@ -9,7 +9,7 @@ const ClipboardListIcon = ClipboardList as any;
 const LogOutIcon = LogOut as any;
 const LockIcon = Lock as any;
 
-export default function ComandasMobilePage() {
+function ComandasMobileInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Derivar una clave estable de los query params para evitar bucles de renders
@@ -216,5 +216,14 @@ export default function ComandasMobilePage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Next.js requires components using useSearchParams to be wrapped in Suspense during prerender
+export default function ComandasMobilePage() {
+  return (
+    <Suspense fallback={<div className="h-screen flex items-center justify-center text-[color:var(--sp-neutral-600)]">Cargando…</div>}>
+      <ComandasMobileInner />
+    </Suspense>
   );
 }
