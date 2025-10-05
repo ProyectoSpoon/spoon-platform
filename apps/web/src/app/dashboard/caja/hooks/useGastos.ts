@@ -66,7 +66,7 @@ export const useGastos = () => {
       const profile = await getUserProfile();
       if (!profile) throw new Error('Usuario no autenticado');
 
-      await crearGastoCaja(sesionActual.id, profile.id, {
+      await crearGastoCaja({
         concepto: nuevoGasto.concepto,
         monto: nuevoGasto.monto,
         categoria: nuevoGasto.categoria,
