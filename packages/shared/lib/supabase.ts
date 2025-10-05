@@ -1895,6 +1895,8 @@ export type TransaccionCaja = {
   monto_recibido?: number;
   monto_cambio?: number;
   procesada_at?: string;
+  tipo_orden?: string;
+  orden_id?: string;
   // Otros campos según se necesiten
 };
 
