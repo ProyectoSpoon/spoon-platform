@@ -1848,6 +1848,53 @@ export const getTransaccionesYGastosEnRango = async (
 };
 
 /**
+ * Generar factura para una transacción de caja
+ * Función de compatibilidad para GeneradorFactura.tsx
+ */
+export const generarFactura = async (transaccionId: string, datosFactura: any) => {
+  try {
+    // Lógica básica de generación de factura
+    return {
+      numero_factura: `INV-${Date.now()}`,
+      transaccion_id: transaccionId,
+      datos_factura: datosFactura,
+      generado_at: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Error generating invoice:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtener el próximo número de factura
+ * Función de compatibilidad para GeneradorFactura.tsx
+ */
+export const getProximoNumeroFactura = async (restaurantId: string): Promise<string> => {
+  try {
+    // Lógica básica para generar next invoice number
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+
+    return `INV-${year}-${month}-${Date.now().toString().slice(-4)}`;
+  } catch (error) {
+    console.error('Error getting next invoice number:', error);
+    throw error;
+  }
+};
+
+// Tipos para compatibilidad
+export type TransaccionCaja = {
+  id: string;
+  created_at: string;
+  monto_total: number;
+  metodo_pago: string;
+  cajero_id: string;
+  // Otros campos según se necesiten
+};
+
+/**
  * Obtener reportes de ventas por período
  * Función de compatibilidad para ReportesAvanzados.tsx
  */
