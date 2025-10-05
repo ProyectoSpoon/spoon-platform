@@ -19,7 +19,7 @@ const nextConfig = {
   },
   // Configuración adicional para desarrollo
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'lwwmmufsdtbetgieoefo.supabase.co'],
     unoptimized: process.env.NODE_ENV === 'development',
   },
   // Configuración experimental para mejorar compatibilidad
