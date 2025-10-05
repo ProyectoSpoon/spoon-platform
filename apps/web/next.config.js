@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // La app estará en /app
-  basePath: '/app',
-  
+    
   eslint: {
     ignoreDuringBuilds: true,
   },
