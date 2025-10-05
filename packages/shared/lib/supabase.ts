@@ -42,6 +42,36 @@ export const getBogotaDateString = (): string => {
   });
 };
 
+// ✅ TIPO DEFINITION: Restaurant
+export interface Restaurant {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  restaurant_type?: string;
+  nit_or_document?: string;
+  telefono?: string;
+  email?: string;
+  website?: string;
+  logo_url?: string;
+  banner_url?: string;
+  cover_photo_url?: string;
+  address_street?: string;
+  address_city?: string;
+  address_state?: string;
+  address_zip?: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
+  currency?: string;
+  language_code?: string;
+  is_active: boolean;
+  setup_complete: boolean;
+  owner_id?: string;
+  created_at: string;
+  updated_at: string;
+  [key: string]: any; // For extensibility
+}
+
 // ✅ HELPER PARA OBTENER HORA BOGOTÁ EN FORMATO LEGIBLE
 export const getBogotaTimeString = (): string => {
   const now = new Date();
