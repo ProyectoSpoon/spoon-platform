@@ -238,15 +238,40 @@ export const getGastosDelDia = async (restaurantId: string, fechaISO?: string) =
 
   if (error) {
     console.error('Error loading gastos del día:', error);
-    return { gastos: [], totalGastos: 0 };
+    return {
+      gastos: [],
+      totalGastos: 0,
+      gastosPorCategoria: {
+        proveedor: 0,
+        servicios: 0,
+        suministros: 0,
+        otro: 0
+      }
+    };
   }
 
   const gastos = data || [];
   const totalGastos = gastos.reduce((sum: number, gasto: any) => sum + (gasto.monto || 0), 0);
 
+  // Agrupar gastos por categoría
+  const gastosPorCategoria = gastos.reduce((acc: any, gasto: any) => {
+    const categoria = gasto.categoria || 'otro';
+    if (!acc[categoria]) {
+      acc[categoria] = 0;
+    }
+    acc[categoria] += gasto.monto || 0;
+    return acc;
+  }, {
+    proveedor: 0,
+    servicios: 0,
+    suministros: 0,
+    otro: 0
+  });
+
   return {
     gastos,
-    totalGastos
+    totalGastos,
+    gastosPorCategoria
   };
 };
 
