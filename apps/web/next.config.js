@@ -1,12 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Deshabilitar ESLint durante build para permitir deploy
+  // === DEPLOYMENT FORCE MODE ===
+  // Completamente ignorar todas las validaciones para deploy urgente
+
+  // Deshabilitar completamente ESLint
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Deshabilitar TypeScript checks durante build
+
+  // Deshabilitar completamente TypeScript checks
   typescript: {
     ignoreBuildErrors: true,
+  },
+  // Inyectar variables públicas en el bundle
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
   // Configuración adicional para desarrollo
   images: {
