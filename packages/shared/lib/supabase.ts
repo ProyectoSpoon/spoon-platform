@@ -1851,12 +1851,12 @@ export const getTransaccionesYGastosEnRango = async (
  * Generar factura para una transacción de caja
  * Función de compatibilidad para GeneradorFactura.tsx
  */
-export const generarFactura = async (transaccionId: string, datosFactura: any) => {
+export const generarFactura = async (datosFactura: any) => {
   try {
     // Lógica básica de generación de factura
     return {
       numero_factura: `INV-${Date.now()}`,
-      transaccion_id: transaccionId,
+      transaccion_id: datosFactura.transaccionId,
       datos_factura: datosFactura,
       generado_at: new Date().toISOString()
     };

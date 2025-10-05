@@ -174,7 +174,7 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
           fecha_transaccion: transaccion.procesada_at,
           items_detalle: [
             {
-              descripcion: `Consumo ${transaccion.tipo_orden}${transaccion.tipo_orden === 'mesa' ? ` #${transaccion.orden_id.slice(-6)}` : ''}`,
+              descripcion: `Consumo ${transaccion.tipo_orden}${transaccion.tipo_orden === 'mesa' && transaccion.orden_id ? ` #${transaccion.orden_id.slice(-6)}` : ''}`,
               cantidad: 1,
               precio_unitario: subtotal,
               precio_total: subtotal
@@ -184,21 +184,17 @@ export function GeneradorFactura({ transaccion, onFacturaGenerada, onCerrar }: G
       };
       
       console.log('📋 Datos de factura preparados:', datosFactura);
-      
-      const { factura, error: facturaError } = await generarFactura(datosFactura);
-      
-      if (facturaError) {
-        throw facturaError;
-      }
-      
+
+      const factura = await generarFactura(datosFactura);
+
       if (!factura) {
         throw new Error('No se pudo generar la factura');
       }
-      
+
       console.log('✅ Factura generada exitosamente:', factura.numero_factura);
-      
+
       setSuccess(true);
-      
+
       // Esperar un momento para mostrar el éxito antes de cerrar
       setTimeout(() => {
         onFacturaGenerada(factura);
