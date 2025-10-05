@@ -1870,17 +1870,18 @@ export const generarFactura = async (transaccionId: string, datosFactura: any) =
  * Obtener el próximo número de factura
  * Función de compatibilidad para GeneradorFactura.tsx
  */
-export const getProximoNumeroFactura = async (restaurantId: string): Promise<string> => {
+export const getProximoNumeroFactura = async (restaurantId: string): Promise<{ data: string; error: any }> => {
   try {
     // Lógica básica para generar next invoice number
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
 
-    return `INV-${year}-${month}-${Date.now().toString().slice(-4)}`;
+    const numeroFactura = `INV-${year}-${month}-${Date.now().toString().slice(-4)}`;
+    return { data: numeroFactura, error: null };
   } catch (error) {
     console.error('Error getting next invoice number:', error);
-    throw error;
+    return { data: '', error };
   }
 };
 
